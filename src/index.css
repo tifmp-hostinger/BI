@@ -1,0 +1,200 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+      Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: #f4f5f7;
+    color: #0f172a;
+    line-height: 1.5;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    line-height: 1.2;
+  }
+
+  ::selection {
+    background-color: rgba(46, 90, 172, 0.2);
+  }
+}
+
+@layer components {
+  .glass {
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.6),
+      0 8px 24px -8px rgba(15, 23, 42, 0.12);
+  }
+
+  .glass-dark {
+    background: linear-gradient(
+      180deg,
+      rgba(15, 23, 42, 0.92) 0%,
+      rgba(15, 23, 42, 0.85) 100%
+    );
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  }
+
+  .glass-header {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(18px) saturate(180%);
+    -webkit-backdrop-filter: blur(18px) saturate(180%);
+    border-bottom: 1px solid rgba(226, 232, 240, 0.7);
+  }
+
+  .glass-login {
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.7),
+      0 20px 40px -12px rgba(15, 23, 42, 0.18);
+  }
+
+  .glass-input {
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(10px) saturate(140%);
+    -webkit-backdrop-filter: blur(10px) saturate(140%);
+    border: 1px solid rgba(203, 213, 225, 0.7);
+    transition: all 0.2s ease-out;
+  }
+
+  .glass-input:focus-within {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(46, 90, 172, 0.5);
+    box-shadow: 0 0 0 4px rgba(46, 90, 172, 0.12);
+  }
+
+  .glass-button {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px) saturate(160%);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    transition: all 0.2s ease-out;
+  }
+
+  .glass-button:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateY(-1px);
+  }
+
+  .glass-drawer {
+    background: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(24px) saturate(160%);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .glass-chat {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+  }
+
+  .glass-dropdown {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.8),
+      0 20px 40px -12px rgba(15, 23, 42, 0.16);
+  }
+
+  .glass-fab {
+    background: linear-gradient(180deg, #4a78d1 0%, #2e5aac 100%);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.4),
+      0 10px 30px -10px rgba(46, 90, 172, 0.6);
+    transition: all 0.2s ease-out;
+  }
+
+  .glass-fab:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.5),
+      0 16px 40px -10px rgba(46, 90, 172, 0.7);
+  }
+
+  .hero-gradient {
+    background:
+      radial-gradient(
+        1200px 400px at 10% 0%,
+        rgba(74, 120, 209, 0.35),
+        transparent 60%
+      ),
+      radial-gradient(
+        800px 500px at 90% 100%,
+        rgba(46, 90, 172, 0.35),
+        transparent 60%
+      ),
+      linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+  }
+}
+
+.leaflet-container {
+  font-family: 'Inter', sans-serif;
+  border-radius: 1rem;
+  background: #f4f5f7;
+}
+
+.leaflet-tile-pane {
+  filter: saturate(0.9) brightness(1.02);
+}
+
+.leaflet-tooltip.cep-tooltip {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 0.75rem;
+  box-shadow: 0 12px 24px -12px rgba(15, 23, 42, 0.25);
+  padding: 8px 10px;
+}
+
+.leaflet-tooltip.cep-tooltip::before {
+  display: none;
+}
+
+.leaflet-control-attribution {
+  background: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(8px);
+  border-radius: 0.5rem !important;
+  font-size: 10px !important;
+  color: #64748b !important;
+  padding: 2px 6px !important;
+}
+
+.leaflet-control-zoom a {
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(8px);
+  color: #334155 !important;
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+}
