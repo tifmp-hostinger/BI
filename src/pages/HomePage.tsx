@@ -8,6 +8,7 @@ import {
   GraduationCap,
   LayoutDashboard,
   MapPin,
+  Percent,
   Sparkles,
   Target,
   UserPlus,
@@ -27,6 +28,7 @@ const ICONS: Record<string, LucideIcon> = {
   Activity,
   Users,
   Target,
+  Percent,
 };
 
 const ACCENT: Record<

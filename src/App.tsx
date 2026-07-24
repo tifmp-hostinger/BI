@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-
 import { HomePage } from '@/pages/HomePage';
 import { PresencaNacionalPage } from '@/pages/PresencaNacionalPage';
 import { AnaliseConversaoPresidenciaPage } from '@/dashboards/analise-conversao-presidencia/page';
+import { BolsasEDescontosPage } from '@/dashboards/bolsas-e-descontos/page';
 import { AppShell } from '@/components/layout/AppShell';
 import { ModulePlaceholder } from '@/components/ui/ModulePlaceholder';
 
@@ -10,6 +11,7 @@ function DashboardRouter() {
   if (slug === 'presenca-nacional') return <PresencaNacionalPage />;
   if (slug === 'analise-conversao-presidencia')
     return <AnaliseConversaoPresidenciaPage />;
+  if (slug === 'bolsas-e-descontos') return <BolsasEDescontosPage />;
   return (
     <AppShell title="Dashboard em breve" subtitle={`Modulo: ${slug}`}>
       <ModulePlaceholder

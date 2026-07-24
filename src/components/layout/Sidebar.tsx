@@ -6,6 +6,7 @@ import {
   GraduationCap,
   LayoutDashboard,
   MapPin,
+  Percent,
   Settings,
   Shield,
   Target,
@@ -25,6 +26,7 @@ const ICONS: Record<string, LucideIcon> = {
   Shield,
   Settings,
   Target,
+  Percent,
 };
 
 type SidebarItem = {

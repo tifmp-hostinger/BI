@@ -28,6 +28,19 @@ export const SAMPLE_DASHBOARDS: Dashboard[] = [
     created_at: new Date().toISOString(),
   },
   {
+    id: '8',
+    slug: 'bolsas-e-descontos',
+    title: 'Bolsas e Descontos - Performance e Retenção',
+    description:
+      'Visão geral de matrículas, bolsas, descontos, faturamento e evasão relacionada a benefícios financeiros.',
+    icon: 'Percent',
+    color: 'fmp',
+    category: 'Financeiro',
+    is_active: true,
+    sort_order: 3,
+    created_at: new Date().toISOString(),
+  },
+  {
     id: '2',
     slug: 'academic-performance',
     title: 'Desempenho Academico',
