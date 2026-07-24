@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fetchDashboardData } from '../queries';
-import { buildFilterOptions, computeGeralKpis, computeLeadsData } from '../calculations';
+import { buildFilterOptions, computeGeralKpis, computeGraduacaoData, computeLeadsData, computeMestradoData, computeRematriculaData } from '../calculations';
 import type {
   ConversaoFilters,
   DashboardDataset,
   FilterOptions,
   GeralKpis,
+  GraduacaoData,
   LeadsData,
+  MestradoData,
+  RematriculaData,
 } from '../types';
 
 type State = {
@@ -55,12 +58,30 @@ export function useAnaliseConversaoData(filters: ConversaoFilters) {
     return computeLeadsData(state.dataset, filters);
   }, [state.dataset, filters]);
 
+  const graduacaoData: GraduacaoData | null = useMemo(() => {
+    if (!state.dataset) return null;
+    return computeGraduacaoData(state.dataset, filters);
+  }, [state.dataset, filters]);
+
+  const rematriculaData: RematriculaData | null = useMemo(() => {
+    if (!state.dataset) return null;
+    return computeRematriculaData(state.dataset, filters);
+  }, [state.dataset, filters]);
+
+  const mestradoData: MestradoData | null = useMemo(() => {
+    if (!state.dataset) return null;
+    return computeMestradoData(state.dataset, filters);
+  }, [state.dataset, filters]);
+
   return {
     loading: state.loading,
     error: state.error,
     filterOptions,
     geralKpis,
     leadsData,
+    graduacaoData,
+    rematriculaData,
+    mestradoData,
     refetch: load,
   };
 }

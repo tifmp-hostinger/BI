@@ -6,10 +6,13 @@ import type {
   ConversaoFilters,
   DashboardDataset,
   GeralKpis,
+  GraduacaoData,
   LeadsData,
   LeadsMensalDatum,
+  MestradoData,
   RawMatriculaPosRow,
   RawRubeusRow,
+  RematriculaData,
 } from './types';
 
 const BOLSAS_INCENTIVO = new Set([
@@ -400,4 +403,328 @@ export function modalidadePos(processoseletivo: string | null): string {
   return processoseletivo === 'Inscrição Pós Graduação Presencial'
     ? 'Pós Presencial'
     : 'Pós EAD';
+}
+
+const SITUACAO_CANCELADO_CURSO = 'Cancelado \u2013 Curso';
+
+const EV_TIPO_CANCELADO = new Set([
+  'Reingresso',
+  'Rematricula',
+  'Rematr\u00edcula n\u00e3o realizada',
+  'N\u00e3o desejou reingressar',
+  'Limite de trancamento ultrapassado',
+  'Nova Matricula',
+]);
+
+const EV_TIPO_EVADIDO = new Set([
+  'Aguardando reingresso',
+  'Limite de trancamento ultrapassado',
+  'N\u00e3o desejou reingressar',
+  'Reingresso',
+  'Rematr\u00edcula n\u00e3o realizada',
+]);
+
+const EV_TIPO_JUBILADO = new Set([
+  'Jubilamento',
+  'Rematr\u00edcula n\u00e3o realizada',
+]);
+
+const EV_TIPO_TRANSFERIDO = new Set([
+  'N\u00e3o desejou reingressar',
+  'Nova Matricula',
+  'Rematricula',
+  'Rematr\u00edcula n\u00e3o realizada',
+]);
+
+const EV_TIPO_TRANCADO = new Set([
+  'N\u00e3o desejou reingressar',
+  'Nova Matricula',
+  'Reingresso',
+  'Rematricula',
+  'Rematr\u00edcula n\u00e3o realizada',
+  'Renova\u00e7\u00e3o Trancamento',
+]);
+
+function filterMatriculasGradByPeriodo(
+  ds: DashboardDataset,
+  filters: ConversaoFilters,
+) {
+  let rows = ds.matriculasGrad;
+  if (filters.codperlet.length > 0) {
+    const cpSet = new Set(filters.codperlet.map(normalizeCodperlet));
+    rows = rows.filter((r) => cpSet.has(normalizeCodperlet(r.codperlet)));
+  }
+  return rows;
+}
+
+function filterInscricoesGradByPeriodo(
+  ds: DashboardDataset,
+  filters: ConversaoFilters,
+) {
+  let rows = ds.inscricoesGrad;
+  if (filters.codperlet.length > 0) {
+    const cpSet = new Set(filters.codperlet.map(normalizeCodperlet));
+    rows = rows.filter((r) => cpSet.has(normalizeCodperlet(r.processoseletivo)));
+  }
+  return rows;
+}
+
+export function computeGraduacaoData(
+  ds: DashboardDataset,
+  filters: ConversaoFilters,
+): GraduacaoData {
+  const matRows = filterMatriculasGradByPeriodo(ds, filters);
+  const inscRows = filterInscricoesGradByPeriodo(ds, filters);
+  const rubeusFiltered = filterRubeusByDate(ds.rubeus, filters);
+
+  const leads = countLeadsByProcesso(rubeusFiltered, 'Graduação');
+  const insc = inscRows.length;
+  const inscxLeads = computeConvLeadsInsc(rubeusFiltered, 'Graduação', buildInscLeadSet(ds));
+
+  const matEfetRas = new Set<string>();
+  for (const r of matRows) {
+    if (r.situacao === 'Matriculado' && r.tipomatricula === 'Nova Matricula' && r.ra) {
+      matEfetRas.add(r.ra);
+    }
+  }
+  const matEfet = matEfetRas.size;
+
+  const matPreRas = new Set<string>();
+  for (const r of matRows) {
+    if (r.situacao === 'Pré-Matrícula' && r.tipomatricula === 'Nova Matricula' && r.ra) {
+      matPreRas.add(r.ra);
+    }
+  }
+  const matPre = matPreRas.size;
+
+  const matCancRas = new Set<string>();
+  for (const r of matRows) {
+    if (r.situacao === SITUACAO_CANCELADO_CURSO && r.tipomatricula === 'Nova Matricula' && r.ra) {
+      matCancRas.add(r.ra);
+    }
+  }
+  const matCanc = matCancRas.size;
+
+  const matBolsas = matRows.filter(
+    (r) => r.tipomatricula === 'Nova Matricula' && r.situacao === 'Matriculado' && r.aluno,
+  ).filter((r) => {
+    const cp = normalizeCodperlet(r.codperlet);
+    return isBolsista(ds, `${r.ra}-${cp}`) || isBolsista(ds, r.ra ?? '');
+  }).length;
+
+  const matPgt = matEfet - matBolsas;
+
+  const periodoAtual = [...ds.pletivo].sort((a, b) => (a.indice ?? 0) - (b.indice ?? 0)).slice(-1)[0]?.periodo_letivo ?? '';
+  const vagas = ds.pletivo.find((p) => p.periodo_letivo === periodoAtual)?.numero_vagas ?? 0;
+  const pctMeta = vagas > 0 ? matEfet / vagas : 0;
+
+  const pctConvIxL = leads > 0 ? inscxLeads / leads : 0;
+  const pctConvMxI = inscxLeads > 0 ? matEfet / inscxLeads : 0;
+  const pctConvMxL = leads > 0 ? matEfet / leads : 0;
+
+  const pgtVsBolsas: ChartDatum[] = [
+    { categoria: 'Pagantes', valor: matPgt },
+    { categoria: 'Bolsistas', valor: matBolsas },
+  ];
+
+  const turnoMap = new Map<string, number>();
+  for (const r of inscRows) {
+    const turno = (r.areainteresse ?? 'Nao informado').trim();
+    turnoMap.set(turno, (turnoMap.get(turno) ?? 0) + 1);
+  }
+  const inscPorTurno = Array.from(turnoMap.entries())
+    .map(([categoria, valor]) => ({ categoria, valor }))
+    .sort((a, b) => b.valor - a.valor);
+
+  const procMap = new Map<string, number>();
+  for (const r of inscRows) {
+    const proc = (r.processoseletivo ?? 'Nao informado').trim();
+    procMap.set(proc, (procMap.get(proc) ?? 0) + 1);
+  }
+  const inscPorProcesso = Array.from(procMap.entries())
+    .map(([categoria, valor]) => ({ categoria, valor }))
+    .sort((a, b) => b.valor - a.valor);
+
+  const ingressoMap = new Map<string, number>();
+  for (const r of matRows) {
+    if (r.situacao !== 'Matriculado' || r.tipomatricula !== 'Nova Matricula') continue;
+    const ing = (r.tipoingresso ?? 'Nao informado').trim();
+    ingressoMap.set(ing, (ingressoMap.get(ing) ?? 0) + 1);
+  }
+  const matPorTipoIngresso = Array.from(ingressoMap.entries())
+    .map(([categoria, valor]) => ({ categoria, valor }))
+    .sort((a, b) => b.valor - a.valor);
+
+  const diaMap = new Map<string, number>();
+  for (const r of matRows) {
+    if (r.situacao !== 'Matriculado' || r.tipomatricula !== 'Nova Matricula') continue;
+    const iso = toISODate(r.datamatricula);
+    if (!iso) continue;
+    diaMap.set(iso, (diaMap.get(iso) ?? 0) + 1);
+  }
+  const matPorDia = Array.from(diaMap.entries())
+    .map(([data, valor]) => ({ data, valor }))
+    .sort((a, b) => a.data.localeCompare(b.data));
+
+  return {
+    leads,
+    insc,
+    matEfet,
+    vagas,
+    matCanc,
+    matPre,
+    matBolsas,
+    matPgt,
+    pctMeta,
+    pctConvIxL,
+    pctConvMxI,
+    pctConvMxL,
+    pgtVsBolsas,
+    inscPorTurno,
+    inscPorProcesso,
+    matPorTipoIngresso,
+    matPorDia,
+  };
+}
+
+export function computeRematriculaData(
+  ds: DashboardDataset,
+  filters: ConversaoFilters,
+): RematriculaData {
+  const matRows = filterMatriculasGradByPeriodo(ds, filters);
+
+  const periodos = [...ds.pletivo].sort((a, b) => (a.indice ?? 0) - (b.indice ?? 0)).map((p) => p.periodo_letivo);
+
+  const evasaoPorPeriodo = periodos.map((periodo) => {
+    const rows = matRows.filter((r) => normalizeCodperlet(r.codperlet) === periodo);
+
+    const evJubilado = rows.filter(
+      (r) => r.situacao === 'Jubilado' && EV_TIPO_JUBILADO.has((r.tipomatricula ?? '').trim()),
+    ).length;
+
+    const evEvadido = rows.filter(
+      (r) => r.situacao === 'Evadido Curso' && EV_TIPO_EVADIDO.has((r.tipomatricula ?? '').trim()),
+    ).length;
+
+    const evCancelado = rows.filter(
+      (r) => r.situacao === SITUACAO_CANCELADO_CURSO && EV_TIPO_CANCELADO.has((r.tipomatricula ?? '').trim()),
+    ).length;
+
+    const evTransferido = rows.filter(
+      (r) => r.situacao === 'Transferido de Instituição' && EV_TIPO_TRANSFERIDO.has((r.tipomatricula ?? '').trim()),
+    ).length;
+
+    return { periodo, evJubilado, evEvadido, evCancelado, evTransferido };
+  });
+
+  const reingressoPorPeriodo = periodos.map((periodo) => {
+    const rows = matRows.filter((r) => normalizeCodperlet(r.codperlet) === periodo);
+
+    const reingressoConf = rows.filter(
+      (r) => r.tipomatricula === 'Reingresso' && r.situacao === 'Matriculado',
+    ).length;
+
+    const reingressoAguard = rows.filter(
+      (r) => r.situacao === 'Aguardando pedido de reingress',
+    ).length;
+
+    return { periodo, reingressoConf, reingressoAguard };
+  });
+
+  const rematriculaPorPeriodo = periodos.map((periodo) => {
+    const rows = matRows.filter((r) => normalizeCodperlet(r.codperlet) === periodo);
+
+    const rematConf = rows.filter(
+      (r) => r.tipomatricula === 'Rematricula' && r.situacao === 'Matriculado',
+    ).length;
+
+    const rematNaoRealiz = rows.filter(
+      (r) => r.tipomatricula === 'Rematr\u00edcula n\u00e3o realizada',
+    ).length;
+
+    // BUG HERDADO do Power BI: compara o campo ra com o texto 'Pré-Matrícula'.
+    // Resultado é sempre 0 pois ra nunca contém esse texto. Preservado intencionalmente.
+    const _rematPend = rows.filter(
+      (r) => r.tipomatricula === 'Rematricula' && r.ra === 'Pré-Matrícula',
+    ).length;
+
+    return { periodo, rematConf, rematNaoRealiz };
+  });
+
+  return { evasaoPorPeriodo, reingressoPorPeriodo, rematriculaPorPeriodo };
+}
+
+export function computeMestradoData(
+  ds: DashboardDataset,
+  filters: ConversaoFilters,
+): MestradoData {
+  let inscRows = ds.inscricoesMestrado;
+  if (filters.codperlet.length > 0) {
+    const cpSet = new Set(filters.codperlet.map(normalizeCodperlet));
+    inscRows = inscRows.filter((r) => cpSet.has(normalizeCodperlet(r.periodo_letivo)));
+  }
+
+  let rubeusMest = ds.rubeus.filter((r) => r.processo === 'Mestrado');
+  rubeusMest = filterRubeusByDate(rubeusMest, filters);
+  if (filters.codperlet.length > 0) {
+    // Rubeus não tem codperlet direto; respeita apenas filtro de data
+  }
+
+  const leads = rubeusMest.length;
+  const insc = inscRows.length;
+
+  const matRows = ds.matriculasMestrado.filter(
+    (r) => r.tipomatricula === 'Nova Matricula' && r.situacao === 'Matriculado',
+  );
+  const mat = new Set(matRows.map((r) => r.ra).filter(Boolean)).size;
+
+  const taxaPaga = ds.rubeus.filter((r) => r.etapa_nome === 'Taxa de Inscrição (Paga)').length;
+  const taxaAPagar = ds.rubeus.filter((r) => r.etapa_nome === 'Taxa de inscrição (a pagar)').length;
+
+  // quali_lead não existe na tabela stg_rm_matriculas_mestrado; usando todas as matrículas qualificadas
+  const matQualificadas = mat;
+  const pctConversao = mat > 0 ? matQualificadas / mat : 0;
+
+  const meta = 20;
+  const pctMeta = mat / meta;
+
+  const procMap = new Map<string, number>();
+  for (const r of inscRows) {
+    const proc = (r.processoseletivo ?? 'Nao informado').trim();
+    procMap.set(proc, (procMap.get(proc) ?? 0) + 1);
+  }
+  const inscPorProcesso = Array.from(procMap.entries())
+    .map(([categoria, valor]) => ({ categoria, valor }))
+    .sort((a, b) => b.valor - a.valor);
+
+  const statusMap = new Map<string, number>();
+  for (const r of inscRows) {
+    const status = (r.statusps ?? 'Nao informado').trim();
+    statusMap.set(status, (statusMap.get(status) ?? 0) + 1);
+  }
+  const statusInscricoes = Array.from(statusMap.entries())
+    .map(([categoria, valor]) => ({ categoria, valor }))
+    .sort((a, b) => b.valor - a.valor);
+
+  const canalMap = new Map<string, number>();
+  for (const r of rubeusMest) {
+    const canal = (r.canal_nome ?? 'Nao informado').trim();
+    canalMap.set(canal, (canalMap.get(canal) ?? 0) + 1);
+  }
+  const leadsPorCanal = Array.from(canalMap.entries())
+    .map(([categoria, valor]) => ({ categoria, valor }))
+    .sort((a, b) => b.valor - a.valor);
+
+  return {
+    leads,
+    insc,
+    mat,
+    taxaPaga,
+    taxaAPagar,
+    pctConversao,
+    pctMeta,
+    inscPorProcesso,
+    statusInscricoes,
+    leadsPorCanal,
+  };
 }

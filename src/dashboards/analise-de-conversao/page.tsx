@@ -33,6 +33,9 @@ import { ErrorState } from '@/components/ui/ErrorState';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useAnaliseConversaoData } from './hooks/useAnaliseConversaoData';
 import { ConversaoFilterBar } from './components/ConversaoFilterBar';
+import { GraduacaoTab } from './components/GraduacaoTab';
+import { RematriculaTab } from './components/RematriculaTab';
+import { MestradoTab } from './components/MestradoTab';
 import { fmtBRLCompact, fmtInt, fmtPct, truncateLabel } from './formatters';
 import type { ConversaoFilters } from './types';
 
@@ -95,7 +98,7 @@ export function AnaliseDeConversaoPage() {
     dataFim: null,
   });
 
-  const { loading, error, filterOptions, geralKpis, leadsData, refetch } =
+  const { loading, error, filterOptions, geralKpis, leadsData, graduacaoData, rematriculaData, mestradoData, refetch } =
     useAnaliseConversaoData(filters);
 
   const tt = useMemo(chartTooltipStyle, []);
@@ -520,8 +523,23 @@ export function AnaliseDeConversaoPage() {
           </>
         )}
 
-        {/* Placeholder tabs */}
-        {['graduacao', 'rematricula', 'especializacoes', 'presencial', 'ead', 'cursoslivres', 'mestrado'].includes(tab) && (
+        {/* GRADUACAO */}
+        {tab === 'graduacao' && (
+          <GraduacaoTab loading={loading} data={graduacaoData} />
+        )}
+
+        {/* REMATRICULA */}
+        {tab === 'rematricula' && (
+          <RematriculaTab loading={loading} data={rematriculaData} />
+        )}
+
+        {/* MESTRADO */}
+        {tab === 'mestrado' && (
+          <MestradoTab loading={loading} data={mestradoData} />
+        )}
+
+        {/* Remaining placeholder tabs */}
+        {['especializacoes', 'presencial', 'ead', 'cursoslivres'].includes(tab) && (
           <EmptyState
             icon={Target}
             title="Em construcao"

@@ -191,6 +191,59 @@ export type LeadsData = {
   entradaGradEspec: LeadsMensalDatum[];
 };
 
+export type GraduacaoData = {
+  leads: number;
+  insc: number;
+  matEfet: number;
+  vagas: number;
+  matCanc: number;
+  matPre: number;
+  matBolsas: number;
+  matPgt: number;
+  pctMeta: number;
+  pctConvIxL: number;
+  pctConvMxI: number;
+  pctConvMxL: number;
+  pgtVsBolsas: ChartDatum[];
+  inscPorTurno: ChartDatum[];
+  inscPorProcesso: ChartDatum[];
+  matPorTipoIngresso: ChartDatum[];
+  matPorDia: { data: string; valor: number }[];
+};
+
+export type RematriculaData = {
+  evasaoPorPeriodo: {
+    periodo: string;
+    evJubilado: number;
+    evEvadido: number;
+    evCancelado: number;
+    evTransferido: number;
+  }[];
+  reingressoPorPeriodo: {
+    periodo: string;
+    reingressoConf: number;
+    reingressoAguard: number;
+  }[];
+  rematriculaPorPeriodo: {
+    periodo: string;
+    rematConf: number;
+    rematNaoRealiz: number;
+  }[];
+};
+
+export type MestradoData = {
+  leads: number;
+  insc: number;
+  mat: number;
+  taxaPaga: number;
+  taxaAPagar: number;
+  pctConversao: number;
+  pctMeta: number;
+  inscPorProcesso: ChartDatum[];
+  statusInscricoes: ChartDatum[];
+  leadsPorCanal: ChartDatum[];
+};
+
 export type DashboardDataset = {
   rubeus: RawRubeusRow[];
   matriculasGrad: RawMatriculaGradRow[];
