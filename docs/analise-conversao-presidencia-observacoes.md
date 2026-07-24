@@ -142,3 +142,22 @@ Caso a segunda fase precise:
 - Indice em `stg_rm_matriculas_pos(databaixa, descontoaluno)`.
 
 Nenhum desses foi executado automaticamente.
+
+## 6. Politicas de leitura RLS
+
+As tabelas `pletivo`, `meta_mestrado`, `meta_pos` e
+`rubeus_registros_personalizada` estavam com RLS habilitado sem nenhuma
+politica, o que fazia com que o PostgREST retornasse zero linhas para o cliente
+anon (sem gerar erro) — resultando em "0 leads" e meta vazia na UI.
+
+Foi aplicada uma migracao adicionando uma politica SELECT em cada tabela para
+os papeis `anon` e `authenticated`:
+
+- `pletivo.read_pletivo_public`
+- `meta_mestrado.read_meta_mestrado_public`
+- `meta_pos.read_meta_pos_public`
+- `rubeus_registros_personalizada.read_rubeus_public`
+
+Nenhuma politica de INSERT / UPDATE / DELETE foi criada. As tabelas permanecem
+somente-leitura pelo frontend, alinhado aa restricao "consultas read-only" do
+dashboard.
