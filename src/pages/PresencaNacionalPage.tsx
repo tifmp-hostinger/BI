@@ -198,7 +198,7 @@ export function PresencaNacionalPage() {
         </section>
 
         {/* Filters */}
-        <section className="flex flex-wrap items-center gap-3 rounded-md border border-line bg-white p-4 shadow-card animate-fade-in">
+        <section className="relative z-20 flex flex-wrap items-center gap-3 rounded-md border border-line bg-white p-4 shadow-card animate-fade-in">
           <div className="flex items-center gap-2 text-xs font-medium text-ink-2">
             <Filter className="h-4 w-4 text-fmp" />
             Fonte:

@@ -31,7 +31,7 @@ export function KpiRow({ label, value, hint, icon: Icon, tone = 'neutral' }: Pro
           <p className="text-2xs font-semibold uppercase tracking-wider text-ink-3 line-clamp-1">
             {label}
           </p>
-          {hint && <p className="text-2xs text-sand line-clamp-1">{hint}</p>}
+          {hint && <p className="text-2xs text-ink-3 line-clamp-1">{hint}</p>}
         </div>
       </div>
       <span

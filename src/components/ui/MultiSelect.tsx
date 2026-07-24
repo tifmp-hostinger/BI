@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, ChevronDown } from 'lucide-react';
+import { Check, ChevronDown, X } from 'lucide-react';
 
 type Props = {
   label: string;
@@ -47,52 +47,92 @@ export function MultiSelect({
       : `${selected.length} selecionados`;
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <label className="text-2xs font-semibold uppercase tracking-widest text-ink-3">
-        {label}
-      </label>
-      <div ref={ref} className={`relative ${widthClass}`}>
-        <button
-          type="button"
-          onClick={() => setOpen((o) => !o)}
-          className={`${btnClass} w-full`}
-        >
-          <span className="truncate">{displayText}</span>
-          <ChevronDown className="h-3 w-3 flex-shrink-0 text-ink-3" />
-        </button>
-        {open && (
-          <div className="absolute z-30 mt-1 max-h-64 w-full overflow-y-auto rounded-md border border-line bg-white py-1 shadow-lg">
-            <button
-              type="button"
-              onClick={() => onChange([])}
-              className={`flex w-full items-center gap-2 px-3 py-1.5 text-2xs font-semibold transition hover:bg-paper ${
-                allSelected ? 'text-fmp' : 'text-ink-2'
-              }`}
-            >
-              <span className="h-3.5 w-3.5 flex-shrink-0" />
-              Todos
-            </button>
-            {options.map((opt) => {
-              const isSel = selected.includes(opt);
-              return (
-                <button
-                  type="button"
-                  key={opt}
-                  onClick={() => toggle(opt)}
-                  className={`flex w-full items-center gap-2 px-3 py-1.5 text-2xs font-semibold transition hover:bg-paper ${
-                    isSel ? 'text-fmp' : 'text-ink-2'
-                  }`}
-                >
-                  <span className="flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center">
-                    {isSel && <Check className="h-3 w-3" />}
-                  </span>
-                  <span className="truncate">{opt}</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
+    <div ref={ref} className={`relative flex flex-col gap-1.5 ${widthClass}`}>
+      <div className="flex items-center gap-2">
+        <label className="text-2xs font-semibold uppercase tracking-widest text-ink-3 whitespace-nowrap">
+          {label}
+        </label>
       </div>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className={`${btnClass} w-full`}
+      >
+        <span className="truncate">{displayText}</span>
+        <ChevronDown className={`h-3 w-3 flex-shrink-0 text-ink-3 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute top-full left-0 z-50 mt-1 max-h-64 min-w-full overflow-y-auto rounded-md border border-line bg-white py-1 shadow-lg">
+          <button
+            type="button"
+            onClick={() => onChange([])}
+            className={`flex w-full items-center gap-2 px-3 py-1.5 text-2xs font-semibold transition hover:bg-paper ${
+              allSelected ? 'text-fmp' : 'text-ink-2'
+            }`}
+          >
+            <span className="h-3.5 w-3.5 flex-shrink-0" />
+            Todos
+          </button>
+          {options.map((opt) => {
+            const isSel = selected.includes(opt);
+            return (
+              <button
+                type="button"
+                key={opt}
+                onClick={() => toggle(opt)}
+                className={`flex w-full items-center gap-2 px-3 py-1.5 text-2xs font-semibold transition hover:bg-paper ${
+                  isSel ? 'text-fmp' : 'text-ink-2'
+                }`}
+              >
+                <span className="flex h-3.5 w-3.5 flex-shrink-0 items-center justify-center">
+                  {isSel && <Check className="h-3 w-3" />}
+                </span>
+                <span className="truncate text-left">{opt}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function SelectedChips({
+  items,
+  onRemove,
+  onClear,
+}: {
+  items: { label: string; value: string | number }[];
+  onRemove: (val: string | number) => void;
+  onClear: () => void;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 pt-2">
+      {items.map((item) => (
+        <span
+          key={`${item.label}-${item.value}`}
+          className="inline-flex items-center gap-1 rounded-full bg-fmp-muted px-2.5 py-1 text-2xs font-semibold text-fmp"
+        >
+          <span className="text-ink-3">{item.label}:</span>
+          {String(item.value)}
+          <button
+            type="button"
+            onClick={() => onRemove(item.value)}
+            className="ml-0.5 rounded-full p-0.5 transition hover:bg-fmp/20"
+          >
+            <X className="h-2.5 w-2.5" />
+          </button>
+        </span>
+      ))}
+      <button
+        type="button"
+        onClick={onClear}
+        className="inline-flex items-center gap-1 rounded-full bg-paper px-2.5 py-1 text-2xs font-semibold text-ink-3 transition hover:bg-sand/30"
+      >
+        Limpar tudo
+      </button>
     </div>
   );
 }

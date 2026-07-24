@@ -90,7 +90,7 @@ export function CepHeatMapPage() {
       subtitle="Distribuicao geografica e indicadores demograficos"
     >
       <div className="mx-auto max-w-7xl space-y-8 p-4 sm:p-6 lg:p-8">
-        <section className="relative overflow-hidden rounded-3xl hero-gradient p-6 text-white shadow-card sm:p-8 animate-fade-in">
+        <section className="relative overflow-hidden rounded-3xl hero-gradient p-6 text-cream shadow-card sm:p-8 animate-fade-in">
           <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-info/25 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-24 -left-16 h-72 w-72 rounded-full bg-fmp-light/25 blur-3xl" />
 
@@ -98,17 +98,17 @@ export function CepHeatMapPage() {
             <div>
               <Link
                 to="/"
-                className="inline-flex items-center gap-1 text-2xs font-medium uppercase tracking-widest text-white/70 hover:text-white"
+                className="inline-flex items-center gap-1 text-2xs font-medium uppercase tracking-widest text-cream/70 hover:text-cream"
               >
                 <ArrowLeft className="h-3 w-3" />
                 Central de Dashboards
               </Link>
               <div className="mt-3 flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-2xs font-medium uppercase tracking-widest text-white/80 ring-1 ring-inset ring-white/15">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium uppercase tracking-widest text-cream/80 ring-1 ring-inset ring-cream/15">
                   <Sparkles className="h-3 w-3" />
                   Geolocalizacao
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-2xs font-medium text-white/80 ring-1 ring-inset ring-white/15">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium text-cream/80 ring-1 ring-inset ring-cream/15">
                   <MapPin className="h-3 w-3" />
                   {stats.cityCount} cidades
                 </span>
@@ -116,7 +116,7 @@ export function CepHeatMapPage() {
               <h1 className="mt-3 text-2xl font-semibold leading-tight sm:text-3xl">
                 Onde estao os usuarios da FMP
               </h1>
-              <p className="mt-2 max-w-xl text-sm text-white/70">
+              <p className="mt-2 max-w-xl text-sm text-cream/70">
                 Concentracao de CEPs no Brasil, com cruzamento por perfil,
                 faixa etaria e curso. Novos indicadores podem ser adicionados a
                 qualquer momento.
@@ -125,13 +125,13 @@ export function CepHeatMapPage() {
 
             <div className="flex flex-wrap items-center gap-2">
               <div className="rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-inset ring-white/15 backdrop-blur">
-                <p className="text-2xs uppercase tracking-widest text-white/60">
+                <p className="text-2xs uppercase tracking-widest text-cream/60">
                   Registros
                 </p>
                 <p className="mt-1 text-xl font-semibold">{stats.total}</p>
               </div>
               <div className="rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-inset ring-white/15 backdrop-blur">
-                <p className="text-2xs uppercase tracking-widest text-white/60">
+                <p className="text-2xs uppercase tracking-widest text-cream/60">
                   UFs cobertas
                 </p>
                 <p className="mt-1 text-xl font-semibold">{stats.stateCount}</p>
@@ -139,7 +139,7 @@ export function CepHeatMapPage() {
               <button
                 type="button"
                 onClick={refetch}
-                className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3.5 py-2 text-2xs font-medium text-white ring-1 ring-inset ring-white/20 transition hover:bg-white/25"
+                className="inline-flex items-center gap-1.5 rounded-full bg-cream/15 px-3.5 py-2 text-2xs font-medium text-cream ring-1 ring-inset ring-cream/20 transition hover:bg-cream/25"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
                 Atualizar
@@ -558,7 +558,7 @@ export function CepHeatMapPage() {
           </SectionCard>
         </section>
 
-        <section className="overflow-hidden rounded-2xl glass-dark p-5 text-white shadow-card animate-fade-in">
+        <section className="overflow-hidden rounded-2xl hero-gradient p-5 text-cream shadow-card animate-fade-in">
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <MiniStat label="Sudeste" value={countRegion(stats.byRegion, 'Sudeste')} total={stats.total} />
             <MiniStat label="Sul" value={countRegion(stats.byRegion, 'Sul')} total={stats.total} />
@@ -574,7 +574,7 @@ export function CepHeatMapPage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-dashed border-fmp/30 bg-fmp-muted/40 p-5 animate-fade-in">
+        <section className="rounded-md border border-dashed border-fmp/30 bg-fmp-muted p-5 animate-fade-in">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
               <div className="rounded-xl bg-white p-2 text-fmp shadow-card">
@@ -622,9 +622,9 @@ function MiniStat({
   const pct = total > 0 ? Math.round((value / total) * 100) : 0;
   return (
     <div>
-      <p className="text-2xs uppercase tracking-widest text-white/50">{label}</p>
-      <p className="mt-1 text-xl font-semibold">{value}</p>
-      <p className="text-2xs text-white/60">{pct}% do total</p>
+      <p className="text-2xs uppercase tracking-widest text-cream/50">{label}</p>
+      <p className="mt-1 text-xl font-semibold text-cream">{value}</p>
+      <p className="text-2xs text-cream/60">{pct}% do total</p>
     </div>
   );
 }
@@ -660,7 +660,7 @@ function InsightRow({
       <span className={`mt-1 h-2 w-2 flex-shrink-0 rounded-full ${s.dot}`} />
       <div className="min-w-0">
         <p className={`text-xs font-semibold ${s.text}`}>{title}</p>
-        <p className="mt-0.5 text-2xs text-gray-500">{message}</p>
+        <p className="mt-0.5 text-2xs text-ink-3">{message}</p>
       </div>
     </div>
   );
