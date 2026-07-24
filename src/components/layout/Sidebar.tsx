@@ -8,6 +8,7 @@ import {
   MapPin,
   Settings,
   Shield,
+  Target,
   UserPlus,
   Users,
   X,
@@ -23,6 +24,7 @@ const ICONS: Record<string, LucideIcon> = {
   Users,
   Shield,
   Settings,
+  Target,
 };
 
 type SidebarItem = {

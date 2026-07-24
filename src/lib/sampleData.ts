@@ -15,6 +15,19 @@ export const SAMPLE_DASHBOARDS: Dashboard[] = [
     created_at: new Date().toISOString(),
   },
   {
+    id: '7',
+    slug: 'analise-conversao-presidencia',
+    title: 'Analise de Conversao - Presidencia',
+    description:
+      'Funil comercial academico: Graduacao, Mestrado e Especializacoes com paridade de regras Power BI.',
+    icon: 'Target',
+    color: 'fmp',
+    category: 'Presidencia',
+    is_active: true,
+    sort_order: 2,
+    created_at: new Date().toISOString(),
+  },
+  {
     id: '2',
     slug: 'academic-performance',
     title: 'Desempenho Academico',

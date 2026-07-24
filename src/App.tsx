@@ -1,12 +1,15 @@
 import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom';
 import { HomePage } from '@/pages/HomePage';
 import { PresencaNacionalPage } from '@/pages/PresencaNacionalPage';
+import { AnaliseConversaoPresidenciaPage } from '@/dashboards/analise-conversao-presidencia/page';
 import { AppShell } from '@/components/layout/AppShell';
 import { ModulePlaceholder } from '@/components/ui/ModulePlaceholder';
 
 function DashboardRouter() {
   const { slug = '' } = useParams();
   if (slug === 'presenca-nacional') return <PresencaNacionalPage />;
+  if (slug === 'analise-conversao-presidencia')
+    return <AnaliseConversaoPresidenciaPage />;
   return (
     <AppShell title="Dashboard em breve" subtitle={`Modulo: ${slug}`}>
       <ModulePlaceholder
