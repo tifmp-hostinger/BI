@@ -60,12 +60,7 @@ export function buildDimMap(dim: RawDimBeneficio[]): DimBeneficioMap {
   return m;
 }
 
-function classifyTipoBeneficio(
-  bolsaNorm: string,
-  dimMap: DimBeneficioMap,
-): string {
-  const mapped = dimMap.get(bolsaNorm);
-  if (mapped) return mapped;
+function classifyTipoBeneficio(bolsaNorm: string): string {
   if (bolsaNorm.includes('DESCONTO')) return 'Desconto';
   if (bolsaNorm.includes('BOLSA')) return 'Bolsa';
   if (bolsaNorm.includes('SEM BOLSA')) return 'Sem Bolsa';
@@ -81,6 +76,7 @@ export function enrichBolsaRows(
     const r = raw[i];
     const bolsaNorm = normalize(r.bolsa ?? '');
     const cpNorm = normCodperlet(r.codperlet);
+    const padronizada = dimMap.get(bolsaNorm) || bolsaNorm;
     out[i] = {
       ra: r.ra,
       curso: r.curso,
@@ -90,8 +86,8 @@ export function enrichBolsaRows(
       situacaoCurso: r.situacao_curso,
       situacaoMatriculaPl: r.situacao_matriculapl,
       bolsa: r.bolsa,
-      bolsaPadronizada: bolsaNorm,
-      tipoBeneficio: classifyTipoBeneficio(bolsaNorm, dimMap),
+      bolsaPadronizada: padronizada,
+      tipoBeneficio: classifyTipoBeneficio(bolsaNorm),
       tipoCurso: tipoCursoFromCurso(r.curso),
       codplanopgto: r.codplanopgto,
       valorOriginal: parseValor(r.valororiginal),
