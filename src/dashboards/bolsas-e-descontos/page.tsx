@@ -301,7 +301,7 @@ export function BolsasEDescontosPage() {
                         <LabelList
                           dataKey="valor"
                           position="right"
-                          formatter={(v: number) => fmtInt(v)}
+                          formatter={(v: unknown) => fmtInt(v as number)}
                           style={{ fontSize: 10, fill: '#3A3838', fontWeight: 600 }}
                         />
                       </Bar>
@@ -336,9 +336,10 @@ export function BolsasEDescontosPage() {
                         innerRadius={55}
                         paddingAngle={3}
                         stroke="none"
-                        label={(entry: { categoria: string; valor: number }) =>
-                          `${entry.categoria}: ${fmtInt(entry.valor)}`
-                        }
+                        label={(entry: unknown) => {
+                          const e = entry as { categoria?: string; valor?: number };
+                          return `${e.categoria ?? ''}: ${fmtInt(e.valor ?? 0)}`;
+                        }}
                         labelLine={false}
                       >
                         <Cell fill={FMP_RED} />
@@ -397,7 +398,7 @@ export function BolsasEDescontosPage() {
                         <LabelList
                           dataKey="valor"
                           position="right"
-                          formatter={(v: number) => fmtBRLCompact(v)}
+                          formatter={(v: unknown) => fmtBRLCompact(v as number)}
                           style={{ fontSize: 11, fill: '#3A3838', fontWeight: 700 }}
                         />
                       </Bar>
@@ -521,7 +522,7 @@ export function BolsasEDescontosPage() {
                         contentStyle={tt.contentStyle}
                         labelStyle={tt.labelStyle}
                         itemStyle={tt.itemStyle}
-                        formatter={(v: unknown, name: string) => {
+                        formatter={(v: unknown, name: unknown) => {
                           if (name === 'matBeneFin') return [`${fmtInt(v as number)}`, 'Mat. com Benefício'];
                           return [`${fmtInt(v as number)}`, 'Evasão'];
                         }}

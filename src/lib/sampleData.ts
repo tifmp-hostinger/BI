@@ -41,6 +41,19 @@ export const SAMPLE_DASHBOARDS: Dashboard[] = [
     created_at: new Date().toISOString(),
   },
   {
+    id: '9',
+    slug: 'analise-de-conversao',
+    title: 'Analise de Conversao',
+    description:
+      'Funil comercial completo: leads, inscricoes e matriculas por processo (Graduacao, Especializacoes, Mestrado e Cursos Livres).',
+    icon: 'Target',
+    color: 'fmp',
+    category: 'Comercial',
+    is_active: true,
+    sort_order: 4,
+    created_at: new Date().toISOString(),
+  },
+  {
     id: '2',
     slug: 'academic-performance',
     title: 'Desempenho Academico',

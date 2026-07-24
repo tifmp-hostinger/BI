@@ -3,6 +3,7 @@ import { HomePage } from '@/pages/HomePage';
 import { PresencaNacionalPage } from '@/pages/PresencaNacionalPage';
 import { AnaliseConversaoPresidenciaPage } from '@/dashboards/analise-conversao-presidencia/page';
 import { BolsasEDescontosPage } from '@/dashboards/bolsas-e-descontos/page';
+import { AnaliseDeConversaoPage } from '@/dashboards/analise-de-conversao/page';
 import { AppShell } from '@/components/layout/AppShell';
 import { ModulePlaceholder } from '@/components/ui/ModulePlaceholder';
 
@@ -12,6 +13,7 @@ function DashboardRouter() {
   if (slug === 'analise-conversao-presidencia')
     return <AnaliseConversaoPresidenciaPage />;
   if (slug === 'bolsas-e-descontos') return <BolsasEDescontosPage />;
+  if (slug === 'analise-de-conversao') return <AnaliseDeConversaoPage />;
   return (
     <AppShell title="Dashboard em breve" subtitle={`Modulo: ${slug}`}>
       <ModulePlaceholder
