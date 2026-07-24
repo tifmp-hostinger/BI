@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fetchDashboardData } from '../queries';
-import { buildFilterOptions, computeGeralKpis, computeGraduacaoData, computeLeadsData, computeMestradoData, computeRematriculaData } from '../calculations';
+import { buildFilterOptions, computeCursosLivresData, computeEspecializacoesData, computeGeralKpis, computeGraduacaoData, computeLeadsData, computeMestradoData, computeModalidadePosData, computeRematriculaData } from '../calculations';
 import type {
   ConversaoFilters,
+  CursosLivresData,
   DashboardDataset,
+  EspecializacoesData,
   FilterOptions,
   GeralKpis,
   GraduacaoData,
   LeadsData,
   MestradoData,
+  ModalidadePosData,
   RematriculaData,
 } from '../types';
 
@@ -73,6 +76,26 @@ export function useAnaliseConversaoData(filters: ConversaoFilters) {
     return computeMestradoData(state.dataset, filters);
   }, [state.dataset, filters]);
 
+  const especializacoesData: EspecializacoesData | null = useMemo(() => {
+    if (!state.dataset) return null;
+    return computeEspecializacoesData(state.dataset, filters);
+  }, [state.dataset, filters]);
+
+  const presencialData: ModalidadePosData | null = useMemo(() => {
+    if (!state.dataset) return null;
+    return computeModalidadePosData(state.dataset, filters, 'Pós Presencial');
+  }, [state.dataset, filters]);
+
+  const eadData: ModalidadePosData | null = useMemo(() => {
+    if (!state.dataset) return null;
+    return computeModalidadePosData(state.dataset, filters, 'Pós EAD');
+  }, [state.dataset, filters]);
+
+  const cursosLivresData: CursosLivresData | null = useMemo(() => {
+    if (!state.dataset) return null;
+    return computeCursosLivresData(state.dataset, filters);
+  }, [state.dataset, filters]);
+
   return {
     loading: state.loading,
     error: state.error,
@@ -82,6 +105,10 @@ export function useAnaliseConversaoData(filters: ConversaoFilters) {
     graduacaoData,
     rematriculaData,
     mestradoData,
+    especializacoesData,
+    presencialData,
+    eadData,
+    cursosLivresData,
     refetch: load,
   };
 }

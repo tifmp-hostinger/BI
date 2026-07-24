@@ -5,14 +5,18 @@ import type {
   ChartDatum,
   ConversaoFilters,
   DashboardDataset,
+  EspecializacoesData,
+  EspecializacoesMensalDatum,
   GeralKpis,
   GraduacaoData,
   LeadsData,
   LeadsMensalDatum,
   MestradoData,
+  ModalidadePosData,
   RawMatriculaPosRow,
   RawRubeusRow,
   RematriculaData,
+  CursosLivresData,
 } from './types';
 
 const BOLSAS_INCENTIVO = new Set([
@@ -126,10 +130,10 @@ export function computeGeralKpis(
 
   const basePos = computeBasePos(ds.matriculasPos, filters);
   const especFatEad = basePos
-    .filter((r) => r.modalidadepos === 'Pós EAD')
+    .filter((r) => (r.distanciapresencial ?? '').trim().toUpperCase() === 'D')
     .reduce((s, r) => s + parseDecimal(r.faturadobruto), 0);
   const especFatPres = basePos
-    .filter((r) => r.modalidadepos === 'Pós Presencial')
+    .filter((r) => (r.distanciapresencial ?? '').trim().toUpperCase() === 'P')
     .reduce((s, r) => s + parseDecimal(r.faturadobruto), 0);
   const especFat = especFatEad + especFatPres;
 
@@ -726,5 +730,386 @@ export function computeMestradoData(
     inscPorProcesso,
     statusInscricoes,
     leadsPorCanal,
+  };
+}
+
+const STATUS_INSCRICAO_POS = new Set([
+  'Inscrito para seleção',
+  'Aprovado',
+  'Compareceu à chamada',
+]);
+
+function filterBasePosByAnoMes(
+  basePos: RawMatriculaPosRow[],
+  filters: ConversaoFilters,
+): RawMatriculaPosRow[] {
+  let out = basePos;
+  if (filters.ano.length > 0) {
+    const anoSet = new Set(filters.ano);
+    out = out.filter((r) => {
+      const baixaIso = toISODate(r.databaixa);
+      if (!baixaIso) return false;
+      const a = Number(baixaIso.slice(0, 4));
+      return anoSet.has(a);
+    });
+  }
+  if (filters.mes.length > 0) {
+    const mesSet = new Set(filters.mes);
+    out = out.filter((r) => {
+      const baixaIso = toISODate(r.databaixa);
+      if (!baixaIso) return false;
+      const m = Number(baixaIso.slice(5, 7));
+      return mesSet.has(m);
+    });
+  }
+  return out;
+}
+
+function filterBasePosByCodperlet(
+  basePos: RawMatriculaPosRow[],
+  filters: ConversaoFilters,
+): RawMatriculaPosRow[] {
+  if (filters.codperlet.length === 0) return basePos;
+  const cpSet = new Set(filters.codperlet.map(normalizeCodperlet));
+  return basePos.filter((r) => cpSet.has(normalizeCodperlet(r.codperlet)));
+}
+
+function isEad(r: RawMatriculaPosRow): boolean {
+  return (r.distanciapresencial ?? '').trim().toUpperCase() === 'D';
+}
+
+function isPresencial(r: RawMatriculaPosRow): boolean {
+  return (r.distanciapresencial ?? '').trim().toUpperCase() === 'P';
+}
+
+export function computeEspecializacoesData(
+  ds: DashboardDataset,
+  filters: ConversaoFilters,
+): EspecializacoesData {
+  const rubeusFiltered = filterRubeusByAnoMes(
+    filterRubeusByDate(ds.rubeus, filters),
+    filters,
+  );
+  const leads = countLeadsByProcesso(rubeusFiltered, 'Pós Graduação');
+
+  const basePos = filterBasePosByAnoMes(
+    computeBasePos(ds.matriculasPos, filters),
+    filters,
+  );
+
+  const fat = basePos.reduce((s, r) => s + parseDecimal(r.faturadobruto), 0);
+  const fatEad = basePos.filter(isEad).reduce((s, r) => s + parseDecimal(r.faturadobruto), 0);
+  const fatPres = basePos.filter(isPresencial).reduce((s, r) => s + parseDecimal(r.faturadobruto), 0);
+
+  const mat = basePos.length;
+  const matEad = basePos.filter(isEad).length;
+  const matPres = basePos.filter(isPresencial).length;
+
+  const tktMedio = mat > 0 ? fat / mat : 0;
+  const tktMedioEad = matEad > 0 ? fatEad / matEad : 0;
+  const tktMedioPres = matPres > 0 ? fatPres / matPres : 0;
+
+  // Desconto_Médio: o Power BI atual exibe 0,00% porque a fonte do percentual de desconto
+  // (valor original das bolsas vs faturado) não está disponível nos dados carregados.
+  const descontoMedio = 0;
+
+  const anoCorrente = filters.ano.length > 0 ? filters.ano[0] : new Date().getFullYear();
+  let metaFat = 0;
+  if (filters.mes.length > 0) {
+    for (const m of filters.mes) {
+      for (const meta of ds.metaPos) {
+        if (meta.ano === anoCorrente && meta.mes_numero === m) {
+          metaFat += Number(meta.meta);
+        }
+      }
+    }
+  } else {
+    for (const meta of ds.metaPos) {
+      if (meta.ano === anoCorrente) metaFat += Number(meta.meta);
+    }
+  }
+  const pctMeta = metaFat > 0 ? fat / metaFat : 0;
+
+  const fatMensalMap = new Map<string, { fat: number; mat: number; fatEad: number; fatPres: number; ano: number; mes: number }>();
+  for (const r of basePos) {
+    const baixaIso = toISODate(r.databaixa);
+    if (!baixaIso) continue;
+    const ano = Number(baixaIso.slice(0, 4));
+    const mes = Number(baixaIso.slice(5, 7));
+    const key = `${ano}-${mes}`;
+    const entry = fatMensalMap.get(key) ?? { fat: 0, mat: 0, fatEad: 0, fatPres: 0, ano, mes };
+    entry.mat++;
+    const v = parseDecimal(r.faturadobruto);
+    entry.fat += v;
+    if (isEad(r)) entry.fatEad += v;
+    if (isPresencial(r)) entry.fatPres += v;
+    fatMensalMap.set(key, entry);
+  }
+  const fatMensal: EspecializacoesMensalDatum[] = [];
+  for (const c of CALENDAR) {
+    const key = `${c.ano}-${c.mes}`;
+    const entry = fatMensalMap.get(key);
+    if (entry) {
+      fatMensal.push({
+        mesAno: fiscalLabel(c.ano, c.mes),
+        ordemFiscal: fiscalSortKey(c.ano, c.mes),
+        fat: entry.fat,
+        mat: entry.mat,
+        fatEad: entry.fatEad,
+        fatPres: entry.fatPres,
+      });
+    }
+  }
+  fatMensal.sort((a, b) => a.ordemFiscal - b.ordemFiscal);
+
+  const cursoFatMap = new Map<string, number>();
+  for (const r of basePos) {
+    const curso = (r.cursoreduzido ?? 'Nao informado').trim();
+    cursoFatMap.set(curso, (cursoFatMap.get(curso) ?? 0) + parseDecimal(r.faturadobruto));
+  }
+  const top5CursosFat: ChartDatum[] = Array.from(cursoFatMap.entries())
+    .map(([categoria, valor]) => ({ categoria, valor }))
+    .sort((a, b) => b.valor - a.valor)
+    .slice(0, 5);
+
+  const fatPorModalidade: ChartDatum[] = [
+    { categoria: 'EAD', valor: fatEad },
+    { categoria: 'Presencial', valor: fatPres },
+  ];
+
+  const comTcc = basePos.filter((r) => (r.tcc ?? '').trim().toUpperCase() === 'TCC').length;
+  const semTcc = basePos.filter((r) => {
+    const tcc = (r.tcc ?? '').trim();
+    return tcc === '' || tcc.toUpperCase() === 'SEM TCC';
+  }).length;
+  const fatPorTcc: ChartDatum[] = [
+    { categoria: 'TCC', valor: comTcc },
+    { categoria: 'Sem TCC', valor: semTcc },
+  ];
+
+  return {
+    leads,
+    fat,
+    fatEad,
+    fatPres,
+    metaFat,
+    pctMeta,
+    mat,
+    tktMedio,
+    tktMedioEad,
+    tktMedioPres,
+    descontoMedio,
+    fatMensal,
+    top5CursosFat,
+    fatPorModalidade,
+    fatPorTcc,
+  };
+}
+
+export function computeModalidadePosData(
+  ds: DashboardDataset,
+  filters: ConversaoFilters,
+  modalidade: 'Pós Presencial' | 'Pós EAD',
+): ModalidadePosData {
+  const rubeusFiltered = filterRubeusByAnoMes(
+    filterRubeusByDate(ds.rubeus, filters),
+    filters,
+  );
+  const leads = countLeadsByProcesso(rubeusFiltered, 'Pós Graduação');
+
+  let basePos = filterBasePosByAnoMes(
+    computeBasePos(ds.matriculasPos, filters),
+    filters,
+  );
+  basePos = filterBasePosByCodperlet(basePos, filters);
+
+  const modalidadeFilter = modalidade === 'Pós EAD' ? isEad : isPresencial;
+  const rows = basePos.filter(modalidadeFilter);
+
+  const mat = rows.length;
+  const fat = rows.reduce((s, r) => s + parseDecimal(r.faturadobruto), 0);
+  const tktMedio = mat > 0 ? fat / mat : 0;
+
+  // Desconto_Médio: 0,00% — fonte do percentual indisponível nos dados carregados.
+  const descontoMedio = 0;
+
+  const comTcc = rows.filter((r) => (r.tcc ?? '').trim().toUpperCase() === 'TCC').length;
+  const semTcc = rows.filter((r) => {
+    const tcc = (r.tcc ?? '').trim();
+    return tcc === '' || tcc.toUpperCase() === 'SEM TCC';
+  }).length;
+
+  let inscRows = ds.inscricoesPos.filter((r) => STATUS_INSCRICAO_POS.has((r.statusps ?? '').trim()));
+  if (filters.ano.length > 0) {
+    const anoSet = new Set(filters.ano);
+    inscRows = inscRows.filter((r) => {
+      const d = parseFlexibleDate(r.datainscricao);
+      return d !== null && anoSet.has(d.getFullYear());
+    });
+  }
+  if (filters.mes.length > 0) {
+    const mesSet = new Set(filters.mes);
+    inscRows = inscRows.filter((r) => {
+      const d = parseFlexibleDate(r.datainscricao);
+      return d !== null && mesSet.has(d.getMonth() + 1);
+    });
+  }
+
+  const inscModalidadeFilter = modalidade === 'Pós EAD'
+    ? (ps: string | null) => (ps ?? '').includes('EAD')
+    : (ps: string | null) => (ps ?? '').includes('Presencial');
+  const insc = inscRows.filter((r) => inscModalidadeFilter(r.processoseletivo)).length;
+
+  const cursoFatMap = new Map<string, number>();
+  for (const r of rows) {
+    const curso = (r.cursoreduzido ?? 'Nao informado').trim();
+    cursoFatMap.set(curso, (cursoFatMap.get(curso) ?? 0) + parseDecimal(r.faturadobruto));
+  }
+  const fatPorCurso: ChartDatum[] = Array.from(cursoFatMap.entries())
+    .map(([categoria, valor]) => ({ categoria, valor }))
+    .sort((a, b) => b.valor - a.valor);
+
+  const descontoFatMap = new Map<string, number>();
+  for (const r of rows) {
+    const bolsa = (r.bolsas ?? 'Nao informado').trim();
+    descontoFatMap.set(bolsa, (descontoFatMap.get(bolsa) ?? 0) + parseDecimal(r.faturadobruto));
+  }
+  const topDescontosFat: ChartDatum[] = Array.from(descontoFatMap.entries())
+    .map(([categoria, valor]) => ({ categoria, valor }))
+    .sort((a, b) => b.valor - a.valor)
+    .slice(0, 10);
+
+  const planoFatMap = new Map<string, number>();
+  for (const r of rows) {
+    const plano = String(r.codplanopgto ?? 'Nao informado').trim();
+    planoFatMap.set(plano, (planoFatMap.get(plano) ?? 0) + parseDecimal(r.faturadobruto));
+  }
+  const top5PlanosPgto: ChartDatum[] = Array.from(planoFatMap.entries())
+    .map(([categoria, valor]) => ({ categoria, valor }))
+    .sort((a, b) => b.valor - a.valor)
+    .slice(0, 5);
+
+  const estadoFatMap = new Map<string, number>();
+  for (const r of rows) {
+    const uf = (r.estado ?? '').trim().toUpperCase();
+    if (!uf || uf === '--' || uf.length !== 2) continue;
+    estadoFatMap.set(uf, (estadoFatMap.get(uf) ?? 0) + parseDecimal(r.faturadobruto));
+  }
+  const fatPorEstado = Array.from(estadoFatMap.entries())
+    .map(([uf, total]) => ({ uf, total }))
+    .sort((a, b) => b.total - a.total);
+
+  return {
+    modalidade,
+    leads,
+    insc,
+    mat,
+    comTcc,
+    semTcc,
+    fat,
+    tktMedio,
+    descontoMedio,
+    fatPorCurso,
+    topDescontosFat,
+    top5PlanosPgto,
+    fatPorEstado,
+  };
+}
+
+const SITUACAO_CL_MATRICULADO = new Set(['Matricula', 'Matriculado']);
+
+export function computeCursosLivresData(
+  ds: DashboardDataset,
+  filters: ConversaoFilters,
+): CursosLivresData {
+  const rubeusFiltered = filterRubeusByDate(ds.rubeus, filters);
+  const leads = countLeadsByProcesso(rubeusFiltered, 'Cursos Livres');
+
+  let inscRows = ds.inscricoesCursosLives;
+  if (filters.dataInicio || filters.dataFim) {
+    inscRows = inscRows.filter((r) => dateInRange(r.datainscricao, filters.dataInicio, filters.dataFim));
+  }
+  const insc = inscRows.length;
+
+  let matInscRows = inscRows.filter((r) => SITUACAO_CL_MATRICULADO.has((r.situacao_matricula ?? '').trim()));
+  const mat = matInscRows.length;
+
+  let matRows = ds.matriculasCursosLives.filter((r) =>
+    SITUACAO_CL_MATRICULADO.has((r.situacao_matricula ?? '').trim()),
+  );
+  if (filters.dataInicio || filters.dataFim) {
+    matRows = matRows.filter((r) => dateInRange(r.data_contrato, filters.dataInicio, filters.dataFim));
+  }
+  const fat = matRows.reduce((s, r) => s + parseDecimal(r.valor_curso_com_desconto), 0);
+
+  const convLeadsMat = computeConvLeadsMat(rubeusFiltered, 'Cursos Livres', buildMatLeadSet(ds));
+
+  // CL_%Conversão = CL_Conv_Leads_Mat / CL_Mat — herdado do Power BI, preservado mesmo parecendo invertido.
+  const pctConversao = mat > 0 ? convLeadsMat / mat : 0;
+
+  const canalMap = new Map<string, number>();
+  for (const r of rubeusFiltered.filter((r) => r.processo === 'Cursos Livres')) {
+    const canal = (r.canal_nome ?? 'Nao informado').trim();
+    canalMap.set(canal, (canalMap.get(canal) ?? 0) + 1);
+  }
+  const leadsPorCanal: ChartDatum[] = Array.from(canalMap.entries())
+    .map(([categoria, valor]) => ({ categoria, valor }))
+    .sort((a, b) => b.valor - a.valor);
+
+  const mensalMap = new Map<string, { leads: number; mat: number; ano: number; mes: number }>();
+  const clRubeus = rubeusFiltered.filter((r) => r.processo === 'Cursos Livres');
+  for (const r of clRubeus) {
+    const d = parseFlexibleDate(r.momento_date);
+    if (!d) continue;
+    const ano = d.getFullYear();
+    const mes = d.getMonth() + 1;
+    const key = `${ano}-${mes}`;
+    const entry = mensalMap.get(key) ?? { leads: 0, mat: 0, ano, mes };
+    entry.leads++;
+    mensalMap.set(key, entry);
+  }
+  for (const r of matInscRows) {
+    const d = parseFlexibleDate(r.datainscricao);
+    if (!d) continue;
+    const ano = d.getFullYear();
+    const mes = d.getMonth() + 1;
+    const key = `${ano}-${mes}`;
+    const entry = mensalMap.get(key) ?? { leads: 0, mat: 0, ano, mes };
+    entry.mat++;
+    mensalMap.set(key, entry);
+  }
+  const inscVsMatMensal: { mesAno: string; ordemFiscal: number; leads: number; mat: number }[] = [];
+  for (const c of CALENDAR) {
+    const key = `${c.ano}-${c.mes}`;
+    const entry = mensalMap.get(key);
+    if (entry) {
+      inscVsMatMensal.push({
+        mesAno: fiscalLabel(c.ano, c.mes),
+        ordemFiscal: fiscalSortKey(c.ano, c.mes),
+        leads: entry.leads,
+        mat: entry.mat,
+      });
+    }
+  }
+  inscVsMatMensal.sort((a, b) => a.ordemFiscal - b.ordemFiscal);
+
+  const cursoFatMap = new Map<string, number>();
+  for (const r of matRows) {
+    const curso = (r.curso ?? 'Nao informado').trim();
+    cursoFatMap.set(curso, (cursoFatMap.get(curso) ?? 0) + parseDecimal(r.valor_curso_com_desconto));
+  }
+  const fatPorCurso: ChartDatum[] = Array.from(cursoFatMap.entries())
+    .map(([categoria, valor]) => ({ categoria, valor }))
+    .sort((a, b) => b.valor - a.valor);
+
+  return {
+    leads,
+    insc,
+    mat,
+    pctConversao,
+    fat,
+    leadsPorCanal,
+    inscVsMatMensal,
+    fatPorCurso,
   };
 }

@@ -231,6 +231,60 @@ export type RematriculaData = {
   }[];
 };
 
+export type EspecializacoesMensalDatum = {
+  mesAno: string;
+  ordemFiscal: number;
+  fat: number;
+  mat: number;
+  fatEad: number;
+  fatPres: number;
+};
+
+export type EspecializacoesData = {
+  leads: number;
+  fat: number;
+  fatEad: number;
+  fatPres: number;
+  metaFat: number;
+  pctMeta: number;
+  mat: number;
+  tktMedio: number;
+  tktMedioEad: number;
+  tktMedioPres: number;
+  descontoMedio: number;
+  fatMensal: EspecializacoesMensalDatum[];
+  top5CursosFat: ChartDatum[];
+  fatPorModalidade: ChartDatum[];
+  fatPorTcc: ChartDatum[];
+};
+
+export type ModalidadePosData = {
+  modalidade: 'Pós Presencial' | 'Pós EAD';
+  leads: number;
+  insc: number;
+  mat: number;
+  comTcc: number;
+  semTcc: number;
+  fat: number;
+  tktMedio: number;
+  descontoMedio: number;
+  fatPorCurso: ChartDatum[];
+  topDescontosFat: ChartDatum[];
+  top5PlanosPgto: ChartDatum[];
+  fatPorEstado: { uf: string; total: number }[];
+};
+
+export type CursosLivresData = {
+  leads: number;
+  insc: number;
+  mat: number;
+  pctConversao: number;
+  fat: number;
+  leadsPorCanal: ChartDatum[];
+  inscVsMatMensal: { mesAno: string; ordemFiscal: number; leads: number; mat: number }[];
+  fatPorCurso: ChartDatum[];
+};
+
 export type MestradoData = {
   leads: number;
   insc: number;

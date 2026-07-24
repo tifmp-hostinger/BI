@@ -36,6 +36,9 @@ import { ConversaoFilterBar } from './components/ConversaoFilterBar';
 import { GraduacaoTab } from './components/GraduacaoTab';
 import { RematriculaTab } from './components/RematriculaTab';
 import { MestradoTab } from './components/MestradoTab';
+import { EspecializacoesTab } from './components/EspecializacoesTab';
+import { ModalidadePosTab } from './components/ModalidadePosTab';
+import { CursosLivresTab } from './components/CursosLivresTab';
 import { fmtBRLCompact, fmtInt, fmtPct, truncateLabel } from './formatters';
 import type { ConversaoFilters } from './types';
 
@@ -98,7 +101,7 @@ export function AnaliseDeConversaoPage() {
     dataFim: null,
   });
 
-  const { loading, error, filterOptions, geralKpis, leadsData, graduacaoData, rematriculaData, mestradoData, refetch } =
+  const { loading, error, filterOptions, geralKpis, leadsData, graduacaoData, rematriculaData, mestradoData, especializacoesData, presencialData, eadData, cursosLivresData, refetch } =
     useAnaliseConversaoData(filters);
 
   const tt = useMemo(chartTooltipStyle, []);
@@ -538,13 +541,24 @@ export function AnaliseDeConversaoPage() {
           <MestradoTab loading={loading} data={mestradoData} />
         )}
 
-        {/* Remaining placeholder tabs */}
-        {['especializacoes', 'presencial', 'ead', 'cursoslivres'].includes(tab) && (
-          <EmptyState
-            icon={Target}
-            title="Em construcao"
-            message="Esta aba sera implementada nas proximas iteracoes do dashboard."
-          />
+        {/* ESPECIALIZACOES */}
+        {tab === 'especializacoes' && (
+          <EspecializacoesTab loading={loading} data={especializacoesData} />
+        )}
+
+        {/* PRESENCIAL */}
+        {tab === 'presencial' && (
+          <ModalidadePosTab loading={loading} data={presencialData} />
+        )}
+
+        {/* EAD */}
+        {tab === 'ead' && (
+          <ModalidadePosTab loading={loading} data={eadData} />
+        )}
+
+        {/* CURSOS LIVRES */}
+        {tab === 'cursoslivres' && (
+          <CursosLivresTab loading={loading} data={cursosLivresData} />
         )}
       </div>
     </AppShell>
