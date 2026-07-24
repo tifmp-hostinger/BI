@@ -37,7 +37,6 @@ function pickDefaults(pletivos: { periodo: string }[]): {
 export function AnaliseConversaoPresidenciaPage() {
   const anoAtual = new Date().getFullYear();
 
-  // Estado dos filtros: inicializamos apos o carregamento dos pletivos.
   const [periodoGradAtual, setPeriodoGradAtual] = useState<string>('26-01');
   const [periodoGradAnterior, setPeriodoGradAnterior] = useState<string>('25-02');
   const [anoMestrado, setAnoMestrado] = useState<number>(anoAtual);
@@ -64,7 +63,6 @@ export function AnaliseConversaoPresidenciaPage() {
     mesesPos,
   });
 
-  // Ajusta os defaults assim que os pletivos chegam.
   if (base && !defaultsAplicados) {
     const { atual, anterior } = pickDefaults(base.pletivos);
     if (atual !== periodoGradAtual) setPeriodoGradAtual(atual);
@@ -96,34 +94,36 @@ export function AnaliseConversaoPresidenciaPage() {
       subtitle="Funil comercial academico: leads, inscricoes, matriculas"
     >
       <div className="mx-auto max-w-7xl space-y-8 p-4 sm:p-6 lg:p-8">
-        {/* Hero */}
-        <section className="relative overflow-hidden rounded-3xl hero-gradient p-6 text-white shadow-card sm:p-8 animate-fade-in">
-          <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-warning/25 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-24 -left-16 h-72 w-72 rounded-full bg-fmp-light/25 blur-3xl" />
+        {/* Hero — dark editorial */}
+        <section className="relative overflow-hidden rounded-lg hero-gradient p-6 text-cream shadow-card sm:p-8 animate-fade-in">
+          <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-fmp/20 blur-3xl" />
 
           <div className="relative flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div className="min-w-0">
               <Link
                 to="/"
-                className="inline-flex items-center gap-1 text-2xs font-medium uppercase tracking-widest text-white/70 transition hover:text-white"
+                className="inline-flex items-center gap-1 text-2xs font-medium uppercase tracking-widest text-cream/60 transition hover:text-fmp no-underline"
               >
                 <ArrowLeft className="h-3 w-3" />
                 Central de Dashboards
               </Link>
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-2xs font-medium uppercase tracking-widest text-white/85 ring-1 ring-inset ring-white/15">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium uppercase tracking-widest text-cream/85 ring-1 ring-inset ring-cream/15">
                   <Target className="h-3 w-3" />
                   Presidencia
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-2xs font-medium text-white/85 ring-1 ring-inset ring-white/15">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium text-cream/85 ring-1 ring-inset ring-cream/15">
                   <Award className="h-3 w-3" />
                   Somente leitura
                 </span>
               </div>
-              <h1 className="mt-3 text-2xl font-semibold leading-tight sm:text-3xl md:text-4xl">
+              <h1
+                className="mt-3 text-2xl sm:text-3xl lg:text-4xl text-cream"
+                style={{ fontFamily: '"Noto Serif", Georgia, serif', fontStyle: 'italic', fontWeight: 500 }}
+              >
                 Analise de Conversao
               </h1>
-              <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/70">
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-cream/70">
                 Reproduz o funil comercial academico do Power BI com paridade
                 total. Graduacao, Mestrado e Especializacoes em uma unica tela,
                 sem expor dados pessoais.
@@ -133,7 +133,7 @@ export function AnaliseConversaoPresidenciaPage() {
             <button
               type="button"
               onClick={refetch}
-              className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3.5 py-2 text-2xs font-medium text-white ring-1 ring-inset ring-white/20 transition hover:bg-white/25"
+              className="inline-flex items-center gap-1.5 rounded-pill bg-fmp px-3.5 py-2 text-2xs font-medium text-white transition hover:bg-fmp-dark no-underline"
             >
               <RefreshCw className="h-3.5 w-3.5" />
               Atualizar
@@ -150,7 +150,7 @@ export function AnaliseConversaoPresidenciaPage() {
         )}
 
         {rubeusFalha && (
-          <div className="flex items-start gap-3 rounded-2xl border border-warning/40 bg-warning-light/60 p-4 text-warning-dark shadow-card">
+          <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning-light p-4 text-warning-dark shadow-card">
             <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
             <div>
               <p className="text-sm font-semibold">Leads (Rubeus) indisponiveis</p>
@@ -170,7 +170,6 @@ export function AnaliseConversaoPresidenciaPage() {
             pletivos={base?.pletivos ?? []}
             periodo={periodoGradAtual}
             onPeriodoChange={setPeriodoGradAtual}
-            accent="fmp"
             loading={loading || rubeusLoading}
           />
           <EspecializacoesBlock
@@ -189,7 +188,6 @@ export function AnaliseConversaoPresidenciaPage() {
             pletivos={base?.pletivos ?? []}
             periodo={periodoGradAnterior}
             onPeriodoChange={setPeriodoGradAnterior}
-            accent="info"
             loading={loading || rubeusLoading}
           />
           <MestradoBlock
@@ -201,21 +199,24 @@ export function AnaliseConversaoPresidenciaPage() {
           />
         </div>
 
-        <section className="rounded-2xl border border-dashed border-fmp/30 bg-fmp-muted/40 p-5 animate-fade-in">
+        <section className="rounded-md border border-dashed border-fmp/30 bg-fmp-muted p-5 animate-fade-in">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
-              <div className="rounded-xl bg-white p-2 text-fmp shadow-card">
+              <div className="rounded-sm bg-white p-2 text-fmp shadow-card">
                 <Target className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-fmp-dark">
+                <p
+                  className="text-sm font-semibold text-ink"
+                  style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic', fontWeight: 600 }}
+                >
                   Regras herdadas do Power BI
                 </p>
-                <p className="text-xs text-gray-600">
+                <p className="text-xs text-ink-3">
                   Este dashboard preserva a logica original, incluindo
                   inconsistencias documentadas em
                   {' '}
-                  <code className="rounded bg-white px-1.5 py-0.5 text-2xs text-fmp-dark">
+                  <code className="rounded bg-white px-1.5 py-0.5 text-2xs text-fmp">
                     docs/analise-conversao-presidencia-observacoes.md
                   </code>
                   .
@@ -224,7 +225,7 @@ export function AnaliseConversaoPresidenciaPage() {
             </div>
             <Link
               to="/"
-              className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-semibold text-fmp-dark shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
+              className="inline-flex items-center gap-1.5 rounded-pill bg-ink px-4 py-2 text-xs font-semibold text-cream transition-all hover:-translate-y-0.5 hover:bg-fmp no-underline"
             >
               Ver outros dashboards
             </Link>

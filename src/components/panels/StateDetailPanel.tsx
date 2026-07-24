@@ -29,7 +29,16 @@ type Props = {
   onClose: () => void;
 };
 
-const SITU_COLORS = ['#2E5AAC', '#0EA5E9', '#16A34A', '#D97706', '#DC2626', '#7C3AED', '#DB2777', '#0891B2'];
+const SITU_COLORS = [
+  '#EE2A42',
+  '#BFBAA4',
+  '#3A3838',
+  '#6E6B66',
+  '#D32238',
+  '#CFCCBF',
+  '#9A1B2A',
+  '#DEDCD4',
+];
 
 function fmtBRL(v: number) {
   return v.toLocaleString('pt-BR', {
@@ -48,31 +57,34 @@ export function StateDetailPanel({ uf, detail, onClose }: Props) {
     () => ({
       contentStyle: {
         background: 'rgba(255,255,255,0.98)',
-        border: '1px solid rgba(226,232,240,0.9)',
+        border: '1px solid #DEDCD4',
         borderRadius: 12,
-        boxShadow: '0 12px 24px -12px rgba(15,23,42,0.25)',
+        boxShadow: '0 18px 40px rgba(25,24,24,0.12)',
         padding: 10,
         fontSize: 12,
       } as const,
-      labelStyle: { color: '#0f172a', fontWeight: 600, fontSize: 12 } as const,
-      itemStyle: { color: '#475569', fontSize: 12 } as const,
+      labelStyle: { color: '#191818', fontWeight: 600, fontSize: 12 } as const,
+      itemStyle: { color: '#3A3838', fontSize: 12 } as const,
     }),
     []
   );
 
   if (!uf || !detail) {
     return (
-      <div className="flex h-full flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-white/70 p-8 text-center">
+      <div className="flex h-full min-h-[400px] flex-col items-center justify-center rounded-md border border-dashed border-line bg-white p-8 text-center">
         <div className="relative">
           <div className="absolute inset-0 animate-pulse-ring rounded-full bg-fmp/20" />
           <div className="relative rounded-full bg-fmp-muted p-4 text-fmp">
             <MapPin className="h-6 w-6" strokeWidth={2.2} />
           </div>
         </div>
-        <h4 className="mt-5 text-sm font-semibold text-gray-900">
+        <h4
+          className="mt-5 text-sm text-ink"
+          style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic', fontWeight: 600 }}
+        >
           Selecione um estado no mapa
         </h4>
-        <p className="mt-1 max-w-xs text-xs leading-relaxed text-gray-500">
+        <p className="mt-1 max-w-xs text-xs leading-relaxed text-ink-3">
           Clique em qualquer marcador para ver o detalhamento dinamico com
           cursos, cidades, situacoes e faturamento.
         </p>
@@ -87,28 +99,31 @@ export function StateDetailPanel({ uf, detail, onClose }: Props) {
   return (
     <div
       key={uf}
-      className="relative overflow-hidden rounded-2xl bg-white shadow-card animate-slide-right"
+      className="relative overflow-hidden rounded-md border border-line bg-white shadow-card animate-slide-right"
     >
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-fmp-light via-fmp to-fmp-dark" />
+      <div className="absolute inset-x-0 top-0 h-1 bg-fmp" />
 
-      <header className="flex items-start justify-between gap-3 border-b border-gray-100 px-5 py-4">
+      <header className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-2xs font-semibold uppercase tracking-widest text-fmp">
-              {region}
-            </span>
-            <span className="h-1 w-1 rounded-full bg-gray-300" />
-            <span className="text-2xs font-medium text-gray-500">{uf}</span>
+            <span className="fmp-eyebrow text-2xs">{region}</span>
+            <span className="h-1 w-1 rounded-full bg-sand" />
+            <span className="text-2xs font-medium text-ink-3">{uf}</span>
           </div>
-          <h3 className="mt-1 text-lg font-semibold text-gray-900">{name}</h3>
-          <p className="text-xs text-gray-500">
+          <h3
+            className="mt-1 text-lg text-ink"
+            style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic', fontWeight: 600 }}
+          >
+            {name}
+          </h3>
+          <p className="text-xs text-ink-3">
             Detalhamento dinamico das matriculas
           </p>
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-ink-3 transition hover:bg-paper hover:text-fmp"
           aria-label="Fechar"
         >
           <X className="h-4 w-4" />
@@ -157,25 +172,25 @@ export function StateDetailPanel({ uf, detail, onClose }: Props) {
                 return (
                   <li
                     key={c.name}
-                    className="rounded-xl bg-gray-50 p-3 animate-slide-up"
+                    className="rounded-sm border border-line bg-paper p-3 animate-slide-up"
                     style={{ animationDelay: `${i * 40}ms` }}
                   >
                     <div className="flex items-center justify-between gap-3">
-                      <p className="line-clamp-1 text-xs font-semibold text-gray-900">
+                      <p className="line-clamp-1 text-xs font-semibold text-ink">
                         {c.name}
                       </p>
-                      <span className="flex-shrink-0 text-2xs font-semibold text-fmp-dark">
+                      <span className="flex-shrink-0 text-2xs font-semibold text-fmp">
                         {c.value}
                       </span>
                     </div>
-                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-white">
+                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-pill bg-white">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-fmp-light to-fmp transition-all duration-500"
+                        className="h-full rounded-pill bg-fmp transition-all duration-500"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
                     {c.faturado > 0 && (
-                      <p className="mt-1 text-2xs text-gray-500">
+                      <p className="mt-1 text-2xs text-ink-3">
                         {fmtBRL(c.faturado)} faturado
                       </p>
                     )}
@@ -192,13 +207,16 @@ export function StateDetailPanel({ uf, detail, onClose }: Props) {
               {detail.cidades.map((c) => (
                 <li
                   key={c.name}
-                  className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-xs"
+                  className="flex items-center justify-between rounded-sm border border-line bg-paper px-3 py-2 text-xs"
                 >
-                  <span className="flex items-center gap-2 text-gray-700">
+                  <span className="flex items-center gap-2 text-ink-2">
                     <ChevronRight className="h-3 w-3 text-fmp" />
                     <span className="line-clamp-1">{c.name}</span>
                   </span>
-                  <span className="font-semibold text-gray-900">
+                  <span
+                    className="font-semibold text-ink"
+                    style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic' }}
+                  >
                     {fmtInt(c.value)}
                   </span>
                 </li>
@@ -237,7 +255,7 @@ export function StateDetailPanel({ uf, detail, onClose }: Props) {
                   key={s.name}
                   className="flex items-center justify-between text-2xs"
                 >
-                  <span className="flex items-center gap-2 text-gray-600">
+                  <span className="flex items-center gap-2 text-ink-2">
                     <span
                       className="h-2 w-2 rounded-full"
                       style={{
@@ -246,7 +264,7 @@ export function StateDetailPanel({ uf, detail, onClose }: Props) {
                     />
                     <span className="line-clamp-1">{s.name}</span>
                   </span>
-                  <span className="font-semibold text-gray-900">
+                  <span className="font-semibold text-ink">
                     {fmtInt(s.value)}
                   </span>
                 </li>
@@ -263,28 +281,34 @@ export function StateDetailPanel({ uf, detail, onClose }: Props) {
                 layout="vertical"
                 margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
               >
+                <defs>
+                  <linearGradient id="barModDet" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#EE2A42" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="#B81E32" stopOpacity={0.85} />
+                  </linearGradient>
+                </defs>
                 <XAxis
                   type="number"
                   hide
-                  tick={{ fontSize: 10, fill: '#64748B' }}
+                  tick={{ fontSize: 10, fill: '#6E6B66' }}
                 />
                 <YAxis
                   type="category"
                   dataKey="name"
-                  tick={{ fontSize: 10, fill: '#475569' }}
+                  tick={{ fontSize: 10, fill: '#3A3838' }}
                   tickLine={false}
                   axisLine={false}
                   width={110}
                 />
                 <Tooltip
-                  cursor={{ fill: 'rgba(46,90,172,0.05)' }}
+                  cursor={{ fill: 'rgba(238,42,66,0.05)' }}
                   contentStyle={tt.contentStyle}
                   itemStyle={tt.itemStyle}
                   formatter={(v: unknown) => [`${v}`, 'matriculas']}
                 />
                 <Bar
                   dataKey="value"
-                  fill="#2E5AAC"
+                  fill="url(#barModDet)"
                   radius={[4, 8, 8, 4]}
                   maxBarSize={16}
                 />
@@ -295,21 +319,21 @@ export function StateDetailPanel({ uf, detail, onClose }: Props) {
 
         {detail.amostraAlunos.length > 0 && (
           <Section title="Amostra de alunos" icon={Users}>
-            <ul className="divide-y divide-gray-100 rounded-xl bg-gray-50">
+            <ul className="divide-y divide-line rounded-sm border border-line bg-paper">
               {detail.amostraAlunos.map((a, i) => (
                 <li
                   key={`${a.ra}-${i}`}
                   className="px-3 py-2 text-2xs"
                 >
-                  <p className="line-clamp-1 font-semibold text-gray-900">
+                  <p className="line-clamp-1 font-semibold text-ink">
                     {a.aluno || 'Aluno sem nome'}
                   </p>
-                  <p className="mt-0.5 line-clamp-1 text-gray-500">
+                  <p className="mt-0.5 line-clamp-1 text-ink-3">
                     {a.curso}
                   </p>
-                  <div className="mt-1 flex items-center gap-2 text-gray-400">
+                  <div className="mt-1 flex items-center gap-2 text-sand">
                     <span>{a.cidade || '—'}</span>
-                    <span className="h-1 w-1 rounded-full bg-gray-300" />
+                    <span className="h-1 w-1 rounded-full bg-sand" />
                     <span className="line-clamp-1">{a.situacao || '—'}</span>
                   </div>
                 </li>
@@ -335,7 +359,7 @@ function Section({
     <div className="animate-fade-in">
       <div className="mb-2 flex items-center gap-2">
         {Icon && <Icon className="h-3.5 w-3.5 text-fmp" strokeWidth={2.4} />}
-        <h4 className="text-2xs font-semibold uppercase tracking-widest text-gray-500">
+        <h4 className="text-2xs font-semibold uppercase tracking-widest text-ink-3">
           {title}
         </h4>
       </div>
@@ -357,20 +381,25 @@ function MicroStat({
 }) {
   const styles: Record<typeof color, { bg: string; text: string }> = {
     fmp: { bg: 'bg-fmp-muted', text: 'text-fmp' },
-    info: { bg: 'bg-info-light', text: 'text-info' },
-    success: { bg: 'bg-success-light', text: 'text-success' },
-    warning: { bg: 'bg-warning-light', text: 'text-warning' },
+    info: { bg: 'bg-info-light', text: 'text-info-dark' },
+    success: { bg: 'bg-success-light', text: 'text-success-dark' },
+    warning: { bg: 'bg-warning-light', text: 'text-warning-dark' },
   };
   const s = styles[color];
   return (
-    <div className="rounded-xl bg-gray-50 p-3">
-      <div className={`inline-flex rounded-lg p-1.5 ${s.bg}`}>
+    <div className="rounded-sm border border-line bg-paper p-3">
+      <div className={`inline-flex rounded-sm p-1.5 ${s.bg}`}>
         <Icon className={`h-3.5 w-3.5 ${s.text}`} strokeWidth={2.4} />
       </div>
-      <p className="mt-2 text-2xs font-medium uppercase tracking-wider text-gray-500">
+      <p className="mt-2 text-2xs font-medium uppercase tracking-wider text-ink-3">
         {label}
       </p>
-      <p className="mt-0.5 text-base font-semibold text-gray-900">{value}</p>
+      <p
+        className="mt-0.5 text-base text-ink"
+        style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic', fontWeight: 600 }}
+      >
+        {value}
+      </p>
     </div>
   );
 }
@@ -385,15 +414,20 @@ function MetricStrip({
   secondary?: string;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-xl bg-gradient-to-br from-fmp-muted to-white p-4 ring-1 ring-inset ring-fmp/10">
+    <div className="flex items-center justify-between rounded-sm border border-fmp/20 bg-fmp-muted p-4">
       <div>
-        <p className="text-2xs font-semibold uppercase tracking-widest text-fmp-dark">
+        <p className="text-2xs font-semibold uppercase tracking-widest text-fmp">
           {label}
         </p>
-        <p className="mt-0.5 text-xl font-semibold text-gray-900">{value}</p>
+        <p
+          className="mt-0.5 text-xl text-ink"
+          style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic', fontWeight: 600 }}
+        >
+          {value}
+        </p>
       </div>
       {secondary && (
-        <p className="text-right text-2xs text-gray-500 max-w-[45%] leading-tight">
+        <p className="max-w-[45%] text-right text-2xs leading-tight text-ink-3">
           {secondary}
         </p>
       )}

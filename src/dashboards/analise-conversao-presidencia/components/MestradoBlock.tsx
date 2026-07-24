@@ -19,14 +19,13 @@ export function MestradoBlock({ kpis, anos, ano, onAnoChange, loading }: Props) 
       title="Mestrado"
       subtitle="Funil por ano academico"
       icon={ScrollText}
-      accent="success"
       actions={
-        <label className="flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1.5 text-2xs font-semibold text-gray-700">
-          <span className="text-gray-500">Ano</span>
+        <label className="flex items-center gap-2 rounded-pill border border-line bg-white px-3 py-1.5 text-2xs font-semibold text-ink-2">
+          <span className="text-ink-3">Ano</span>
           <select
             value={ano}
             onChange={(e) => onAnoChange(Number(e.target.value))}
-            className="rounded-full bg-transparent text-2xs font-semibold text-success-dark focus:outline-none"
+            className="rounded-pill bg-transparent text-2xs font-semibold text-fmp focus:outline-none"
           >
             {anos.map((a) => (
               <option key={a} value={a}>
@@ -47,8 +46,6 @@ export function MestradoBlock({ kpis, anos, ano, onAnoChange, loading }: Props) 
                 ? `${fmtInt(kpis.matriculas)} novas / meta ${fmtInt(kpis.meta)}`
                 : undefined
             }
-            colorStart="#4ADE80"
-            colorEnd="#15803D"
           />
         </div>
         <div className="lg:col-span-3">

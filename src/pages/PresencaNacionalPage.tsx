@@ -39,12 +39,12 @@ import { nameOf } from '@/lib/brStates';
 import type { MatriculaSource } from '@/services/matriculasService';
 
 const REGION_COLORS: Record<string, string> = {
-  Sul: '#2E5AAC',
-  Sudeste: '#0EA5E9',
-  Nordeste: '#16A34A',
-  'Centro-Oeste': '#D97706',
-  Norte: '#DC2626',
-  Outros: '#94A3B8',
+  Sul: '#EE2A42',
+  Sudeste: '#EE2A42',
+  Nordeste: '#EE2A42',
+  'Centro-Oeste': '#EE2A42',
+  Norte: '#EE2A42',
+  Outros: '#BFBAA4',
 };
 
 const SOURCE_OPTIONS: Array<{
@@ -75,19 +75,19 @@ function chartTooltipStyle() {
   return {
     contentStyle: {
       background: 'rgba(255,255,255,0.98)',
-      border: '1px solid rgba(226,232,240,0.9)',
+      border: '1px solid #DEDCD4',
       borderRadius: 12,
-      boxShadow: '0 12px 24px -12px rgba(15,23,42,0.25)',
+      boxShadow: '0 18px 40px rgba(25,24,24,0.12)',
       padding: 10,
       fontSize: 12,
     } as const,
     labelStyle: {
-      color: '#0f172a',
+      color: '#191818',
       fontWeight: 600,
       marginBottom: 4,
       fontSize: 12,
     } as const,
-    itemStyle: { color: '#475569', fontSize: 12 } as const,
+    itemStyle: { color: '#3A3838', fontSize: 12 } as const,
   };
 }
 
@@ -122,38 +122,40 @@ export function PresencaNacionalPage() {
       subtitle="Distribuicao de matriculas por estado"
     >
       <div className="mx-auto max-w-7xl space-y-8 p-4 sm:p-6 lg:p-8">
-        {/* Hero */}
-        <section className="relative overflow-hidden rounded-3xl hero-gradient p-6 text-white shadow-card sm:p-8 animate-fade-in">
-          <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-info/25 blur-3xl" />
-          <div className="pointer-events-none absolute -bottom-24 -left-16 h-72 w-72 rounded-full bg-fmp-light/25 blur-3xl" />
+        {/* Hero — dark editorial */}
+        <section className="relative overflow-hidden rounded-lg hero-gradient p-6 text-cream shadow-card sm:p-8 animate-fade-in">
+          <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-fmp/20 blur-3xl" />
 
           <div className="relative flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div className="min-w-0">
               <Link
                 to="/"
-                className="inline-flex items-center gap-1 text-2xs font-medium uppercase tracking-widest text-white/70 transition hover:text-white"
+                className="inline-flex items-center gap-1 text-2xs font-medium uppercase tracking-widest text-cream/60 transition hover:text-fmp no-underline"
               >
                 <ArrowLeft className="h-3 w-3" />
                 Central de Dashboards
               </Link>
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-2xs font-medium uppercase tracking-widest text-white/85 ring-1 ring-inset ring-white/15">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium uppercase tracking-widest text-cream/85 ring-1 ring-inset ring-cream/15">
                   <Compass className="h-3 w-3" />
                   Geointeligencia
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-2xs font-medium text-white/85 ring-1 ring-inset ring-white/15">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium text-cream/85 ring-1 ring-inset ring-cream/15">
                   <MapPin className="h-3 w-3" />
                   {stats.ufsCount} UFs
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-2xs font-medium text-white/85 ring-1 ring-inset ring-white/15">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium text-cream/85 ring-1 ring-inset ring-cream/15">
                   <Building2 className="h-3 w-3" />
                   {stats.cidadesCount} cidades
                 </span>
               </div>
-              <h1 className="mt-3 text-2xl font-semibold leading-tight sm:text-3xl md:text-4xl">
+              <h1
+                className="mt-3 text-2xl sm:text-3xl lg:text-4xl text-cream"
+                style={{ fontFamily: '"Noto Serif", Georgia, serif', fontStyle: 'italic', fontWeight: 500 }}
+              >
                 Onde a FMP esta presente
               </h1>
-              <p className="mt-2 max-w-xl text-sm leading-relaxed text-white/70">
+              <p className="mt-2 max-w-xl text-sm leading-relaxed text-cream/70">
                 Mapa vivo das matriculas de Pos-graduacao e Cursos Livres pelo
                 Brasil. Clique em um estado para revelar cursos, cidades,
                 situacoes e faturamento em tempo real.
@@ -161,26 +163,32 @@ export function PresencaNacionalPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <div className="rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-inset ring-white/15 backdrop-blur">
-                <p className="text-2xs uppercase tracking-widest text-white/60">
+              <div className="rounded-lg bg-cream/10 px-4 py-3 ring-1 ring-inset ring-cream/15 backdrop-blur">
+                <p className="text-2xs uppercase tracking-widest text-cream/50">
                   Matriculas
                 </p>
-                <p className="mt-1 text-2xl font-semibold">
+                <p
+                  className="mt-1 text-2xl text-cream"
+                  style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic', fontWeight: 600 }}
+                >
                   {fmtInt(stats.total)}
                 </p>
               </div>
-              <div className="rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-inset ring-white/15 backdrop-blur">
-                <p className="text-2xs uppercase tracking-widest text-white/60">
+              <div className="rounded-lg bg-cream/10 px-4 py-3 ring-1 ring-inset ring-cream/15 backdrop-blur">
+                <p className="text-2xs uppercase tracking-widest text-cream/50">
                   Faturamento
                 </p>
-                <p className="mt-1 text-2xl font-semibold">
+                <p
+                  className="mt-1 text-2xl text-cream"
+                  style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic', fontWeight: 600 }}
+                >
                   {fmtBRL(stats.faturado)}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={refetch}
-                className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3.5 py-2 text-2xs font-medium text-white ring-1 ring-inset ring-white/20 transition hover:bg-white/25"
+                className="inline-flex items-center gap-1.5 rounded-pill bg-fmp px-3.5 py-2 text-2xs font-medium text-white transition hover:bg-fmp-dark no-underline"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
                 Atualizar
@@ -190,8 +198,8 @@ export function PresencaNacionalPage() {
         </section>
 
         {/* Filters */}
-        <section className="flex flex-wrap items-center gap-3 rounded-2xl bg-white p-4 shadow-card animate-fade-in">
-          <div className="flex items-center gap-2 text-xs font-medium text-gray-700">
+        <section className="flex flex-wrap items-center gap-3 rounded-md border border-line bg-white p-4 shadow-card animate-fade-in">
+          <div className="flex items-center gap-2 text-xs font-medium text-ink-2">
             <Filter className="h-4 w-4 text-fmp" />
             Fonte:
           </div>
@@ -204,10 +212,10 @@ export function PresencaNacionalPage() {
                   key={opt.value}
                   type="button"
                   onClick={() => setSource(opt.value)}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-2xs font-semibold transition ${
+                  className={`inline-flex items-center gap-1.5 rounded-pill px-3 py-1.5 text-2xs font-semibold transition ${
                     active
                       ? 'bg-fmp text-white shadow-glow'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      : 'bg-paper text-ink-2 hover:bg-sand/30'
                   }`}
                 >
                   <Icon className="h-3 w-3" />
@@ -217,7 +225,7 @@ export function PresencaNacionalPage() {
             })}
           </div>
 
-          <div className="ml-2 h-6 w-px bg-gray-200" />
+          <div className="ml-2 h-6 w-px bg-line" />
 
           <div className="flex flex-wrap items-center gap-2">
             {REGION_OPTIONS.map((r) => {
@@ -228,10 +236,10 @@ export function PresencaNacionalPage() {
                   key={r}
                   type="button"
                   onClick={() => setRegion(value)}
-                  className={`rounded-full px-3 py-1.5 text-2xs font-semibold transition ${
+                  className={`rounded-pill px-3 py-1.5 text-2xs font-semibold transition ${
                     active
                       ? 'bg-fmp text-white shadow-glow'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      : 'bg-paper text-ink-2 hover:bg-sand/30'
                   }`}
                 >
                   {r}
@@ -240,12 +248,12 @@ export function PresencaNacionalPage() {
             })}
           </div>
 
-          <label className="ml-auto inline-flex items-center gap-2 text-2xs font-semibold text-gray-600">
+          <label className="ml-auto inline-flex items-center gap-2 text-2xs font-semibold text-ink-2">
             <input
               type="checkbox"
               checked={onlyMatriculados}
               onChange={(e) => setOnlyMatriculados(e.target.checked)}
-              className="h-3.5 w-3.5 rounded border-gray-300 text-fmp focus:ring-fmp"
+              className="h-3.5 w-3.5 rounded border-line-2 text-fmp focus:ring-fmp"
             />
             Somente matriculados
           </label>
@@ -286,7 +294,7 @@ export function PresencaNacionalPage() {
                     : ''
                 }
                 icon={MapPin}
-                color="info"
+                color="gray"
               />
               <StatCard
                 index={2}
@@ -294,7 +302,7 @@ export function PresencaNacionalPage() {
                 value={fmtBRL(stats.faturado)}
                 subtitle={`Ticket medio ${fmtBRL(stats.ticketMedio)}`}
                 icon={Wallet}
-                color="success"
+                color="fmp"
               />
               <StatCard
                 index={3}
@@ -302,7 +310,7 @@ export function PresencaNacionalPage() {
                 value={`${conversion}%`}
                 subtitle={`${fmtInt(stats.matriculados)} matriculas ativas`}
                 icon={TrendingUp}
-                color="warning"
+                color="gray"
               />
             </>
           )}
@@ -320,7 +328,7 @@ export function PresencaNacionalPage() {
                 {Object.entries(REGION_COLORS).slice(0, 5).map(([name, c]) => (
                   <span
                     key={name}
-                    className="inline-flex items-center gap-1 text-2xs text-gray-500"
+                    className="inline-flex items-center gap-1 text-2xs text-ink-3"
                   >
                     <span
                       className="h-2 w-2 rounded-full"
@@ -376,28 +384,28 @@ export function PresencaNacionalPage() {
                 >
                   <defs>
                     <linearGradient id="barUf" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#4A78D1" stopOpacity={0.95} />
-                      <stop offset="100%" stopColor="#2E5AAC" stopOpacity={0.85} />
+                      <stop offset="0%" stopColor="#EE2A42" stopOpacity={0.95} />
+                      <stop offset="100%" stopColor="#D32238" stopOpacity={0.85} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid
                     strokeDasharray="4 4"
                     vertical={false}
-                    stroke="#E2E8F0"
+                    stroke="#DEDCD4"
                   />
                   <XAxis
                     dataKey="uf"
-                    tick={{ fontSize: 11, fill: '#64748B' }}
+                    tick={{ fontSize: 11, fill: '#6E6B66' }}
                     tickLine={false}
                     axisLine={false}
                   />
                   <YAxis
-                    tick={{ fontSize: 11, fill: '#64748B' }}
+                    tick={{ fontSize: 11, fill: '#6E6B66' }}
                     tickLine={false}
                     axisLine={false}
                   />
                   <Tooltip
-                    cursor={{ fill: 'rgba(46,90,172,0.05)' }}
+                    cursor={{ fill: 'rgba(238,42,66,0.05)' }}
                     contentStyle={tt.contentStyle}
                     labelStyle={tt.labelStyle}
                     itemStyle={tt.itemStyle}
@@ -453,7 +461,7 @@ export function PresencaNacionalPage() {
                       {stats.byRegion.map((r) => (
                         <Cell
                           key={r.name}
-                          fill={REGION_COLORS[r.name] ?? '#94A3B8'}
+                          fill={REGION_COLORS[r.name] ?? '#BFBAA4'}
                         />
                       ))}
                     </Pie>
@@ -470,17 +478,17 @@ export function PresencaNacionalPage() {
                         key={r.name}
                         className="flex items-center justify-between text-xs"
                       >
-                        <span className="flex items-center gap-2 text-gray-600">
+                        <span className="flex items-center gap-2 text-ink-2">
                           <span
                             className="h-2 w-2 rounded-full"
                             style={{
-                              background: REGION_COLORS[r.name] ?? '#94A3B8',
+                              background: REGION_COLORS[r.name] ?? '#BFBAA4',
                             }}
                           />
                           {r.name}
                         </span>
-                        <span className="font-semibold text-gray-900">
-                          {fmtInt(r.value)} <span className="text-gray-400">({pct}%)</span>
+                        <span className="font-semibold text-ink">
+                          {fmtInt(r.value)} <span className="text-ink-3">({pct}%)</span>
                         </span>
                       </li>
                     );
@@ -507,31 +515,31 @@ export function PresencaNacionalPage() {
                 >
                   <defs>
                     <linearGradient id="barSitu" x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor="#0EA5E9" stopOpacity={0.95} />
-                      <stop offset="100%" stopColor="#2E5AAC" stopOpacity={0.9} />
+                      <stop offset="0%" stopColor="#EE2A42" stopOpacity={0.95} />
+                      <stop offset="100%" stopColor="#EE2A42" stopOpacity={0.8} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid
                     strokeDasharray="4 4"
                     horizontal={false}
-                    stroke="#E2E8F0"
+                    stroke="#DEDCD4"
                   />
                   <XAxis
                     type="number"
-                    tick={{ fontSize: 11, fill: '#64748B' }}
+                    tick={{ fontSize: 11, fill: '#6E6B66' }}
                     tickLine={false}
                     axisLine={false}
                   />
                   <YAxis
                     type="category"
                     dataKey="name"
-                    tick={{ fontSize: 11, fill: '#475569' }}
+                    tick={{ fontSize: 11, fill: '#3A3838' }}
                     tickLine={false}
                     axisLine={false}
                     width={130}
                   />
                   <Tooltip
-                    cursor={{ fill: 'rgba(14,165,233,0.05)' }}
+                    cursor={{ fill: 'rgba(238,42,66,0.05)' }}
                     contentStyle={tt.contentStyle}
                     labelStyle={tt.labelStyle}
                     itemStyle={tt.itemStyle}
@@ -563,31 +571,31 @@ export function PresencaNacionalPage() {
                 >
                   <defs>
                     <linearGradient id="barMod" x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor="#4A78D1" stopOpacity={0.95} />
-                      <stop offset="100%" stopColor="#1E3F80" stopOpacity={0.9} />
+                      <stop offset="0%" stopColor="#EE2A42" stopOpacity={0.9} />
+                      <stop offset="100%" stopColor="#B81E32" stopOpacity={0.85} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid
                     strokeDasharray="4 4"
                     horizontal={false}
-                    stroke="#E2E8F0"
+                    stroke="#DEDCD4"
                   />
                   <XAxis
                     type="number"
-                    tick={{ fontSize: 11, fill: '#64748B' }}
+                    tick={{ fontSize: 11, fill: '#6E6B66' }}
                     tickLine={false}
                     axisLine={false}
                   />
                   <YAxis
                     type="category"
                     dataKey="name"
-                    tick={{ fontSize: 11, fill: '#475569' }}
+                    tick={{ fontSize: 11, fill: '#3A3838' }}
                     tickLine={false}
                     axisLine={false}
                     width={130}
                   />
                   <Tooltip
-                    cursor={{ fill: 'rgba(46,90,172,0.05)' }}
+                    cursor={{ fill: 'rgba(238,42,66,0.05)' }}
                     contentStyle={tt.contentStyle}
                     labelStyle={tt.labelStyle}
                     itemStyle={tt.itemStyle}
@@ -605,17 +613,20 @@ export function PresencaNacionalPage() {
           </SectionCard>
         </section>
 
-        <section className="rounded-2xl border border-dashed border-fmp/30 bg-fmp-muted/40 p-5 animate-fade-in">
+        <section className="rounded-md border border-dashed border-fmp/30 bg-fmp-muted p-5 animate-fade-in">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
-              <div className="rounded-xl bg-white p-2 text-fmp shadow-card">
+              <div className="rounded-sm bg-white p-2 text-fmp shadow-card">
                 <Sparkles className="h-4 w-4" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-fmp-dark">
+                <p
+                  className="text-sm font-semibold text-ink"
+                  style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic', fontWeight: 600 }}
+                >
                   Novos indicadores em breve
                 </p>
-                <p className="text-xs text-gray-600">
+                <p className="text-xs text-ink-3">
                   Camada por CEP, filtros por curso e comparativo temporal serao
                   adicionados nas proximas evolucoes.
                 </p>
@@ -623,7 +634,7 @@ export function PresencaNacionalPage() {
             </div>
             <Link
               to="/"
-              className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-xs font-semibold text-fmp-dark shadow-card transition-all hover:-translate-y-0.5 hover:shadow-card-hover"
+              className="inline-flex items-center gap-1.5 rounded-pill bg-ink px-4 py-2 text-xs font-semibold text-cream transition-all hover:-translate-y-0.5 hover:bg-fmp no-underline"
             >
               Ver outros dashboards
             </Link>

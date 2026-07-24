@@ -49,15 +49,14 @@ export function EspecializacoesBlock({
       title="Especializacoes"
       subtitle="Faturamento realizado x meta"
       icon={Wallet}
-      accent="warning"
       actions={
         <div className="flex flex-wrap items-center gap-2">
-          <label className="flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1.5 text-2xs font-semibold text-gray-700">
-            <span className="text-gray-500">Ano</span>
+          <label className="flex items-center gap-2 rounded-pill border border-line bg-white px-3 py-1.5 text-2xs font-semibold text-ink-2">
+            <span className="text-ink-3">Ano</span>
             <select
               value={ano}
               onChange={(e) => onAnoChange(Number(e.target.value))}
-              className="rounded-full bg-transparent text-2xs font-semibold text-warning-dark focus:outline-none"
+              className="rounded-pill bg-transparent text-2xs font-semibold text-fmp focus:outline-none"
             >
               {anos.map((a) => (
                 <option key={a} value={a}>
@@ -80,10 +79,10 @@ export function EspecializacoesBlock({
               key={m.n}
               type="button"
               onClick={() => toggle(m.n)}
-              className={`rounded-full px-3 py-1 text-2xs font-semibold transition ${
+              className={`rounded-pill px-3 py-1 text-2xs font-semibold transition ${
                 active
-                  ? 'bg-warning text-white shadow-glow'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-fmp text-white shadow-glow'
+                  : 'bg-paper text-ink-2 hover:bg-sand/30'
               }`}
             >
               {m.label}
@@ -93,14 +92,14 @@ export function EspecializacoesBlock({
         <button
           type="button"
           onClick={() => onMesesChange(MESES.map((m) => m.n))}
-          className="ml-1 rounded-full border border-gray-200 px-3 py-1 text-2xs font-semibold text-gray-500 transition hover:border-warning hover:text-warning-dark"
+          className="ml-1 rounded-pill border border-line-2 px-3 py-1 text-2xs font-semibold text-ink-2 transition hover:border-fmp hover:text-fmp"
         >
           Todos
         </button>
         <button
           type="button"
           onClick={() => onMesesChange([])}
-          className="rounded-full border border-gray-200 px-3 py-1 text-2xs font-semibold text-gray-500 transition hover:border-danger hover:text-danger"
+          className="rounded-pill border border-line-2 px-3 py-1 text-2xs font-semibold text-ink-2 transition hover:border-fmp hover:text-fmp"
         >
           Limpar
         </button>
@@ -120,8 +119,6 @@ export function EspecializacoesBlock({
                 ? fmtBRLCompact(kpis.faturamentoTotal)
                 : undefined
             }
-            colorStart="#FBBF24"
-            colorEnd="#B45309"
           />
         </div>
         <div className="lg:col-span-3">

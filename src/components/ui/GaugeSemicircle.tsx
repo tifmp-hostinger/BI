@@ -5,9 +5,6 @@ type Props = {
   label?: string;
   size?: number;
   strokeWidth?: number;
-  colorStart?: string;
-  colorEnd?: string;
-  trackColor?: string;
   formatValue?: (v: number | null) => string;
   caption?: string;
 };
@@ -15,16 +12,13 @@ type Props = {
 /**
  * Semicircle gauge (0-100%). The visual fill is clamped to 100%, but the numeric
  * label shows the real percentage even when it exceeds the meta.
- * Reusable across dashboards; pass any brand color via `colorStart`/`colorEnd`.
+ * Uses the single FMP red; track is a faint sand tone.
  */
 export function GaugeSemicircle({
   value,
   label,
   size = 200,
   strokeWidth = 18,
-  colorStart = '#4A78D1',
-  colorEnd = '#2E5AAC',
-  trackColor = '#E7EEFB',
   formatValue,
   caption,
 }: Props) {
@@ -69,14 +63,14 @@ export function GaugeSemicircle({
       >
         <defs>
           <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor={colorStart} />
-            <stop offset="100%" stopColor={colorEnd} />
+            <stop offset="0%" stopColor="#EE2A42" stopOpacity={0.85} />
+            <stop offset="100%" stopColor="#EE2A42" />
           </linearGradient>
         </defs>
         <path
           d={trackPath}
           fill="none"
-          stroke={trackColor}
+          stroke="#DEDCD4"
           strokeWidth={strokeWidth}
           strokeLinecap="round"
         />
@@ -91,17 +85,22 @@ export function GaugeSemicircle({
         )}
       </svg>
       <div className="-mt-6 text-center">
-        <p className="text-2xl font-semibold text-gray-900 tabular-nums">
+        <p
+          className="text-2xl tabular-nums text-ink"
+          style={{
+            fontFamily: '"Noto Serif", Georgia, serif',
+            fontStyle: 'italic',
+            fontWeight: 600,
+          }}
+        >
           {display}
         </p>
         {label && (
-          <p className="mt-0.5 text-2xs font-medium uppercase tracking-widest text-gray-500">
+          <p className="mt-0.5 text-2xs font-semibold uppercase tracking-widest text-ink-3">
             {label}
           </p>
         )}
-        {caption && (
-          <p className="mt-0.5 text-xs text-gray-500">{caption}</p>
-        )}
+        {caption && <p className="mt-0.5 text-xs text-ink-3">{caption}</p>}
       </div>
     </div>
   );

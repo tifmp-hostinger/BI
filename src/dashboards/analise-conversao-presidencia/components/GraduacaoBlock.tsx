@@ -12,7 +12,6 @@ type Props = {
   pletivos: PeriodoLetivo[];
   periodo: string;
   onPeriodoChange: (periodo: string) => void;
-  accent?: 'fmp' | 'info';
   loading?: boolean;
 };
 
@@ -23,7 +22,6 @@ export function GraduacaoBlock({
   pletivos,
   periodo,
   onPeriodoChange,
-  accent = 'fmp',
   loading,
 }: Props) {
   const opcoes = pletivos
@@ -35,14 +33,13 @@ export function GraduacaoBlock({
       title={title}
       subtitle={subtitle}
       icon={GraduationCap}
-      accent={accent}
       actions={
-        <label className="flex items-center gap-2 rounded-full bg-gray-100 px-3 py-1.5 text-2xs font-semibold text-gray-700">
-          <span className="text-gray-500">Periodo</span>
+        <label className="flex items-center gap-2 rounded-pill border border-line bg-white px-3 py-1.5 text-2xs font-semibold text-ink-2">
+          <span className="text-ink-3">Periodo</span>
           <select
             value={periodo}
             onChange={(e) => onPeriodoChange(e.target.value)}
-            className="rounded-full bg-transparent text-2xs font-semibold text-fmp-dark focus:outline-none"
+            className="rounded-pill bg-transparent text-2xs font-semibold text-fmp focus:outline-none"
           >
             {opcoes.map((p) => (
               <option key={p} value={p}>
@@ -66,8 +63,6 @@ export function GraduacaoBlock({
                 ? `${fmtInt(kpis.matriculas)} de ${fmtInt(kpis.vagas)} vagas`
                 : undefined
             }
-            colorStart={accent === 'info' ? '#38BDF8' : '#4A78D1'}
-            colorEnd={accent === 'info' ? '#0369A1' : '#2E5AAC'}
           />
         </div>
         <div className="lg:col-span-3">
