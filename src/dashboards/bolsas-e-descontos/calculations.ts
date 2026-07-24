@@ -102,12 +102,12 @@ export function applyFilters(
   filters: BolsasFilters,
 ): EnrichedBolsaRow[] {
   return rows.filter((r) => {
-    if (filters.codperlet && r.codperletNorm !== filters.codperlet) return false;
-    if (filters.ano !== null && r.ano !== filters.ano) return false;
-    if (filters.tipocurso && r.tipoCurso !== filters.tipocurso) return false;
+    if (filters.codperlet.length > 0 && !filters.codperlet.includes(r.codperletNorm)) return false;
+    if (filters.ano.length > 0 && r.ano !== null && !filters.ano.includes(r.ano)) return false;
+    if (filters.tipocurso.length > 0 && !filters.tipocurso.includes(r.tipoCurso)) return false;
     if (
-      filters.bolsaPadronizada &&
-      r.bolsaPadronizada !== filters.bolsaPadronizada
+      filters.bolsaPadronizada.length > 0 &&
+      !filters.bolsaPadronizada.includes(r.bolsaPadronizada)
     ) {
       return false;
     }
@@ -117,13 +117,13 @@ export function applyFilters(
 
 export function computeMatriculasCount(
   m: MatriculadosData,
-  codperletFilter: string | null,
+  codperletFilter: string[],
 ): number {
   const set = new Set<string>();
   const add = (list: MatriculadosData[keyof MatriculadosData]) => {
     for (const r of list) {
       if (!r.ra) continue;
-      if (codperletFilter && r.codperletNorm !== codperletFilter) continue;
+      if (codperletFilter.length > 0 && !codperletFilter.includes(r.codperletNorm)) continue;
       set.add(r.ra);
     }
   };
@@ -294,14 +294,14 @@ export function computeEvasaoBeneficios(
 
 export function computeEvasaoPorAno(
   rows: EnrichedBolsaRow[],
-  tipocurso: string | null,
-  bolsaPadronizada: string | null,
+  tipocurso: string[],
+  bolsaPadronizada: string[],
 ): EvasaoPorAnoDatum[] {
   const m = new Map<number, { matBeneFin: number; evasaoBolsas: number }>();
   for (const r of rows) {
     if (r.ano === null) continue;
-    if (tipocurso && r.tipoCurso !== tipocurso) continue;
-    if (bolsaPadronizada && r.bolsaPadronizada !== bolsaPadronizada) continue;
+    if (tipocurso.length > 0 && !tipocurso.includes(r.tipoCurso)) continue;
+    if (bolsaPadronizada.length > 0 && !bolsaPadronizada.includes(r.bolsaPadronizada)) continue;
 
     const isBene = r.tipoBeneficio === 'Bolsa' || r.tipoBeneficio === 'Desconto';
     if (!isBene) continue;

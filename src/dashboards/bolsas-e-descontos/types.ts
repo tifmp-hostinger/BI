@@ -1,8 +1,8 @@
 export type BolsasFilters = {
-  codperlet: string | null;
-  ano: number | null;
-  tipocurso: string | null;
-  bolsaPadronizada: string | null;
+  codperlet: string[];
+  ano: number[];
+  tipocurso: string[];
+  bolsaPadronizada: string[];
 };
 
 export type FilterOptions = {

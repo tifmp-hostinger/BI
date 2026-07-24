@@ -68,10 +68,10 @@ type Tab = 'panorama' | 'evasao';
 export function BolsasEDescontosPage() {
   const [tab, setTab] = useState<Tab>('panorama');
   const [filters, setFilters] = useState<BolsasFilters>({
-    codperlet: null,
-    ano: null,
-    tipocurso: null,
-    bolsaPadronizada: null,
+    codperlet: [],
+    ano: [],
+    tipocurso: [],
+    bolsaPadronizada: [],
   });
 
   const {
