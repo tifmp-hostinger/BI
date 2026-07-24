@@ -23,21 +23,30 @@ function toParams(filters: BolsasFilters): RpcParams {
   };
 }
 
-export async function fetchPanoramaKpis(filters: BolsasFilters): Promise<PanoramaKpis> {
-  const { data, error } = await supabase.rpc('rpc_bolsas_panorama_kpis', toParams(filters));
+export async function fetchMatriculasCount(): Promise<number> {
+  const { data, error } = await supabase.rpc('rpc_bolsas_matriculas_count');
   if (error) throw error;
-  if (!data || data.length === 0) {
+  return Number(data) || 0;
+}
+
+export async function fetchPanoramaKpis(filters: BolsasFilters): Promise<PanoramaKpis> {
+  const [kpisResult, matriculasCount] = await Promise.all([
+    supabase.rpc('rpc_bolsas_panorama_kpis', toParams(filters)),
+    fetchMatriculasCount(),
+  ]);
+  if (kpisResult.error) throw kpisResult.error;
+  if (!kpisResult.data || kpisResult.data.length === 0) {
     return {
-      matriculas: 0, bolsas: 0, descontos: 0, formados: 0,
+      matriculas: matriculasCount, bolsas: 0, descontos: 0, formados: 0,
       fatOriginalPrevisto: 0, fatDescontoPrevisto: 0,
       matricCancelado: 0, matricEvadido: 0, matricTransferencia: 0,
       evasaoBolsas: 0, fatDescontoMatriculado: 0, matBeneFin: 0,
       renunciaValorEvasao: 0,
     };
   }
-  const r = data[0] as Record<string, unknown>;
+  const r = kpisResult.data[0] as Record<string, unknown>;
   return {
-    matriculas: Number(r.matriculas) || 0,
+    matriculas: matriculasCount,
     bolsas: Number(r.bolsas) || 0,
     descontos: Number(r.descontos) || 0,
     formados: Number(r.formados) || 0,
