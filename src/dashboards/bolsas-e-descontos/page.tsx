@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Area,
-  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
   ComposedChart,
+  Funnel,
+  FunnelChart,
+  LabelList,
   Legend,
   Line,
   Pie,
@@ -61,7 +62,7 @@ function chartTooltipStyle() {
 const FMP_RED = '#EE2A42';
 const FMP_DARK = '#B81E32';
 const NEUTRAL = '#BFBAA4';
-const COLORS = [FMP_RED, '#D32238', '#E85A6E', '#C84756', '#A01A2A'];
+const COLORS = [FMP_RED, '#D46B78', '#C79B98', NEUTRAL];
 
 type Tab = 'panorama' | 'evasao';
 
@@ -260,42 +261,51 @@ export function BolsasEDescontosPage() {
                 ) : !panorama || panorama.ocorrenciasBolsa.length === 0 ? (
                   <EmptyState title="Sem dados para os filtros selecionados" />
                 ) : (
-                  <ResponsiveContainer width="100%" height={320}>
-                    <AreaChart data={panorama.ocorrenciasBolsa} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
+                  <ResponsiveContainer width="100%" height={Math.max(320, panorama.ocorrenciasBolsa.length * 22)}>
+                    <BarChart
+                      data={panorama.ocorrenciasBolsa}
+                      layout="vertical"
+                      margin={{ top: 4, right: 24, left: 0, bottom: 4 }}
+                    >
                       <defs>
-                        <linearGradient id="areaBolsa" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={FMP_RED} stopOpacity={0.35} />
-                          <stop offset="100%" stopColor={FMP_RED} stopOpacity={0.02} />
+                        <linearGradient id="barOcorrencias" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor={FMP_RED} stopOpacity={0.9} />
+                          <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#DEDCD4" />
+                      <CartesianGrid strokeDasharray="4 4" horizontal={false} stroke="#DEDCD4" />
                       <XAxis
-                        dataKey="categoria"
-                        tick={{ fontSize: 10, fill: '#6E6B66' }}
+                        type="number"
+                        tick={{ fontSize: 11, fill: '#6E6B66' }}
                         tickLine={false}
                         axisLine={false}
-                        tickFormatter={(v: string) => truncateLabel(v, 14)}
-                        interval={0}
-                        angle={-20}
-                        textAnchor="end"
-                        height={70}
+                        tickFormatter={(v: number) => fmtInt(v)}
                       />
-                      <YAxis tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
+                      <YAxis
+                        type="category"
+                        dataKey="categoria"
+                        tick={{ fontSize: 10, fill: '#3A3838' }}
+                        tickLine={false}
+                        axisLine={false}
+                        width={180}
+                        tickFormatter={(v: string) => truncateLabel(v, 26)}
+                      />
                       <Tooltip
+                        cursor={{ fill: 'rgba(238,42,66,0.05)' }}
                         contentStyle={tt.contentStyle}
                         labelStyle={tt.labelStyle}
                         itemStyle={tt.itemStyle}
                         formatter={(v: unknown) => [`${fmtInt(v as number)} ocorrências`, 'Bolsas']}
                       />
-                      <Area
-                        type="monotone"
-                        dataKey="valor"
-                        stroke={FMP_RED}
-                        strokeWidth={2}
-                        fill="url(#areaBolsa)"
-                        dot={{ r: 3, fill: FMP_RED }}
-                      />
-                    </AreaChart>
+                      <Bar dataKey="valor" fill="url(#barOcorrencias)" radius={[4, 8, 8, 4]} maxBarSize={22}>
+                        <LabelList
+                          dataKey="valor"
+                          position="right"
+                          formatter={(v: number) => fmtInt(v)}
+                          style={{ fontSize: 10, fill: '#3A3838', fontWeight: 600 }}
+                        />
+                      </Bar>
+                    </BarChart>
                   </ResponsiveContainer>
                 )}
               </SectionCard>
@@ -352,7 +362,7 @@ export function BolsasEDescontosPage() {
                   <EmptyState title="Sem dados para os filtros selecionados" />
                 ) : (
                   <ResponsiveContainer width="100%" height={320}>
-                    <BarChart data={panorama.topCursosFat} layout="vertical" margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
+                    <BarChart data={panorama.topCursosFat} layout="vertical" margin={{ top: 4, right: 80, left: 0, bottom: 4 }}>
                       <defs>
                         <linearGradient id="barCurso" x1="0" y1="0" x2="1" y2="0">
                           <stop offset="0%" stopColor={FMP_RED} stopOpacity={0.95} />
@@ -383,7 +393,14 @@ export function BolsasEDescontosPage() {
                         itemStyle={tt.itemStyle}
                         formatter={(v: unknown) => [fmtBRLCompact(v as number), 'Faturamento']}
                       />
-                      <Bar dataKey="valor" fill="url(#barCurso)" radius={[4, 8, 8, 4]} maxBarSize={28} />
+                      <Bar dataKey="valor" fill="url(#barCurso)" radius={[4, 8, 8, 4]} maxBarSize={28}>
+                        <LabelList
+                          dataKey="valor"
+                          position="right"
+                          formatter={(v: number) => fmtBRLCompact(v)}
+                          style={{ fontSize: 11, fill: '#3A3838', fontWeight: 700 }}
+                        />
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 )}
@@ -420,43 +437,47 @@ export function BolsasEDescontosPage() {
                 ) : !evasao || evasao.evasaoBeneficios.length === 0 ? (
                   <EmptyState title="Sem dados para os filtros selecionados" />
                 ) : (
-                  <ResponsiveContainer width="100%" height={360}>
-                    <BarChart
-                      data={evasao.evasaoBeneficios}
-                      layout="vertical"
-                      margin={{ top: 4, right: 16, left: 0, bottom: 4 }}
-                    >
-                      <defs>
-                        <linearGradient id="barEvasao" x1="0" y1="0" x2="1" y2="0">
-                          <stop offset="0%" stopColor={FMP_RED} stopOpacity={0.9} />
-                          <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="4 4" horizontal={false} stroke="#DEDCD4" />
-                      <XAxis
-                        type="number"
-                        tick={{ fontSize: 11, fill: '#6E6B66' }}
-                        tickLine={false}
-                        axisLine={false}
-                      />
-                      <YAxis
-                        type="category"
-                        dataKey="categoria"
-                        tick={{ fontSize: 9, fill: '#3A3838' }}
-                        tickLine={false}
-                        axisLine={false}
-                        width={180}
-                        tickFormatter={(v: string) => truncateLabel(v, 26)}
-                      />
+                  <ResponsiveContainer width="100%" height={380}>
+                    <FunnelChart margin={{ top: 8, right: 180, left: 180, bottom: 8 }}>
                       <Tooltip
-                        cursor={{ fill: 'rgba(238,42,66,0.05)' }}
                         contentStyle={tt.contentStyle}
                         labelStyle={tt.labelStyle}
                         itemStyle={tt.itemStyle}
-                        formatter={(v: unknown) => [`${fmtInt(v as number)} evasões`, 'Evasão']}
+                        formatter={(v: unknown, _n: unknown, p: { payload?: { categoria?: string } }) => [
+                          `${fmtInt(v as number)} evasões`,
+                          p?.payload?.categoria ?? 'Evasão',
+                        ]}
                       />
-                      <Bar dataKey="valor" fill="url(#barEvasao)" radius={[4, 8, 8, 4]} maxBarSize={24} />
-                    </BarChart>
+                      <Funnel
+                        dataKey="valor"
+                        nameKey="categoria"
+                        data={evasao.evasaoBeneficios.map((r, i) => ({
+                          ...r,
+                          fill: `rgba(238,42,66,${Math.max(0.35, 1 - i * 0.07).toFixed(2)})`,
+                        }))}
+                        isAnimationActive
+                        stroke="#fff"
+                      >
+                        <LabelList
+                          position="left"
+                          dataKey="categoria"
+                          fill="#3A3838"
+                          stroke="none"
+                          fontSize={11}
+                          fontWeight={600}
+                          formatter={(v: unknown) => truncateLabel(String(v ?? ''), 24)}
+                        />
+                        <LabelList
+                          position="right"
+                          dataKey="valor"
+                          fill="#B81E32"
+                          stroke="none"
+                          fontSize={11}
+                          fontWeight={700}
+                          formatter={(v: unknown) => fmtInt(v as number)}
+                        />
+                      </Funnel>
+                    </FunnelChart>
                   </ResponsiveContainer>
                 )}
               </SectionCard>

@@ -83,11 +83,11 @@ export function CepHeatMap({ points, height = 480 }: Props) {
       minOpacity: 0.35,
       maxZoom: 12,
       gradient: {
-        0.2: '#4A78D1',
-        0.4: '#0EA5E9',
-        0.6: '#16A34A',
-        0.75: '#D97706',
-        0.9: '#DC2626',
+        0.2: '#E9D9C8',
+        0.4: '#E8A79C',
+        0.6: '#EE6474',
+        0.8: '#EE2A42',
+        1.0: '#B81E32',
       },
     });
     heat.addTo(map);
@@ -131,10 +131,10 @@ export function CepHeatMap({ points, height = 480 }: Props) {
             <div style="
               display:flex;align-items:center;justify-content:center;
               width:${size}px;height:${size}px;border-radius:9999px;
-              background:linear-gradient(180deg,rgba(74,120,209,0.95),rgba(46,90,172,0.95));
+              background:linear-gradient(180deg,rgba(238,42,66,0.95),rgba(184,30,50,0.95));
               color:white;font-family:Inter,sans-serif;font-size:11px;font-weight:600;
               border:2px solid rgba(255,255,255,0.9);
-              box-shadow:0 8px 20px -8px rgba(46,90,172,0.6);
+              box-shadow:0 8px 20px -8px rgba(184,30,50,0.6);
             ">${c.count}</div>
           `,
           iconSize: [size, size],
@@ -145,7 +145,7 @@ export function CepHeatMap({ points, height = 480 }: Props) {
         `<div style="font-family:Inter,sans-serif;">
           <div style="font-size:11px;color:#64748B;">${c.state}</div>
           <div style="font-size:13px;font-weight:600;color:#0F172A;">${c.city}</div>
-          <div style="font-size:11px;color:#2E5AAC;margin-top:2px;">${c.count} usuarios</div>
+          <div style="font-size:11px;color:#B81E32;margin-top:2px;">${c.count} usuarios</div>
         </div>`,
         {
           direction: 'top',

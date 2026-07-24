@@ -320,10 +320,16 @@ export function computeTopDescontos(rows: EnrichedBolsaRow[]): ChartDatum[] {
 }
 
 export function computeOcorrenciasBolsa(rows: EnrichedBolsaRow[]): ChartDatum[] {
-  return groupCount(
+  const all = groupCount(
     rows.filter((r) => r.tipoBeneficio === 'Bolsa'),
     (r) => r.bolsaPadronizada,
   ).sort((a, b) => b.valor - a.valor);
+  const TOP = 15;
+  if (all.length <= TOP) return all;
+  const top = all.slice(0, TOP);
+  const outrosValor = all.slice(TOP).reduce((s, x) => s + x.valor, 0);
+  if (outrosValor > 0) top.push({ categoria: 'Outros', valor: outrosValor });
+  return top;
 }
 
 export function computeDistribuicaoBeneficios(

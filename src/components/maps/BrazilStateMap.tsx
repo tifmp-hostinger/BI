@@ -12,13 +12,17 @@ type Props = {
   height?: number;
 };
 
-const REGION_COLOR: Record<string, string> = {
-  Sul: '#2E5AAC',
-  Sudeste: '#0EA5E9',
-  Nordeste: '#16A34A',
-  'Centro-Oeste': '#D97706',
-  Norte: '#DC2626',
-};
+const FMP_SAND = '#BFBAA4';
+
+function interpolateSandToRed(t: number): string {
+  const clamp = Math.max(0, Math.min(1, t));
+  const from = { r: 0xBF, g: 0xBA, b: 0xA4 };
+  const to = { r: 0xEE, g: 0x2A, b: 0x42 };
+  const r = Math.round(from.r + (to.r - from.r) * clamp);
+  const g = Math.round(from.g + (to.g - from.g) * clamp);
+  const b = Math.round(from.b + (to.b - from.b) * clamp);
+  return `rgb(${r},${g},${b})`;
+}
 
 export function BrazilStateMap({
   data,
@@ -112,11 +116,11 @@ export function BrazilStateMap({
         minOpacity: 0.35,
         maxZoom: 8,
         gradient: {
-          0.2: '#4A78D1',
-          0.4: '#0EA5E9',
-          0.6: '#16A34A',
-          0.75: '#D97706',
-          0.9: '#DC2626',
+          0.2: '#E9D9C8',
+          0.4: '#E8A79C',
+          0.6: '#EE6474',
+          0.8: '#EE2A42',
+          1.0: '#B81E32',
         },
       });
       heat.addTo(map);
@@ -126,10 +130,14 @@ export function BrazilStateMap({
     for (const s of BR_STATES) {
       const agg = byUf.get(s.uf);
       const total = agg?.total ?? 0;
-      const color = REGION_COLOR[s.region] ?? '#2E5AAC';
+      const intensity =
+        total === 0
+          ? 0
+          : Math.max(0.2, Math.min(1, Math.log10(1 + total) / Math.log10(1 + max)));
+      const color = total === 0 ? FMP_SAND : interpolateSandToRed(intensity);
 
       const isSelected = selectedRef.current === s.uf;
-      const scale = total === 0 ? 0.35 : 0.4 + Math.min(1, Math.log10(1 + total) / Math.log10(1 + max)) * 0.6;
+      const scale = total === 0 ? 0.35 : 0.4 + intensity * 0.6;
       const size = Math.round(30 + scale * 30);
 
       const marker = L.marker([s.lat, s.lng], {
@@ -145,7 +153,7 @@ export function BrazilStateMap({
         `<div style="font-family:Inter,sans-serif;">
           <div style="font-size:10px;color:#64748B;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;">${s.region}</div>
           <div style="font-size:13px;font-weight:600;color:#0F172A;margin-top:2px;">${s.name} <span style="color:#94A3B8;font-weight:500;">(${s.uf})</span></div>
-          <div style="font-size:12px;color:#2E5AAC;margin-top:4px;font-weight:600;">${total.toLocaleString('pt-BR')} matriculas</div>
+          <div style="font-size:12px;color:#B81E32;margin-top:4px;font-weight:600;">${total.toLocaleString('pt-BR')} matriculas</div>
           ${
             agg
               ? `<div style="font-size:10px;color:#64748B;margin-top:2px;">Pos: ${agg.pos} &middot; Cursos livres: ${agg.livres}</div>`
@@ -189,16 +197,16 @@ function renderBubble({
   hasData: boolean;
 }) {
   const border = isSelected
-    ? 'border: 3px solid #fff; box-shadow: 0 0 0 3px rgba(46,90,172,0.95), 0 16px 40px -12px rgba(46,90,172,0.65);'
+    ? 'border: 3px solid #fff; box-shadow: 0 0 0 3px rgba(238,42,66,0.95), 0 16px 40px -12px rgba(184,30,50,0.55);'
     : hasData
-    ? 'border: 2px solid rgba(255,255,255,0.9); box-shadow: 0 8px 20px -8px rgba(15,23,42,0.4);'
-    : 'border: 2px dashed rgba(148,163,184,0.7); box-shadow: none;';
+    ? 'border: 2px solid rgba(255,255,255,0.9); box-shadow: 0 8px 20px -8px rgba(25,24,24,0.35);'
+    : 'border: 2px dashed rgba(191,186,164,0.75); box-shadow: none;';
 
   const bg = hasData
     ? `background: radial-gradient(circle at 30% 25%, ${lighten(color)}, ${color});`
     : 'background: rgba(255,255,255,0.75);';
 
-  const fontColor = hasData ? '#ffffff' : '#94A3B8';
+  const fontColor = hasData ? '#ffffff' : '#8A8578';
   const fontSize = size > 46 ? 12 : size > 38 ? 11 : 10;
   const label = total > 999 ? `${(total / 1000).toFixed(1)}k` : total > 0 ? total : state.uf;
 
@@ -223,6 +231,13 @@ function renderBubble({
 }
 
 function lighten(hex: string) {
+  if (hex.startsWith('rgb')) {
+    const parts = hex.match(/\d+/g);
+    if (!parts) return hex;
+    const [r, g, b] = parts.map(Number);
+    const mix = (v: number) => Math.min(255, Math.round(v + (255 - v) * 0.45));
+    return `rgb(${mix(r)},${mix(g)},${mix(b)})`;
+  }
   const c = hex.replace('#', '');
   const r = parseInt(c.slice(0, 2), 16);
   const g = parseInt(c.slice(2, 4), 16);
