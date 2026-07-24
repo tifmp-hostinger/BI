@@ -1,21 +1,33 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type {
   BolsasFilters,
   ChartDatum,
+  EnrichedBolsaRow,
   EvasaoPorAnoDatum,
   FilterOptions,
+  MatriculadosData,
   PanoramaKpis,
 } from '../types';
 import {
-  fetchDistribuicaoBeneficios,
-  fetchEvasaoBeneficios,
-  fetchEvasaoPorAno,
-  fetchEvasaoPorModalidade,
-  fetchFilterOptions,
-  fetchOcorrenciasBolsa,
-  fetchPanoramaKpis,
-  fetchTopCursosFaturamento,
-  fetchTopDescontos,
+  applyFilters,
+  buildDimMap,
+  computeDistribuicaoBeneficios,
+  computeEvasaoBeneficios,
+  computeEvasaoPorAno,
+  computeEvasaoPorModalidade,
+  computeFilterOptions,
+  computeOcorrenciasBolsa,
+  computePanoramaKpis,
+  computeTopCursosFaturamento,
+  computeTopDescontos,
+  enrichBolsaRows,
+} from '../calculations';
+import {
+  fetchBolsasRaw,
+  fetchDimBeneficio,
+  fetchMatriculadosGrad,
+  fetchMatriculadosMestrado,
+  fetchMatriculadosPos,
 } from '../queries';
 
 type PanoramaData = {
@@ -33,102 +45,90 @@ type EvasaoData = {
   renunciaValorEvasao: number;
 };
 
+type Dataset = {
+  enrichedRows: EnrichedBolsaRow[];
+  matriculados: MatriculadosData;
+  filterOptions: FilterOptions;
+};
+
 export function useBolsasDescontosData(filters: BolsasFilters) {
-  const [filterOptions, setFilterOptions] = useState<FilterOptions | null>(null);
-  const [optionsLoading, setOptionsLoading] = useState(true);
-  const [optionsError, setOptionsError] = useState<string | null>(null);
+  const [dataset, setDataset] = useState<Dataset | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [panorama, setPanorama] = useState<PanoramaData | null>(null);
-  const [panoramaLoading, setPanoramaLoading] = useState(false);
-  const [panoramaError, setPanoramaError] = useState<string | null>(null);
-
-  const [evasao, setEvasao] = useState<EvasaoData | null>(null);
-  const [evasaoLoading, setEvasaoLoading] = useState(false);
-  const [evasaoError, setEvasaoError] = useState<string | null>(null);
-
-  const loadOptions = useCallback(async () => {
-    setOptionsLoading(true);
-    setOptionsError(null);
+  const loadAll = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const opts = await fetchFilterOptions();
-      setFilterOptions(opts);
+      const [dim, raw, grad, pos, mestrado] = await Promise.all([
+        fetchDimBeneficio(),
+        fetchBolsasRaw(),
+        fetchMatriculadosGrad(),
+        fetchMatriculadosPos(),
+        fetchMatriculadosMestrado(),
+      ]);
+      const dimMap = buildDimMap(dim);
+      const enrichedRows = enrichBolsaRows(raw, dimMap);
+      const matriculados: MatriculadosData = { grad, pos, mestrado };
+      const filterOptions = computeFilterOptions(enrichedRows);
+      setDataset({ enrichedRows, matriculados, filterOptions });
     } catch (err) {
-      setOptionsError(err instanceof Error ? err.message : 'Erro ao carregar filtros');
+      setDataset(null);
+      setError(err instanceof Error ? err.message : 'Erro ao carregar dados');
     } finally {
-      setOptionsLoading(false);
+      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadOptions();
-  }, [loadOptions]);
+    loadAll();
+  }, [loadAll]);
 
-  const loadPanorama = useCallback(async () => {
-    setPanoramaLoading(true);
-    setPanoramaError(null);
-    try {
-      const [kpis, topDescontos, ocorrenciasBolsa, distribuicao, topCursosFat] = await Promise.all([
-        fetchPanoramaKpis(filters),
-        fetchTopDescontos(filters),
-        fetchOcorrenciasBolsa(filters),
-        fetchDistribuicaoBeneficios(filters),
-        fetchTopCursosFaturamento(filters),
-      ]);
-      setPanorama({ kpis, topDescontos, ocorrenciasBolsa, distribuicao, topCursosFat });
-    } catch (err) {
-      setPanorama(null);
-      setPanoramaError(err instanceof Error ? err.message : 'Erro ao carregar panorama');
-    } finally {
-      setPanoramaLoading(false);
-    }
-  }, [filters]);
+  const filtered = useMemo<EnrichedBolsaRow[] | null>(() => {
+    if (!dataset) return null;
+    return applyFilters(dataset.enrichedRows, filters);
+  }, [dataset, filters]);
 
-  useEffect(() => {
-    loadPanorama();
-  }, [loadPanorama]);
+  const kpis = useMemo<PanoramaKpis | null>(() => {
+    if (!dataset || !filtered) return null;
+    return computePanoramaKpis(filtered, dataset.matriculados, filters);
+  }, [dataset, filtered, filters]);
 
-  const loadEvasao = useCallback(async () => {
-    setEvasaoLoading(true);
-    setEvasaoError(null);
-    try {
-      const [kpis, evasaoBeneficios, evasaoPorAno, evasaoPorModalidade] = await Promise.all([
-        fetchPanoramaKpis(filters),
-        fetchEvasaoBeneficios(filters),
-        fetchEvasaoPorAno(filters.tipocurso, filters.bolsaPadronizada),
-        fetchEvasaoPorModalidade(filters),
-      ]);
-      setEvasao({
-        renunciaValorEvasao: kpis.renunciaValorEvasao,
-        evasaoBeneficios,
-        evasaoPorAno,
-        evasaoPorModalidade,
-      });
-    } catch (err) {
-      setEvasao(null);
-      setEvasaoError(err instanceof Error ? err.message : 'Erro ao carregar evasão');
-    } finally {
-      setEvasaoLoading(false);
-    }
-  }, [filters]);
+  const panorama = useMemo<PanoramaData | null>(() => {
+    if (!filtered || !kpis) return null;
+    return {
+      kpis,
+      topDescontos: computeTopDescontos(filtered),
+      ocorrenciasBolsa: computeOcorrenciasBolsa(filtered),
+      distribuicao: computeDistribuicaoBeneficios(filtered),
+      topCursosFat: computeTopCursosFaturamento(filtered),
+    };
+  }, [filtered, kpis]);
 
-  useEffect(() => {
-    loadEvasao();
-  }, [loadEvasao]);
+  const evasao = useMemo<EvasaoData | null>(() => {
+    if (!dataset || !filtered || !kpis) return null;
+    return {
+      evasaoBeneficios: computeEvasaoBeneficios(filtered),
+      evasaoPorAno: computeEvasaoPorAno(
+        dataset.enrichedRows,
+        filters.tipocurso,
+        filters.bolsaPadronizada,
+      ),
+      evasaoPorModalidade: computeEvasaoPorModalidade(filtered),
+      renunciaValorEvasao: kpis.renunciaValorEvasao,
+    };
+  }, [dataset, filtered, kpis, filters.tipocurso, filters.bolsaPadronizada]);
 
   return {
-    filterOptions,
-    optionsLoading,
-    optionsError,
+    filterOptions: dataset?.filterOptions ?? null,
+    optionsLoading: loading,
+    optionsError: error,
     panorama,
-    panoramaLoading,
-    panoramaError,
+    panoramaLoading: loading,
+    panoramaError: error,
     evasao,
-    evasaoLoading,
-    evasaoError,
-    refetch: () => {
-      loadOptions();
-      loadPanorama();
-      loadEvasao();
-    },
+    evasaoLoading: loading,
+    evasaoError: error,
+    refetch: loadAll,
   };
 }
