@@ -5,6 +5,7 @@ import type {
   EnrichedBolsaRow,
   EvasaoPorAnoDatum,
   FilterOptions,
+  MatriculadoRow,
   MatriculadosData,
   PanoramaKpis,
   RawBolsaRow,
@@ -103,7 +104,7 @@ export function applyFilters(
 ): EnrichedBolsaRow[] {
   return rows.filter((r) => {
     if (filters.codperlet.length > 0 && !filters.codperlet.includes(r.codperletNorm)) return false;
-    if (filters.ano.length > 0 && r.ano !== null && !filters.ano.includes(r.ano)) return false;
+    if (filters.ano.length > 0 && (r.ano === null || !filters.ano.includes(r.ano))) return false;
     if (filters.tipocurso.length > 0 && !filters.tipocurso.includes(r.tipoCurso)) return false;
     if (
       filters.bolsaPadronizada.length > 0 &&
@@ -117,19 +118,41 @@ export function applyFilters(
 
 export function computeMatriculasCount(
   m: MatriculadosData,
-  codperletFilter: string[],
+  filters: BolsasFilters,
+  filteredRows: EnrichedBolsaRow[],
 ): number {
   const set = new Set<string>();
-  const add = (list: MatriculadosData[keyof MatriculadosData]) => {
+
+  const tipoCursoFilter =
+    filters.tipocurso.length > 0 ? new Set(filters.tipocurso) : null;
+  const anoFilter =
+    filters.ano.length > 0 ? new Set(filters.ano) : null;
+  const bolsaRAs =
+    filters.bolsaPadronizada.length > 0
+      ? new Set(
+          filteredRows
+            .map((r) => r.ra)
+            .filter((ra): ra is string => ra !== null),
+        )
+      : null;
+
+  const add = (list: MatriculadoRow[], tipoCurso: TipoCurso) => {
+    if (tipoCursoFilter && !tipoCursoFilter.has(tipoCurso)) return;
     for (const r of list) {
       if (!r.ra) continue;
-      if (codperletFilter.length > 0 && !codperletFilter.includes(r.codperletNorm)) continue;
+      if (filters.codperlet.length > 0 && !filters.codperlet.includes(r.codperletNorm))
+        continue;
+      if (anoFilter) {
+        const ano = anoFromCodperlet(r.codperletNorm);
+        if (ano === null || !anoFilter.has(ano)) continue;
+      }
+      if (bolsaRAs && !bolsaRAs.has(r.ra)) continue;
       set.add(r.ra);
     }
   };
-  add(m.grad);
-  add(m.pos);
-  add(m.mestrado);
+  add(m.grad, 'Graduação');
+  add(m.pos, 'Pós Graduação');
+  add(m.mestrado, 'Mestrado');
   return set.size;
 }
 
@@ -261,7 +284,7 @@ export function computePanoramaKpis(
   const matBeneFin = bolsas + descontos;
 
   return {
-    matriculas: computeMatriculasCount(matriculados, filters.codperlet),
+    matriculas: computeMatriculasCount(matriculados, filters, filtered),
     bolsas,
     descontos,
     formados,
