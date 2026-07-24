@@ -109,15 +109,11 @@ export function useBolsasDescontosData(filters: BolsasFilters) {
     if (!dataset || !filtered || !kpis) return null;
     return {
       evasaoBeneficios: computeEvasaoBeneficios(filtered),
-      evasaoPorAno: computeEvasaoPorAno(
-        dataset.enrichedRows,
-        filters.tipocurso,
-        filters.bolsaPadronizada,
-      ),
+      evasaoPorAno: computeEvasaoPorAno(filtered),
       evasaoPorModalidade: computeEvasaoPorModalidade(filtered),
       renunciaValorEvasao: kpis.renunciaValorEvasao,
     };
-  }, [dataset, filtered, kpis, filters.tipocurso, filters.bolsaPadronizada]);
+  }, [dataset, filtered, kpis]);
 
   return {
     filterOptions: dataset?.filterOptions ?? null,

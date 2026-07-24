@@ -133,6 +133,97 @@ export function computeMatriculasCount(
   return set.size;
 }
 
+/* =====================================================================
+   Shared evasão logic — EvasãoBolsas metric
+
+   EvasãoBolsas = COUNT(DISTINCT ra WHERE situacao='Cancelado - Curso (Assin_Cont)')
+               + COUNT(DISTINCT codplanopgto WHERE situacao='Cancelado – Curso')
+               + COUNT(rows WHERE situacao='Evadido Curso')
+               + COUNT(rows WHERE situacao='Transferido de Instituição')
+
+   The DISTINCT for ra and codplanopgto is computed WITHIN each group
+   (not globally), so grouped counts (by tipocurso, bolsaPadronizada, ano)
+   are correct.
+   ===================================================================== */
+
+type EvasaoAcc = {
+  raCancelado: Set<string>;
+  planoCancelado: Set<string>;
+  evadido: number;
+  transf: number;
+};
+
+function newEvasaoAcc(): EvasaoAcc {
+  return {
+    raCancelado: new Set<string>(),
+    planoCancelado: new Set<string>(),
+    evadido: 0,
+    transf: 0,
+  };
+}
+
+function accEvasao(acc: EvasaoAcc, r: EnrichedBolsaRow): void {
+  if (!r.situacaoCurso || !EVASAO_STATUSES.has(r.situacaoCurso)) return;
+  if (r.situacaoCurso === 'Cancelado - Curso (Assin_Cont)' && r.ra) {
+    acc.raCancelado.add(r.ra);
+  }
+  if (r.situacaoCurso === 'Cancelado – Curso' && r.codplanopgto) {
+    acc.planoCancelado.add(r.codplanopgto);
+  }
+  if (r.situacaoCurso === 'Evadido Curso') acc.evadido += 1;
+  if (r.situacaoCurso === 'Transferido de Instituição') acc.transf += 1;
+}
+
+function evasaoTotal(acc: EvasaoAcc): number {
+  return acc.raCancelado.size + acc.planoCancelado.size + acc.evadido + acc.transf;
+}
+
+export type EvasaoBreakdown = {
+  raCanceladoCount: number;
+  planoCanceladoCount: number;
+  evadido: number;
+  transf: number;
+  total: number;
+};
+
+export function computeEvasaoTotal(rows: EnrichedBolsaRow[]): EvasaoBreakdown {
+  const acc = newEvasaoAcc();
+  for (const r of rows) accEvasao(acc, r);
+  return {
+    raCanceladoCount: acc.raCancelado.size,
+    planoCanceladoCount: acc.planoCancelado.size,
+    evadido: acc.evadido,
+    transf: acc.transf,
+    total: evasaoTotal(acc),
+  };
+}
+
+export function computeEvasaoByGroup(
+  rows: EnrichedBolsaRow[],
+  keyFn: (r: EnrichedBolsaRow) => string | null,
+): ChartDatum[] {
+  const groups = new Map<string, EvasaoAcc>();
+  for (const r of rows) {
+    if (!r.situacaoCurso || !EVASAO_STATUSES.has(r.situacaoCurso)) continue;
+    const k = keyFn(r);
+    if (!k) continue;
+    let acc = groups.get(k);
+    if (!acc) {
+      acc = newEvasaoAcc();
+      groups.set(k, acc);
+    }
+    accEvasao(acc, r);
+  }
+  return Array.from(groups, ([categoria, acc]) => ({
+    categoria,
+    valor: evasaoTotal(acc),
+  }));
+}
+
+/* =====================================================================
+   KPIs
+   ===================================================================== */
+
 export function computePanoramaKpis(
   filtered: EnrichedBolsaRow[],
   matriculados: MatriculadosData,
@@ -143,13 +234,8 @@ export function computePanoramaKpis(
   let formados = 0;
   let fatOriginal = 0;
   let fatDesconto = 0;
-  let evadido = 0;
-  let transf = 0;
   let fatDescontoMat = 0;
   let renuncia = 0;
-
-  const raCancelado = new Set<string>();
-  const planoCancelado = new Set<string>();
 
   for (const r of filtered) {
     const isMat = r.situacaoMatriculaPl === 'Matriculado';
@@ -166,22 +252,12 @@ export function computePanoramaKpis(
 
     if (isMat && isDesc) fatDescontoMat += r.valorOriginal;
 
-    if (r.situacaoCurso === 'Cancelado - Curso (Assin_Cont)' && r.ra) {
-      raCancelado.add(r.ra);
-    }
-    if (r.situacaoCurso === 'Cancelado – Curso' && r.codplanopgto) {
-      planoCancelado.add(r.codplanopgto);
-    }
-    if (r.situacaoCurso === 'Evadido Curso') evadido += 1;
-    if (r.situacaoCurso === 'Transferido de Instituição') transf += 1;
-
     if (r.situacaoCurso && EVASAO_STATUSES.has(r.situacaoCurso)) {
       renuncia += r.valorOriginal;
     }
   }
 
-  const cancelado = raCancelado.size + planoCancelado.size;
-  const evasaoBolsas = cancelado + evadido + transf;
+  const evasao = computeEvasaoTotal(filtered);
   const matBeneFin = bolsas + descontos;
 
   return {
@@ -191,15 +267,19 @@ export function computePanoramaKpis(
     formados,
     fatOriginalPrevisto: fatOriginal,
     fatDescontoPrevisto: fatDesconto,
-    matricCancelado: cancelado,
-    matricEvadido: evadido,
-    matricTransferencia: transf,
-    evasaoBolsas,
+    matricCancelado: evasao.raCanceladoCount + evasao.planoCanceladoCount,
+    matricEvadido: evasao.evadido,
+    matricTransferencia: evasao.transf,
+    evasaoBolsas: evasao.total,
     fatDescontoMatriculado: fatDescontoMat,
     matBeneFin,
     renunciaValorEvasao: renuncia,
   };
 }
+
+/* =====================================================================
+   Chart computations
+   ===================================================================== */
 
 function groupCount(
   rows: EnrichedBolsaRow[],
@@ -281,58 +361,48 @@ export function computeTopCursosFaturamento(
 export function computeEvasaoBeneficios(
   rows: EnrichedBolsaRow[],
 ): ChartDatum[] {
-  const filtered = rows.filter(
-    (r) =>
-      (r.tipoBeneficio === 'Bolsa' || r.tipoBeneficio === 'Desconto') &&
-      r.situacaoCurso !== null &&
-      EVASAO_STATUSES.has(r.situacaoCurso),
-  );
-  return groupCount(filtered, (r) => r.bolsaPadronizada)
+  return computeEvasaoByGroup(rows, (r) => r.bolsaPadronizada)
     .sort((a, b) => b.valor - a.valor)
     .slice(0, 10);
 }
 
 export function computeEvasaoPorAno(
   rows: EnrichedBolsaRow[],
-  tipocurso: string[],
-  bolsaPadronizada: string[],
 ): EvasaoPorAnoDatum[] {
-  const m = new Map<number, { matBeneFin: number; evasaoBolsas: number }>();
+  const matBeneFinMap = new Map<number, number>();
+  const evasaoMap = new Map<number, EvasaoAcc>();
+
   for (const r of rows) {
     if (r.ano === null) continue;
-    if (tipocurso.length > 0 && !tipocurso.includes(r.tipoCurso)) continue;
-    if (bolsaPadronizada.length > 0 && !bolsaPadronizada.includes(r.bolsaPadronizada)) continue;
 
-    const isBene = r.tipoBeneficio === 'Bolsa' || r.tipoBeneficio === 'Desconto';
-    if (!isBene) continue;
+    if (
+      (r.tipoBeneficio === 'Bolsa' || r.tipoBeneficio === 'Desconto') &&
+      r.situacaoMatriculaPl === 'Matriculado'
+    ) {
+      matBeneFinMap.set(r.ano, (matBeneFinMap.get(r.ano) ?? 0) + 1);
+    }
 
-    let acc = m.get(r.ano);
+    if (!r.situacaoCurso || !EVASAO_STATUSES.has(r.situacaoCurso)) continue;
+    let acc = evasaoMap.get(r.ano);
     if (!acc) {
-      acc = { matBeneFin: 0, evasaoBolsas: 0 };
-      m.set(r.ano, acc);
+      acc = newEvasaoAcc();
+      evasaoMap.set(r.ano, acc);
     }
-    if (r.situacaoMatriculaPl === 'Matriculado') acc.matBeneFin += 1;
-    if (r.situacaoCurso && EVASAO_STATUSES.has(r.situacaoCurso)) {
-      acc.evasaoBolsas += 1;
-    }
+    accEvasao(acc, r);
   }
-  return Array.from(m, ([ano, v]) => ({
+
+  const anos = new Set<number>([...matBeneFinMap.keys(), ...evasaoMap.keys()]);
+  return Array.from(anos, (ano) => ({
     ano,
-    matBeneFin: v.matBeneFin,
-    evasaoBolsas: v.evasaoBolsas,
+    matBeneFin: matBeneFinMap.get(ano) ?? 0,
+    evasaoBolsas: evasaoTotal(evasaoMap.get(ano) ?? newEvasaoAcc()),
   })).sort((a, b) => a.ano - b.ano);
 }
 
 export function computeEvasaoPorModalidade(
   rows: EnrichedBolsaRow[],
 ): ChartDatum[] {
-  const filtered = rows.filter(
-    (r) =>
-      (r.tipoBeneficio === 'Bolsa' || r.tipoBeneficio === 'Desconto') &&
-      r.situacaoCurso !== null &&
-      EVASAO_STATUSES.has(r.situacaoCurso),
-  );
-  return groupCount(filtered, (r) => r.tipoCurso);
+  return computeEvasaoByGroup(rows, (r) => r.tipoCurso);
 }
 
 export function computeFilterOptions(rows: EnrichedBolsaRow[]): FilterOptions {
