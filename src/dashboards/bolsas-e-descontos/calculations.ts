@@ -119,40 +119,19 @@ export function applyFilters(
 export function computeMatriculasCount(
   m: MatriculadosData,
   filters: BolsasFilters,
-  filteredRows: EnrichedBolsaRow[],
 ): number {
   const set = new Set<string>();
-
-  const tipoCursoFilter =
-    filters.tipocurso.length > 0 ? new Set(filters.tipocurso) : null;
-  const anoFilter =
-    filters.ano.length > 0 ? new Set(filters.ano) : null;
-  const bolsaRAs =
-    filters.bolsaPadronizada.length > 0
-      ? new Set(
-          filteredRows
-            .map((r) => r.ra)
-            .filter((ra): ra is string => ra !== null),
-        )
-      : null;
-
-  const add = (list: MatriculadoRow[], tipoCurso: TipoCurso) => {
-    if (tipoCursoFilter && !tipoCursoFilter.has(tipoCurso)) return;
+  const add = (list: MatriculadoRow[]) => {
     for (const r of list) {
       if (!r.ra) continue;
       if (filters.codperlet.length > 0 && !filters.codperlet.includes(r.codperletNorm))
         continue;
-      if (anoFilter) {
-        const ano = anoFromCodperlet(r.codperletNorm);
-        if (ano === null || !anoFilter.has(ano)) continue;
-      }
-      if (bolsaRAs && !bolsaRAs.has(r.ra)) continue;
       set.add(r.ra);
     }
   };
-  add(m.grad, 'Graduação');
-  add(m.pos, 'Pós Graduação');
-  add(m.mestrado, 'Mestrado');
+  add(m.grad);
+  add(m.pos);
+  add(m.mestrado);
   return set.size;
 }
 
@@ -284,7 +263,7 @@ export function computePanoramaKpis(
   const matBeneFin = bolsas + descontos;
 
   return {
-    matriculas: computeMatriculasCount(matriculados, filters, filtered),
+    matriculas: computeMatriculasCount(matriculados, filters),
     bolsas,
     descontos,
     formados,
