@@ -417,6 +417,41 @@ function calendarForFilters(filters: ConversaoFilters) {
   });
 }
 
+/**
+ * Quando os filtros reduzem o eixo a UM único mês, os gráficos "por mês"
+ * viram gráficos "por dia" desse mês (todas as fontes têm data completa).
+ * Retorna o mês alvo ou null para manter a granularidade mensal.
+ */
+function granularidadeDiaria(filters: ConversaoFilters): { ano: number; mes: number } | null {
+  const cal = calendarForFilters(filters);
+  if (cal.length === 1) return { ano: cal[0].ano, mes: cal[0].mes };
+  return null;
+}
+
+/**
+ * Dias (1..último) do mês alvo, respeitando a faixa Data Início/Fim quando
+ * ela recorta o mês. label = "dd/mm"; ordem = dia.
+ */
+function diasDoMes(
+  alvo: { ano: number; mes: number },
+  filters: ConversaoFilters,
+): { dia: number; label: string }[] {
+  const ultimo = new Date(alvo.ano, alvo.mes, 0).getDate();
+  const mm = String(alvo.mes).padStart(2, '0');
+  const out: { dia: number; label: string }[] = [];
+  for (let dia = 1; dia <= ultimo; dia++) {
+    const iso = `${alvo.ano}-${mm}-${String(dia).padStart(2, '0')}`;
+    if (filters.dataInicio && iso < filters.dataInicio) continue;
+    if (filters.dataFim && iso > filters.dataFim) continue;
+    out.push({ dia, label: `${String(dia).padStart(2, '0')}/${mm}` });
+  }
+  return out;
+}
+
+function isMesAlvo(d: Date, alvo: { ano: number; mes: number }): boolean {
+  return d.getFullYear() === alvo.ano && d.getMonth() + 1 === alvo.mes;
+}
+
 function buildMensalSeries(
   rubeus: RawRubeusRow[],
   processo: string,
@@ -424,9 +459,31 @@ function buildMensalSeries(
   matNames: Set<string>,
   filters: ConversaoFilters,
 ): LeadsMensalDatum[] {
-  const byMesAno = new Map<string, { leads: number; convInsc: number; convMat: number; ano: number; mes: number }>();
-
   const filtered = filterRubeusByDate(rubeus, filters).filter((r) => r.processo === processo);
+
+  const diario = granularidadeDiaria(filters);
+  if (diario) {
+    const byDia = new Map<number, { leads: number; convInsc: number; convMat: number }>();
+    for (const r of filtered) {
+      const d = parseFlexibleDate(r.momento_date);
+      if (!d || !isMesAlvo(d, diario)) continue;
+      const dia = d.getDate();
+      const entry = byDia.get(dia) ?? { leads: 0, convInsc: 0, convMat: 0 };
+      entry.leads++;
+      if (r.pessoa_nome && inscNames.has((r.pessoa_nome ?? '').trim())) entry.convInsc++;
+      if (r.pessoa_nome && matNames.has((r.pessoa_nome ?? '').trim())) entry.convMat++;
+      byDia.set(dia, entry);
+    }
+    return diasDoMes(diario, filters).map(({ dia, label }) => ({
+      mesAno: label,
+      ordemFiscal: dia,
+      leads: byDia.get(dia)?.leads ?? 0,
+      convLeadsInsc: byDia.get(dia)?.convInsc ?? 0,
+      convLeadsMat: byDia.get(dia)?.convMat ?? 0,
+    }));
+  }
+
+  const byMesAno = new Map<string, { leads: number; convInsc: number; convMat: number; ano: number; mes: number }>();
 
   for (const r of filtered) {
     const d = parseFlexibleDate(r.momento_date);
@@ -478,31 +535,54 @@ export function computeLeadsData(
     .map(([categoria, valor]) => ({ categoria, valor }))
     .sort((a, b) => b.valor - a.valor);
 
-  const entradaMap = new Map<string, { grad: number; espec: number; ano: number; mes: number }>();
-  for (const r of rubeusFiltered) {
-    const d = parseFlexibleDate(r.momento_date);
-    if (!d) continue;
-    const ano = d.getFullYear();
-    const mes = d.getMonth() + 1;
-    const key = `${ano}-${mes}`;
-    const entry = entradaMap.get(key) ?? { grad: 0, espec: 0, ano, mes };
-    if (r.processo === 'Graduação') entry.grad++;
-    if (r.processo === 'Pós Graduação') entry.espec++;
-    entradaMap.set(key, entry);
-  }
   const entradaGradEspec: LeadsMensalDatum[] = [];
-  for (const c of calendarForFilters(filters)) {
-    const key = `${c.ano}-${c.mes}`;
-    const entry = entradaMap.get(key);
-    entradaGradEspec.push({
-      mesAno: fiscalLabel(c.ano, c.mes),
-      ordemFiscal: fiscalSortKey(c.ano, c.mes),
-      leads: entry?.grad ?? 0,
-      convLeadsInsc: entry?.espec ?? 0,
-      convLeadsMat: 0,
-    });
+  const diarioEntrada = granularidadeDiaria(filters);
+  if (diarioEntrada) {
+    const byDia = new Map<number, { grad: number; espec: number }>();
+    for (const r of rubeusFiltered) {
+      const d = parseFlexibleDate(r.momento_date);
+      if (!d || !isMesAlvo(d, diarioEntrada)) continue;
+      const dia = d.getDate();
+      const entry = byDia.get(dia) ?? { grad: 0, espec: 0 };
+      if (r.processo === 'Graduação') entry.grad++;
+      if (r.processo === 'Pós Graduação') entry.espec++;
+      byDia.set(dia, entry);
+    }
+    for (const { dia, label } of diasDoMes(diarioEntrada, filters)) {
+      entradaGradEspec.push({
+        mesAno: label,
+        ordemFiscal: dia,
+        leads: byDia.get(dia)?.grad ?? 0,
+        convLeadsInsc: byDia.get(dia)?.espec ?? 0,
+        convLeadsMat: 0,
+      });
+    }
+  } else {
+    const entradaMap = new Map<string, { grad: number; espec: number; ano: number; mes: number }>();
+    for (const r of rubeusFiltered) {
+      const d = parseFlexibleDate(r.momento_date);
+      if (!d) continue;
+      const ano = d.getFullYear();
+      const mes = d.getMonth() + 1;
+      const key = `${ano}-${mes}`;
+      const entry = entradaMap.get(key) ?? { grad: 0, espec: 0, ano, mes };
+      if (r.processo === 'Graduação') entry.grad++;
+      if (r.processo === 'Pós Graduação') entry.espec++;
+      entradaMap.set(key, entry);
+    }
+    for (const c of calendarForFilters(filters)) {
+      const key = `${c.ano}-${c.mes}`;
+      const entry = entradaMap.get(key);
+      entradaGradEspec.push({
+        mesAno: fiscalLabel(c.ano, c.mes),
+        ordemFiscal: fiscalSortKey(c.ano, c.mes),
+        leads: entry?.grad ?? 0,
+        convLeadsInsc: entry?.espec ?? 0,
+        convLeadsMat: 0,
+      });
+    }
+    entradaGradEspec.sort((a, b) => a.ordemFiscal - b.ordemFiscal);
   }
-  entradaGradEspec.sort((a, b) => a.ordemFiscal - b.ordemFiscal);
 
   return {
     gradMensal,
@@ -1004,37 +1084,68 @@ export function computeEspecializacoesData(
   }
   const pctMeta = metaFat > 0 ? fat / metaFat : 0;
 
-  const fatMensalMap = new Map<string, { fat: number; mat: number; fatEad: number; fatPres: number; ano: number; mes: number }>();
-  for (const r of basePos) {
-    const baixaIso = toISODate(r.databaixa);
-    if (!baixaIso) continue;
-    const ano = Number(baixaIso.slice(0, 4));
-    const mes = Number(baixaIso.slice(5, 7));
-    const key = `${ano}-${mes}`;
-    const entry = fatMensalMap.get(key) ?? { fat: 0, mat: 0, fatEad: 0, fatPres: 0, ano, mes };
-    entry.mat++;
-    const v = parseDecimal(r.faturadobruto);
-    entry.fat += v;
-    if (isEad(r)) entry.fatEad += v;
-    if (isPresencial(r)) entry.fatPres += v;
-    fatMensalMap.set(key, entry);
-  }
   const fatMensal: EspecializacoesMensalDatum[] = [];
-  for (const c of CALENDAR) {
-    const key = `${c.ano}-${c.mes}`;
-    const entry = fatMensalMap.get(key);
-    if (entry) {
+  const diarioFat = granularidadeDiaria(filters);
+  if (diarioFat) {
+    const byDia = new Map<number, { fat: number; mat: number; fatEad: number; fatPres: number }>();
+    for (const r of basePos) {
+      const baixaIso = toISODate(r.databaixa);
+      if (!baixaIso) continue;
+      if (Number(baixaIso.slice(0, 4)) !== diarioFat.ano) continue;
+      if (Number(baixaIso.slice(5, 7)) !== diarioFat.mes) continue;
+      const dia = Number(baixaIso.slice(8, 10));
+      if (!Number.isFinite(dia)) continue;
+      const entry = byDia.get(dia) ?? { fat: 0, mat: 0, fatEad: 0, fatPres: 0 };
+      entry.mat++;
+      const v = parseDecimal(r.faturadobruto);
+      entry.fat += v;
+      if (isEad(r)) entry.fatEad += v;
+      if (isPresencial(r)) entry.fatPres += v;
+      byDia.set(dia, entry);
+    }
+    for (const { dia, label } of diasDoMes(diarioFat, filters)) {
+      const entry = byDia.get(dia);
       fatMensal.push({
-        mesAno: fiscalLabel(c.ano, c.mes),
-        ordemFiscal: fiscalSortKey(c.ano, c.mes),
-        fat: entry.fat,
-        mat: entry.mat,
-        fatEad: entry.fatEad,
-        fatPres: entry.fatPres,
+        mesAno: label,
+        ordemFiscal: dia,
+        fat: entry?.fat ?? 0,
+        mat: entry?.mat ?? 0,
+        fatEad: entry?.fatEad ?? 0,
+        fatPres: entry?.fatPres ?? 0,
       });
     }
+  } else {
+    const fatMensalMap = new Map<string, { fat: number; mat: number; fatEad: number; fatPres: number; ano: number; mes: number }>();
+    for (const r of basePos) {
+      const baixaIso = toISODate(r.databaixa);
+      if (!baixaIso) continue;
+      const ano = Number(baixaIso.slice(0, 4));
+      const mes = Number(baixaIso.slice(5, 7));
+      const key = `${ano}-${mes}`;
+      const entry = fatMensalMap.get(key) ?? { fat: 0, mat: 0, fatEad: 0, fatPres: 0, ano, mes };
+      entry.mat++;
+      const v = parseDecimal(r.faturadobruto);
+      entry.fat += v;
+      if (isEad(r)) entry.fatEad += v;
+      if (isPresencial(r)) entry.fatPres += v;
+      fatMensalMap.set(key, entry);
+    }
+    for (const c of CALENDAR) {
+      const key = `${c.ano}-${c.mes}`;
+      const entry = fatMensalMap.get(key);
+      if (entry) {
+        fatMensal.push({
+          mesAno: fiscalLabel(c.ano, c.mes),
+          ordemFiscal: fiscalSortKey(c.ano, c.mes),
+          fat: entry.fat,
+          mat: entry.mat,
+          fatEad: entry.fatEad,
+          fatPres: entry.fatPres,
+        });
+      }
+    }
+    fatMensal.sort((a, b) => a.ordemFiscal - b.ordemFiscal);
   }
-  fatMensal.sort((a, b) => a.ordemFiscal - b.ordemFiscal);
 
   const cursoFatMap = new Map<string, number>();
   for (const r of basePos) {
@@ -1238,42 +1349,73 @@ export function computeCursosLivresData(
     .map(([categoria, valor]) => ({ categoria, valor }))
     .sort((a, b) => b.valor - a.valor);
 
-  const mensalMap = new Map<string, { leads: number; mat: number; ano: number; mes: number }>();
   const clRubeus = rubeusFiltered.filter((r) => r.processo === 'Cursos Livres');
-  for (const r of clRubeus) {
-    const d = parseFlexibleDate(r.momento_date);
-    if (!d) continue;
-    const ano = d.getFullYear();
-    const mes = d.getMonth() + 1;
-    const key = `${ano}-${mes}`;
-    const entry = mensalMap.get(key) ?? { leads: 0, mat: 0, ano, mes };
-    entry.leads++;
-    mensalMap.set(key, entry);
-  }
-  for (const dia of clDias) {
-    if (!dia.data || dia.mat === 0) continue;
-    const ano = Number(dia.data.slice(0, 4));
-    const mes = Number(dia.data.slice(5, 7));
-    if (!Number.isFinite(ano) || !Number.isFinite(mes)) continue;
-    const key = `${ano}-${mes}`;
-    const entry = mensalMap.get(key) ?? { leads: 0, mat: 0, ano, mes };
-    entry.mat += dia.mat;
-    mensalMap.set(key, entry);
-  }
   const inscVsMatMensal: { mesAno: string; ordemFiscal: number; leads: number; mat: number }[] = [];
-  for (const c of CALENDAR) {
-    const key = `${c.ano}-${c.mes}`;
-    const entry = mensalMap.get(key);
-    if (entry) {
+  const diarioCl = granularidadeDiaria(filters);
+  if (diarioCl) {
+    const byDia = new Map<number, { leads: number; mat: number }>();
+    for (const r of clRubeus) {
+      const d = parseFlexibleDate(r.momento_date);
+      if (!d || !isMesAlvo(d, diarioCl)) continue;
+      const dia = d.getDate();
+      const entry = byDia.get(dia) ?? { leads: 0, mat: 0 };
+      entry.leads++;
+      byDia.set(dia, entry);
+    }
+    for (const diaAgg of clDias) {
+      if (!diaAgg.data || diaAgg.mat === 0) continue;
+      if (Number(diaAgg.data.slice(0, 4)) !== diarioCl.ano) continue;
+      if (Number(diaAgg.data.slice(5, 7)) !== diarioCl.mes) continue;
+      const dia = Number(diaAgg.data.slice(8, 10));
+      if (!Number.isFinite(dia)) continue;
+      const entry = byDia.get(dia) ?? { leads: 0, mat: 0 };
+      entry.mat += diaAgg.mat;
+      byDia.set(dia, entry);
+    }
+    for (const { dia, label } of diasDoMes(diarioCl, filters)) {
       inscVsMatMensal.push({
-        mesAno: fiscalLabel(c.ano, c.mes),
-        ordemFiscal: fiscalSortKey(c.ano, c.mes),
-        leads: entry.leads,
-        mat: entry.mat,
+        mesAno: label,
+        ordemFiscal: dia,
+        leads: byDia.get(dia)?.leads ?? 0,
+        mat: byDia.get(dia)?.mat ?? 0,
       });
     }
+  } else {
+    const mensalMap = new Map<string, { leads: number; mat: number; ano: number; mes: number }>();
+    for (const r of clRubeus) {
+      const d = parseFlexibleDate(r.momento_date);
+      if (!d) continue;
+      const ano = d.getFullYear();
+      const mes = d.getMonth() + 1;
+      const key = `${ano}-${mes}`;
+      const entry = mensalMap.get(key) ?? { leads: 0, mat: 0, ano, mes };
+      entry.leads++;
+      mensalMap.set(key, entry);
+    }
+    for (const dia of clDias) {
+      if (!dia.data || dia.mat === 0) continue;
+      const ano = Number(dia.data.slice(0, 4));
+      const mes = Number(dia.data.slice(5, 7));
+      if (!Number.isFinite(ano) || !Number.isFinite(mes)) continue;
+      const key = `${ano}-${mes}`;
+      const entry = mensalMap.get(key) ?? { leads: 0, mat: 0, ano, mes };
+      entry.mat += dia.mat;
+      mensalMap.set(key, entry);
+    }
+    for (const c of CALENDAR) {
+      const key = `${c.ano}-${c.mes}`;
+      const entry = mensalMap.get(key);
+      if (entry) {
+        inscVsMatMensal.push({
+          mesAno: fiscalLabel(c.ano, c.mes),
+          ordemFiscal: fiscalSortKey(c.ano, c.mes),
+          leads: entry.leads,
+          mat: entry.mat,
+        });
+      }
+    }
+    inscVsMatMensal.sort((a, b) => a.ordemFiscal - b.ordemFiscal);
   }
-  inscVsMatMensal.sort((a, b) => a.ordemFiscal - b.ordemFiscal);
 
   const cursoFatMap = new Map<string, number>();
   for (const r of matRows) {

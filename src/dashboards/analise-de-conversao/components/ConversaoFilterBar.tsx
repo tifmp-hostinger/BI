@@ -1,3 +1,4 @@
+import { MultiSelect } from '@/components/ui/MultiSelect';
 import type { ConversaoFilters, FilterOptions } from '../types';
 import { ANOS } from '../constants';
 
@@ -27,30 +28,13 @@ export function ConversaoFilterBar({
   return (
     <div className="rounded-md border border-line bg-white p-4 shadow-card animate-fade-in">
       <div className="flex flex-wrap items-center gap-4">
-        <div className="flex flex-col gap-1">
-          <label
-            htmlFor="filtro-codperlet"
-            className="text-2xs font-semibold uppercase tracking-widest text-ink-3"
-          >
-            Periodo Letivo
-          </label>
-          <select
-            id="filtro-codperlet"
-            className="rounded-sm border border-line bg-paper px-3 py-2 text-xs text-ink focus:border-fmp focus:outline-none"
-            value={filters.codperlet[0] ?? ''}
-            onChange={(e) => {
-              const v = e.target.value;
-              onCodperletChange(v ? [v] : []);
-            }}
-          >
-            <option value="">Todos</option>
-            {options.codperletOptions.map((cp) => (
-              <option key={cp} value={cp}>
-                {cp}
-              </option>
-            ))}
-          </select>
-        </div>
+        <MultiSelect
+          label="Periodo Letivo"
+          options={options.codperletOptions}
+          selected={filters.codperlet}
+          onChange={(next) => onCodperletChange(next.map(String))}
+          widthClass="min-w-[150px]"
+        />
 
         <div className="flex flex-col gap-1">
           <span className="text-2xs font-semibold uppercase tracking-widest text-ink-3">
@@ -75,30 +59,20 @@ export function ConversaoFilterBar({
           </div>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label
-            htmlFor="filtro-mes"
-            className="text-2xs font-semibold uppercase tracking-widest text-ink-3"
-          >
-            Mes
-          </label>
-          <select
-            id="filtro-mes"
-            className="rounded-sm border border-line bg-paper px-3 py-2 text-xs text-ink focus:border-fmp focus:outline-none"
-            value={filters.mes[0] ?? ''}
-            onChange={(e) => {
-              const v = e.target.value;
-              onMesChange(v ? [Number(v)] : []);
-            }}
-          >
-            <option value="">Todos</option>
-            {options.mesOptions.map((m) => (
-              <option key={m.numero} value={m.numero}>
-                {m.nome}
-              </option>
-            ))}
-          </select>
-        </div>
+        <MultiSelect
+          label="Mes"
+          options={options.mesOptions.map((m) => m.nome)}
+          selected={filters.mes
+            .map((n) => options.mesOptions.find((m) => m.numero === n)?.nome)
+            .filter((n): n is string => !!n)}
+          onChange={(next) => {
+            const nomes = new Set(next.map(String));
+            onMesChange(
+              options.mesOptions.filter((m) => nomes.has(m.nome)).map((m) => m.numero),
+            );
+          }}
+          widthClass="min-w-[150px]"
+        />
 
         <div className="flex flex-col gap-1">
           <label
