@@ -5,6 +5,16 @@ const MESES_PT = [
 
 export const ANOS = [2024, 2025, 2026];
 
+/**
+ * Janela de dados do Power BI original: a tabela `calendário` do modelo ia de
+ * 01/11/2024 a 31/12/2026, e as medidas de Especializações usavam
+ * MIN/MAX(calendário) como janela SEMPRE — nada anterior a nov/2024 era
+ * contado, mesmo sem filtro selecionado. Estes valores são o padrão quando o
+ * usuário não escolhe Data Início/Fim.
+ */
+export const DATA_INICIO_PADRAO = '2024-11-01';
+export const DATA_FIM_PADRAO = '2026-12-31';
+
 export function buildCalendar(): import('./types').CalendarEntry[] {
   const out: import('./types').CalendarEntry[] = [];
   for (const ano of ANOS) {

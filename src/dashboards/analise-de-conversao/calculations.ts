@@ -1,5 +1,5 @@
 import { normalizeCodperlet } from '@/lib/supabasePaginate';
-import { CALENDAR, fiscalLabel, fiscalSortKey } from './constants';
+import { CALENDAR, DATA_FIM_PADRAO, DATA_INICIO_PADRAO, fiscalLabel, fiscalSortKey } from './constants';
 import { dateInRange, parseDecimal, parseFlexibleDate, toISODate } from './dateUtils';
 import type {
   ChartDatum,
@@ -322,8 +322,8 @@ function computeBasePos(
   rows: RawMatriculaPosRow[],
   filters: ConversaoFilters,
 ): RawMatriculaPosRow[] {
-  const inicio = filters.dataInicio;
-  const fim = filters.dataFim;
+  const inicio = filters.dataInicio ?? DATA_INICIO_PADRAO;
+  const fim = filters.dataFim ?? DATA_FIM_PADRAO;
 
   return rows.filter((r) => {
     const curso = (r.curso ?? '').trim();
@@ -345,16 +345,11 @@ function computeBasePos(
 
     const baixaIso = toISODate(r.databaixa);
     if (!baixaIso) return false;
-    if (inicio && baixaIso < inicio) return false;
-    if (fim && baixaIso > fim) return false;
+    if (baixaIso < inicio || baixaIso > fim) return false;
 
+    // Réplica do Power BI: exclui quem CANCELOU dentro da janela ativa.
     const cancelIso = toISODate(r.datacancelamentomatricula);
-    if (cancelIso) {
-      if (!inicio && !fim) return false;
-      if (inicio && cancelIso >= inicio && fim && cancelIso <= fim) return false;
-      if (inicio && !fim && cancelIso >= inicio) return false;
-      if (!inicio && fim && cancelIso <= fim) return false;
-    }
+    if (cancelIso && cancelIso >= inicio && cancelIso <= fim) return false;
 
     return true;
   });
