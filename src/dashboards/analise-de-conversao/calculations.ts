@@ -133,6 +133,71 @@ function filterRubeusByDate(
   return rubeus.filter((r) => dateInRange(r.momento_date, filters.dataInicio, filters.dataFim));
 }
 
+/**
+ * Extrai o ano (2000+) do prefixo de 2 dígitos de um codperlet normalizado.
+ */
+function anoFromCodperletStr(cp: string): number | null {
+  const m = cp.match(/^(\d{2})/);
+  return m ? 2000 + parseInt(m[1], 10) : null;
+}
+
+/**
+ * Deriva o período letivo ("26-01") do texto do processo seletivo
+ * ("Vestibular 2026/1 - ENEM") — replica a coluna derivada do Power BI que
+ * ligava inscrições de graduação ao PLetivo.
+ */
+function periodoFromProcessoSeletivo(ps: string | null): string {
+  const m = (ps ?? '').match(/(\d{4})\s*\/\s*(\d)/);
+  if (!m) return '';
+  return `${m[1].slice(2)}-0${m[2]}`;
+}
+
+function isoAnoMesOk(iso: string | null, filters: ConversaoFilters): boolean {
+  if (!iso) return filters.ano.length === 0 && filters.mes.length === 0;
+  if (filters.ano.length > 0) {
+    const a = Number(iso.slice(0, 4));
+    if (!filters.ano.includes(a)) return false;
+  }
+  if (filters.mes.length > 0) {
+    const m = Number(iso.slice(5, 7));
+    if (!filters.mes.includes(m)) return false;
+  }
+  return true;
+}
+
+/**
+ * Janelas de matrícula (data início..fim) dos períodos letivos selecionados.
+ * No Power BI, o slicer de Período filtrava o Rubeus via relacionamento
+ * PLetivo→calendário→momento; aqui reproduzimos com as janelas do pletivo.
+ */
+function pletivoWindows(
+  ds: DashboardDataset,
+  filters: ConversaoFilters,
+): { ini: string; fim: string }[] {
+  if (filters.codperlet.length === 0) return [];
+  const sel = new Set(filters.codperlet);
+  return ds.pletivo
+    .filter((p) => sel.has(p.periodo_letivo) && p.data_inicio_matricula && p.data_fim_matricula)
+    .map((p) => ({ ini: String(p.data_inicio_matricula), fim: String(p.data_fim_matricula) }));
+}
+
+function filterRubeusFull(
+  ds: DashboardDataset,
+  filters: ConversaoFilters,
+): RawRubeusRow[] {
+  let rows = filterRubeusByAnoMes(filterRubeusByDate(ds.rubeus, filters), filters);
+  const windows = pletivoWindows(ds, filters);
+  if (windows.length > 0) {
+    rows = rows.filter((r) => {
+      const d = parseFlexibleDate(r.momento_date);
+      if (!d) return false;
+      const iso = d.toISOString().slice(0, 10);
+      return windows.some((w) => iso >= w.ini && iso <= w.fim);
+    });
+  }
+  return rows;
+}
+
 function filterRubeusByAnoMes(
   rubeus: RawRubeusRow[],
   filters: ConversaoFilters,
@@ -171,8 +236,21 @@ export function computeGeralKpis(
     matEfetByPeriodo.set(cp, (matEfetByPeriodo.get(cp) ?? 0) + 1);
   }
 
-  const periodoAtual = pletivoSorted[pletivoSorted.length - 1]?.periodo_letivo ?? '';
-  const periodoAnterior = pletivoSorted[pletivoSorted.length - 2]?.periodo_letivo ?? '';
+  // Períodos dos 2 gauges de Graduação: respeitam a seleção do filtro;
+  // sem filtro, mostram o período atual e o anterior.
+  let periodoAtual = pletivoSorted[pletivoSorted.length - 1]?.periodo_letivo ?? '';
+  let periodoAnterior = pletivoSorted[pletivoSorted.length - 2]?.periodo_letivo ?? '';
+  if (filters.codperlet.length > 0) {
+    const selecionados = pletivoSorted
+      .map((p) => p.periodo_letivo)
+      .filter((p) => filters.codperlet.includes(p));
+    if (selecionados.length >= 1) periodoAtual = selecionados[selecionados.length - 1];
+    if (selecionados.length >= 2) periodoAnterior = selecionados[selecionados.length - 2];
+    else if (selecionados.length === 1) {
+      const idx = pletivoSorted.findIndex((p) => p.periodo_letivo === periodoAtual);
+      periodoAnterior = idx > 0 ? pletivoSorted[idx - 1].periodo_letivo : '';
+    }
+  }
 
   const vagasAtual = ds.pletivo.find((p) => p.periodo_letivo === periodoAtual)?.numero_vagas ?? 0;
   const vagasAnterior = ds.pletivo.find((p) => p.periodo_letivo === periodoAnterior)?.numero_vagas ?? 0;
@@ -185,7 +263,11 @@ export function computeGeralKpis(
 
   const anoCorrente = filters.ano.length > 0 ? filters.ano[0] : new Date().getFullYear();
 
-  const basePos = computeBasePos(ds.matriculasPos, filters);
+  // Mesmos filtros de Ano/Mês/Período aplicados na aba Especializações.
+  const basePos = filterBasePosByCodperlet(
+    filterBasePosByAnoMes(computeBasePos(ds.matriculasPos, filters), filters),
+    filters,
+  );
   const especFatEad = basePos
     .filter((r) => (r.distanciapresencial ?? '').trim().toUpperCase() === 'D')
     .reduce((s, r) => s + parseDecimal(r.faturadobruto), 0);
@@ -210,9 +292,14 @@ export function computeGeralKpis(
   }
   const especPctMeta = especMetaFat > 0 ? especFat / especMetaFat : 0;
 
-  const mestMat = ds.matriculasMestrado.filter(
-    (r) => r.tipomatricula === 'Nova Matricula' && r.situacao === 'Matriculado',
-  ).length;
+  const mestMat = ds.matriculasMestrado.filter((r) => {
+    if (r.tipomatricula !== 'Nova Matricula' || r.situacao !== 'Matriculado') return false;
+    if (filters.ano.length > 0) {
+      const a = anoFromCodperletStr(normalizeCodperlet(r.codperlet));
+      if (a === null || !filters.ano.includes(a)) return false;
+    }
+    return true;
+  }).length;
 
   const mestMeta = 20;
   const mestPctMeta = mestMat / mestMeta;
@@ -361,7 +448,7 @@ export function computeLeadsData(
 ): LeadsData {
   const inscNames = buildInscLeadSet(ds);
   const matNames = buildMatLeadSet(ds);
-  const rubeusFiltered = filterRubeusByDate(ds.rubeus, filters);
+  const rubeusFiltered = filterRubeusFull(ds, filters);
 
   const gradMensal = buildMensalSeries(rubeusFiltered, 'Graduação', inscNames, matNames, filters);
   const especMensal = buildMensalSeries(rubeusFiltered, 'Pós Graduação', inscNames, matNames, filters);
@@ -479,6 +566,18 @@ function filterMatriculasGradByPeriodo(
     const cpSet = new Set(filters.codperlet.map(normalizeCodperlet));
     rows = rows.filter((r) => cpSet.has(normalizeCodperlet(r.codperlet)));
   }
+  if (filters.ano.length > 0) {
+    rows = rows.filter((r) => {
+      const a = anoFromCodperletStr(normalizeCodperlet(r.codperlet));
+      return a !== null && filters.ano.includes(a);
+    });
+  }
+  if (filters.mes.length > 0) {
+    rows = rows.filter((r) => {
+      const d = parseFlexibleDate(r.datamatricula);
+      return d !== null && filters.mes.includes(d.getMonth() + 1);
+    });
+  }
   return rows;
 }
 
@@ -488,8 +587,19 @@ function filterInscricoesGradByPeriodo(
 ) {
   let rows = ds.inscricoesGrad;
   if (filters.codperlet.length > 0) {
+    // Período derivado do texto do processo seletivo ("2026/1" → "26-01"),
+    // como no Power BI. Antes comparava com o texto bruto e zerava tudo.
     const cpSet = new Set(filters.codperlet.map(normalizeCodperlet));
-    rows = rows.filter((r) => cpSet.has(normalizeCodperlet(r.processoseletivo)));
+    rows = rows.filter((r) => cpSet.has(periodoFromProcessoSeletivo(r.processoseletivo)));
+  }
+  if (filters.ano.length > 0 || filters.mes.length > 0) {
+    rows = rows.filter((r) => {
+      const d = parseFlexibleDate(r.datainscricao);
+      if (!d) return false;
+      if (filters.ano.length > 0 && !filters.ano.includes(d.getFullYear())) return false;
+      if (filters.mes.length > 0 && !filters.mes.includes(d.getMonth() + 1)) return false;
+      return true;
+    });
   }
   return rows;
 }
@@ -500,7 +610,7 @@ export function computeGraduacaoData(
 ): GraduacaoData {
   const matRows = filterMatriculasGradByPeriodo(ds, filters);
   const inscRows = filterInscricoesGradByPeriodo(ds, filters);
-  const rubeusFiltered = filterRubeusByDate(ds.rubeus, filters);
+  const rubeusFiltered = filterRubeusFull(ds, filters);
 
   const leads = countLeadsByProcesso(rubeusFiltered, 'Graduação');
   // Fiel ao Power BI: Grad_Insc = DISTINCTCOUNT(cpf)
@@ -545,8 +655,17 @@ export function computeGraduacaoData(
 
   const matPgt = matEfet - matBolsas;
 
-  const periodoAtual = [...ds.pletivo].sort((a, b) => (a.indice ?? 0) - (b.indice ?? 0)).slice(-1)[0]?.periodo_letivo ?? '';
-  const vagas = ds.pletivo.find((p) => p.periodo_letivo === periodoAtual)?.numero_vagas ?? 0;
+  // Vagas respeitam o(s) período(s) selecionado(s); sem filtro, usa o atual.
+  let vagas = 0;
+  if (filters.codperlet.length > 0) {
+    const sel = new Set(filters.codperlet);
+    vagas = ds.pletivo
+      .filter((p) => sel.has(p.periodo_letivo))
+      .reduce((s, p) => s + (p.numero_vagas ?? 0), 0);
+  } else {
+    const periodoAtual = [...ds.pletivo].sort((a, b) => (a.indice ?? 0) - (b.indice ?? 0)).slice(-1)[0]?.periodo_letivo ?? '';
+    vagas = ds.pletivo.find((p) => p.periodo_letivo === periodoAtual)?.numero_vagas ?? 0;
+  }
   const pctMeta = vagas > 0 ? matEfet / vagas : 0;
 
   const pctConvIxL = leads > 0 ? inscxLeads / leads : 0;
@@ -695,22 +814,28 @@ export function computeMestradoData(
     inscRows = inscRows.filter((r) => cpSet.has(normalizeCodperlet(r.periodo_letivo)));
   }
 
-  let rubeusMest = ds.rubeus.filter((r) => r.processo === 'Mestrado');
-  rubeusMest = filterRubeusByDate(rubeusMest, filters);
-  if (filters.codperlet.length > 0) {
-    // Rubeus não tem codperlet direto; respeita apenas filtro de data
-  }
+  const rubeusMest = filterRubeusFull(ds, filters).filter((r) => r.processo === 'Mestrado');
 
   const leads = rubeusMest.length;
   const insc = inscRows.length;
 
-  const matRows = ds.matriculasMestrado.filter(
-    (r) => r.tipomatricula === 'Nova Matricula' && r.situacao === 'Matriculado',
-  );
+  const matRows = ds.matriculasMestrado.filter((r) => {
+    if (r.tipomatricula !== 'Nova Matricula' || r.situacao !== 'Matriculado') return false;
+    if (filters.codperlet.length > 0) {
+      const cpSet = new Set(filters.codperlet.map(normalizeCodperlet));
+      if (!cpSet.has(normalizeCodperlet(r.codperlet))) return false;
+    }
+    if (filters.ano.length > 0) {
+      const a = anoFromCodperletStr(normalizeCodperlet(r.codperlet));
+      if (a === null || !filters.ano.includes(a)) return false;
+    }
+    return true;
+  });
   const mat = new Set(matRows.map((r) => r.ra).filter(Boolean)).size;
 
-  const taxaPaga = ds.rubeus.filter((r) => r.etapa_nome === 'Taxa de Inscrição (Paga)').length;
-  const taxaAPagar = ds.rubeus.filter((r) => r.etapa_nome === 'Taxa de inscrição (a pagar)').length;
+  const rubeusDataAnoMes = filterRubeusByAnoMes(filterRubeusByDate(ds.rubeus, filters), filters);
+  const taxaPaga = rubeusDataAnoMes.filter((r) => r.etapa_nome === 'Taxa de Inscrição (Paga)').length;
+  const taxaAPagar = rubeusDataAnoMes.filter((r) => r.etapa_nome === 'Taxa de inscrição (a pagar)').length;
 
   // quali_lead reproduzido do Power BI: aluno da matrícula existe em
   // rubeus.pessoa_nome (cruzamento por nome, feito só em memória).
@@ -821,14 +946,11 @@ export function computeEspecializacoesData(
   ds: DashboardDataset,
   filters: ConversaoFilters,
 ): EspecializacoesData {
-  const rubeusFiltered = filterRubeusByAnoMes(
-    filterRubeusByDate(ds.rubeus, filters),
-    filters,
-  );
+  const rubeusFiltered = filterRubeusFull(ds, filters);
   const leads = countLeadsByProcesso(rubeusFiltered, 'Pós Graduação');
 
-  const basePos = filterBasePosByAnoMes(
-    computeBasePos(ds.matriculasPos, filters),
+  const basePos = filterBasePosByCodperlet(
+    filterBasePosByAnoMes(computeBasePos(ds.matriculasPos, filters), filters),
     filters,
   );
 
@@ -946,10 +1068,7 @@ export function computeModalidadePosData(
   filters: ConversaoFilters,
   modalidade: 'Pós Presencial' | 'Pós EAD',
 ): ModalidadePosData {
-  const rubeusFiltered = filterRubeusByAnoMes(
-    filterRubeusByDate(ds.rubeus, filters),
-    filters,
-  );
+  const rubeusFiltered = filterRubeusFull(ds, filters);
   const leads = countLeadsByProcesso(rubeusFiltered, 'Pós Graduação');
 
   let basePos = filterBasePosByAnoMes(
@@ -1057,13 +1176,16 @@ export function computeCursosLivresData(
   ds: DashboardDataset,
   filters: ConversaoFilters,
 ): CursosLivresData {
-  const rubeusFiltered = filterRubeusByDate(ds.rubeus, filters);
+  const rubeusFiltered = filterRubeusByAnoMes(filterRubeusByDate(ds.rubeus, filters), filters);
   const leads = countLeadsByProcesso(rubeusFiltered, 'Cursos Livres');
 
   // Inscrições de Cursos Livres já vêm agregadas por dia (ver queries.ts).
   let clDias = ds.clInscPorDia;
   if (filters.dataInicio || filters.dataFim) {
     clDias = clDias.filter((d) => d.data && dateInRange(d.data, filters.dataInicio, filters.dataFim));
+  }
+  if (filters.ano.length > 0 || filters.mes.length > 0) {
+    clDias = clDias.filter((d) => isoAnoMesOk(d.data || null, filters));
   }
   const insc = clDias.reduce((s, d) => s + d.total, 0);
   const mat = clDias.reduce((s, d) => s + d.mat, 0);
@@ -1073,6 +1195,15 @@ export function computeCursosLivresData(
   );
   if (filters.dataInicio || filters.dataFim) {
     matRows = matRows.filter((r) => dateInRange(r.data_contrato, filters.dataInicio, filters.dataFim));
+  }
+  if (filters.ano.length > 0 || filters.mes.length > 0) {
+    matRows = matRows.filter((r) => {
+      const d = parseFlexibleDate(r.data_contrato);
+      if (!d) return false;
+      if (filters.ano.length > 0 && !filters.ano.includes(d.getFullYear())) return false;
+      if (filters.mes.length > 0 && !filters.mes.includes(d.getMonth() + 1)) return false;
+      return true;
+    });
   }
   const fat = matRows.reduce((s, r) => s + parseDecimal(r.valor_curso_com_desconto), 0);
 
