@@ -395,6 +395,28 @@ function computeConvLeadsMat(
     .filter((r) => matNames.has((r.pessoa_nome ?? '').trim())).length;
 }
 
+/**
+ * Restringe o eixo mensal dos gráficos aos meses compatíveis com os filtros
+ * (Ano/Mês/faixa de datas). Sem filtro, mantém o calendário completo — evita
+ * o gráfico "vazio com um espigão" quando o usuário filtra um período curto.
+ */
+function calendarForFilters(filters: ConversaoFilters) {
+  return CALENDAR.filter((c) => {
+    if (filters.ano.length > 0 && !filters.ano.includes(c.ano)) return false;
+    if (filters.mes.length > 0 && !filters.mes.includes(c.mes)) return false;
+    const ym = c.ano * 100 + c.mes;
+    if (filters.dataInicio) {
+      const ini = Number(filters.dataInicio.slice(0, 4)) * 100 + Number(filters.dataInicio.slice(5, 7));
+      if (Number.isFinite(ini) && ym < ini) return false;
+    }
+    if (filters.dataFim) {
+      const fim = Number(filters.dataFim.slice(0, 4)) * 100 + Number(filters.dataFim.slice(5, 7));
+      if (Number.isFinite(fim) && ym > fim) return false;
+    }
+    return true;
+  });
+}
+
 function buildMensalSeries(
   rubeus: RawRubeusRow[],
   processo: string,
@@ -420,7 +442,7 @@ function buildMensalSeries(
   }
 
   const result: LeadsMensalDatum[] = [];
-  for (const c of CALENDAR) {
+  for (const c of calendarForFilters(filters)) {
     const key = `${c.ano}-${c.mes}`;
     const entry = byMesAno.get(key);
     result.push({
@@ -469,7 +491,7 @@ export function computeLeadsData(
     entradaMap.set(key, entry);
   }
   const entradaGradEspec: LeadsMensalDatum[] = [];
-  for (const c of CALENDAR) {
+  for (const c of calendarForFilters(filters)) {
     const key = `${c.ano}-${c.mes}`;
     const entry = entradaMap.get(key);
     entradaGradEspec.push({

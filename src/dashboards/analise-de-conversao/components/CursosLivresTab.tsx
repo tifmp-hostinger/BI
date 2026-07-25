@@ -121,7 +121,7 @@ export function CursosLivresTab({ loading, data }: Props) {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#DEDCD4" />
-                <XAxis dataKey="mesAno" tick={{ fontSize: 9, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: string) => truncateLabel(v, 10)} interval={2} />
+                <XAxis dataKey="mesAno" tick={{ fontSize: 9, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: string) => truncateLabel(v, 10)} interval="preserveStartEnd" />
                 <YAxis tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
                 <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown, name: unknown) => { if (name === 'mat') return [fmtInt(v as number), 'Matriculas']; return [fmtInt(v as number), 'Leads']; }} />
                 <Bar dataKey="leads" fill="url(#barCLLeads)" radius={[8, 8, 4, 4]} maxBarSize={36} />

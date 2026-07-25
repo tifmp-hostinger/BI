@@ -313,7 +313,7 @@ export function AnaliseDeConversaoPage() {
                             tickLine={false}
                             axisLine={false}
                             tickFormatter={(v: string) => truncateLabel(v, 10)}
-                            interval={2}
+                            interval="preserveStartEnd"
                           />
                           <YAxis tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
                           <Tooltip contentStyle={tt.contentStyle} labelStyle={tt.labelStyle} itemStyle={tt.itemStyle} />
@@ -360,7 +360,7 @@ export function AnaliseDeConversaoPage() {
                             tickLine={false}
                             axisLine={false}
                             tickFormatter={(v: string) => truncateLabel(v, 10)}
-                            interval={2}
+                            interval="preserveStartEnd"
                           />
                           <YAxis tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
                           <Tooltip contentStyle={tt.contentStyle} labelStyle={tt.labelStyle} itemStyle={tt.itemStyle} />
@@ -407,7 +407,7 @@ export function AnaliseDeConversaoPage() {
                             tickLine={false}
                             axisLine={false}
                             tickFormatter={(v: string) => truncateLabel(v, 10)}
-                            interval={2}
+                            interval="preserveStartEnd"
                           />
                           <YAxis tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
                           <Tooltip contentStyle={tt.contentStyle} labelStyle={tt.labelStyle} itemStyle={tt.itemStyle} />
@@ -516,7 +516,7 @@ export function AnaliseDeConversaoPage() {
                           tickLine={false}
                           axisLine={false}
                           tickFormatter={(v: string) => truncateLabel(v, 10)}
-                          interval={2}
+                          interval="preserveStartEnd"
                         />
                         <YAxis tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
                         <Tooltip contentStyle={tt.contentStyle} labelStyle={tt.labelStyle} itemStyle={tt.itemStyle} />
