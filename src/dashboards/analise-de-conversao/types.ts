@@ -77,8 +77,18 @@ export type RawInscricaoCursosLivesRow = {
   numeroinscricao: string | null;
   situacao_matricula: string | null;
   datainscricao: string | null;
-  curso: string | null;
-  aluno: string | null;
+};
+
+/**
+ * Agregado diário das inscrições de Cursos Livres (106k+ linhas brutas são
+ * agregadas logo após o fetch e descartadas, para reduzir memória).
+ * total = nº de inscrições no dia; mat = nº com situacao_matricula em
+ * {'Matricula','Matriculado'}.
+ */
+export type ClInscDia = {
+  data: string;
+  total: number;
+  mat: number;
 };
 
 export type RawMatriculaCursosLivesRow = {
@@ -306,7 +316,7 @@ export type DashboardDataset = {
   inscricoesMestrado: RawInscricaoMestradoRow[];
   matriculasMestrado: RawMatriculaMestradoRow[];
   matriculasPos: RawMatriculaPosRow[];
-  inscricoesCursosLives: RawInscricaoCursosLivesRow[];
+  clInscPorDia: ClInscDia[];
   matriculasCursosLives: RawMatriculaCursosLivesRow[];
   matriculasBolsas: RawMatriculaBolsaRow[];
   pletivo: RawPletivoRow[];

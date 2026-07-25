@@ -1,6 +1,8 @@
 import { loadAllFrom, normalizeCodperlet } from '@/lib/supabasePaginate';
 import { supabase } from '@/lib/supabase';
+import { toISODate } from './dateUtils';
 import type {
+  ClInscDia,
   DashboardDataset,
   RawInscricaoCursosLivesRow,
   RawInscricaoGradRow,
@@ -18,8 +20,62 @@ import type {
   RawRubeusRow,
 } from './types';
 
-export async function fetchDashboardData(): Promise<DashboardDataset> {
-  const [
+// Cache em nível de módulo: navegar para outro dashboard e voltar NÃO refaz
+// o download (~200k linhas). O botão "Atualizar" usa clearDashboardCache().
+let cachedDataset: DashboardDataset | null = null;
+
+export function clearDashboardCache(): void {
+  cachedDataset = null;
+}
+
+export type LoadProgress = (etapa: number, totalEtapas: number, descricao: string) => void;
+
+const TOTAL_ETAPAS = 4;
+
+/**
+ * Carrega os dados em 4 lotes SEQUENCIAIS (não tudo em paralelo) para não
+ * estourar o limite de requisições simultâneas do Supabase free tier.
+ */
+export async function fetchDashboardData(
+  onProgress?: LoadProgress,
+  forceRefresh = false,
+): Promise<DashboardDataset> {
+  if (cachedDataset && !forceRefresh) return cachedDataset;
+
+  // Lote 1 — tabelas pequenas (metas/pletivo) + rubeus
+  onProgress?.(1, TOTAL_ETAPAS, 'Carregando leads e metas');
+  const [pletivo, metaGraduacao, metaMestrado, metaPos, rubeus] = [
+    await loadPletivo(),
+    await loadMetaGraduacao(),
+    await loadMetaMestrado(),
+    await loadMetaPos(),
+    await loadRubeus(),
+  ];
+
+  // Lote 2 — graduação e mestrado
+  onProgress?.(2, TOTAL_ETAPAS, 'Carregando graduação e mestrado');
+  const [matriculasGrad, inscricoesGrad, inscricoesMestrado, matriculasMestrado] = [
+    await loadMatriculasGrad(),
+    await loadInscricoesGrad(),
+    await loadInscricoesMestrado(),
+    await loadMatriculasMestrado(),
+  ];
+
+  // Lote 3 — pós/especializações + bolsas (já filtrada no servidor)
+  onProgress?.(3, TOTAL_ETAPAS, 'Carregando especializações');
+  const [matriculasPos, inscricoesPos, matriculasBolsas] = [
+    await loadMatriculasPos(),
+    await loadInscricoesPos(),
+    await loadMatriculasBolsas(),
+  ];
+
+  // Lote 4 — cursos livres (a tabela de inscrições tem 100k+ linhas;
+  // agregamos por dia logo após o fetch e descartamos o array bruto)
+  onProgress?.(4, TOTAL_ETAPAS, 'Carregando cursos livres');
+  const clInscPorDia = await loadClInscAgregado();
+  const matriculasCursosLives = await loadMatriculasCursosLives();
+
+  cachedDataset = {
     rubeus,
     matriculasGrad,
     inscricoesGrad,
@@ -27,38 +83,7 @@ export async function fetchDashboardData(): Promise<DashboardDataset> {
     inscricoesMestrado,
     matriculasMestrado,
     matriculasPos,
-    inscricoesCursosLives,
-    matriculasCursosLives,
-    matriculasBolsas,
-  ] = await Promise.all([
-    loadRubeus(),
-    loadMatriculasGrad(),
-    loadInscricoesGrad(),
-    loadInscricoesPos(),
-    loadInscricoesMestrado(),
-    loadMatriculasMestrado(),
-    loadMatriculasPos(),
-    loadInscricoesCursosLives(),
-    loadMatriculasCursosLives(),
-    loadMatriculasBolsas(),
-  ]);
-
-  const [pletivo, metaGraduacao, metaMestrado, metaPos] = await Promise.all([
-    loadPletivo(),
-    loadMetaGraduacao(),
-    loadMetaMestrado(),
-    loadMetaPos(),
-  ]);
-
-  return {
-    rubeus,
-    matriculasGrad,
-    inscricoesGrad,
-    inscricoesPos,
-    inscricoesMestrado,
-    matriculasMestrado,
-    matriculasPos,
-    inscricoesCursosLives,
+    clInscPorDia,
     matriculasCursosLives,
     matriculasBolsas,
     pletivo,
@@ -66,6 +91,7 @@ export async function fetchDashboardData(): Promise<DashboardDataset> {
     metaMestrado,
     metaPos,
   };
+  return cachedDataset;
 }
 
 async function loadRubeus(): Promise<RawRubeusRow[]> {
@@ -116,10 +142,26 @@ async function loadMatriculasPos(): Promise<RawMatriculaPosRow[]> {
   return rows as RawMatriculaPosRow[];
 }
 
-async function loadInscricoesCursosLives(): Promise<RawInscricaoCursosLivesRow[]> {
-  const cols = 'numeroinscricao,situacao_matricula,datainscricao,curso,aluno';
-  const rows = await loadAllFrom('stg_rm_inscricoes_cursoslivres', cols);
-  return rows as RawInscricaoCursosLivesRow[];
+const SITUACAO_CL_MATRICULADO = new Set(['Matricula', 'Matriculado']);
+
+/**
+ * stg_rm_inscricoes_cursoslivres tem 100k+ linhas. Buscamos só 3 colunas e
+ * agregamos por dia imediatamente, descartando o array bruto (memória).
+ */
+async function loadClInscAgregado(): Promise<ClInscDia[]> {
+  const cols = 'numeroinscricao,situacao_matricula,datainscricao';
+  const rows = (await loadAllFrom('stg_rm_inscricoes_cursoslivres', cols)) as RawInscricaoCursosLivesRow[];
+  const porDia = new Map<string, { total: number; mat: number }>();
+  for (const r of rows) {
+    const iso = toISODate(r.datainscricao) ?? '';
+    const entry = porDia.get(iso) ?? { total: 0, mat: 0 };
+    entry.total += 1;
+    if (SITUACAO_CL_MATRICULADO.has((r.situacao_matricula ?? '').trim())) entry.mat += 1;
+    porDia.set(iso, entry);
+  }
+  return Array.from(porDia.entries())
+    .map(([data, v]) => ({ data, total: v.total, mat: v.mat }))
+    .sort((a, b) => a.data.localeCompare(b.data));
 }
 
 async function loadMatriculasCursosLives(): Promise<RawMatriculaCursosLivesRow[]> {
@@ -128,9 +170,20 @@ async function loadMatriculasCursosLives(): Promise<RawMatriculaCursosLivesRow[]
   return rows as RawMatriculaCursosLivesRow[];
 }
 
+const BOLSAS_INCENTIVO_VALUES = [
+  'BOLSA INCENTIVO EDUCACIONAL',
+  'BOLSA SOCIOECONÔMICA',
+];
+
 async function loadMatriculasBolsas(): Promise<RawMatriculaBolsaRow[]> {
-  const cols = 'ra,bolsa';
-  const rows = await loadAllFrom('stg_rm_matriculas_bolsas', cols);
+  // Filtro NO SERVIDOR: só as 2 bolsas usadas na regra "bolsista"
+  // (reduz ~129k linhas para ~9,5k).
+  const rows = await loadAllFrom(
+    'stg_rm_matriculas_bolsas',
+    'ra,bolsa',
+    undefined,
+    { column: 'bolsa', values: BOLSAS_INCENTIVO_VALUES },
+  );
   return rows as RawMatriculaBolsaRow[];
 }
 

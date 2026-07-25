@@ -2,6 +2,14 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
+# Envs do Vite sao injetadas em BUILD-TIME: precisam existir como ARG/ENV
+# neste stage, senao o `npm run build` nao as enxerga (EasyPanel passa como
+# build args).
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
+ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
+
 COPY package.json package-lock.json ./
 RUN npm ci
 
@@ -10,7 +18,9 @@ RUN npm run build
 
 # ---------- stage 2: serve ----------
 FROM nginx:alpine
-COPY dist/ /usr/share/nginx/html/
+# Copia do STAGE de build (nao do contexto local): garante build limpo no
+# EasyPanel/CI sem depender de dist/ pre-existente.
+COPY --from=build /app/dist/ /usr/share/nginx/html/
 
 # SPA fallback: any unknown route returns index.html
 RUN printf 'server {\n\

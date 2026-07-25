@@ -19,19 +19,76 @@ import type {
   CursosLivresData,
 } from './types';
 
+// Valores EXATOS do banco (acentuados) — sem acento a exclusão nunca casava.
 const BOLSAS_INCENTIVO = new Set([
   'BOLSA INCENTIVO EDUCACIONAL',
-  'BOLSA SOCIOECONOMICA',
+  'BOLSA SOCIOECONÔMICA',
 ]);
 
+// Strings literais herdadas do DAX do Power BI ('Pré Matricula' não existe no
+// banco — filtro morto herdado, preservado de propósito para paridade).
 const SITUACOES_EXCLUIR_BASE_POS = new Set([
-  'Obito',
+  'Óbito',
   'Evadido Curso',
   'Formado',
   'Troca de Ciclo',
-  'Transferencia Interna',
-  'Pre Matricula',
+  'Transferência Interna',
+  'Pré Matricula',
 ]);
+
+/**
+ * Conjuntos pesados calculados UMA vez por dataset (WeakMap): sem isso, cada
+ * troca de filtro reconstruía Sets de dezenas de milhares de nomes e varria
+ * a tabela de bolsas linha a linha (travava a interface).
+ */
+type SharedSets = {
+  inscNames: Set<string>;
+  matNames: Set<string>;
+  rubeusNames: Set<string>;
+  bolsistaRas: Set<string>;
+};
+
+const sharedSetsCache = new WeakMap<DashboardDataset, SharedSets>();
+
+function getSharedSets(ds: DashboardDataset): SharedSets {
+  const cached = sharedSetsCache.get(ds);
+  if (cached) return cached;
+
+  const inscNames = new Set<string>();
+  for (const r of ds.inscricoesGrad) {
+    if (r.nome) inscNames.add(r.nome.trim());
+  }
+
+  const matNames = new Set<string>();
+  for (const r of ds.matriculasMestrado) {
+    if (r.aluno) matNames.add(r.aluno.trim());
+  }
+  for (const r of ds.matriculasCursosLives) {
+    if (r.aluno) matNames.add(r.aluno.trim());
+  }
+  for (const r of ds.matriculasPos) {
+    if (r.aluno) matNames.add(r.aluno.trim());
+  }
+  for (const r of ds.matriculasGrad) {
+    if (r.aluno) matNames.add(r.aluno.trim());
+  }
+
+  const rubeusNames = new Set<string>();
+  for (const r of ds.rubeus) {
+    if (r.pessoa_nome) rubeusNames.add(r.pessoa_nome.trim());
+  }
+
+  const bolsistaRas = new Set<string>();
+  for (const r of ds.matriculasBolsas) {
+    if (r.ra && BOLSAS_INCENTIVO.has((r.bolsa ?? '').trim())) {
+      bolsistaRas.add(r.ra);
+    }
+  }
+
+  const sets: SharedSets = { inscNames, matNames, rubeusNames, bolsistaRas };
+  sharedSetsCache.set(ds, sets);
+  return sets;
+}
 
 const PROCESSO_MAP: Record<string, string> = {
   'Graduacao': 'Graduação',
@@ -223,46 +280,12 @@ function computeBasePos(
   });
 }
 
-function buildNameSet(ds: DashboardDataset): Set<string> {
-  const names = new Set<string>();
-  for (const r of ds.matriculasMestrado) {
-    if (r.aluno) names.add(r.aluno.trim());
-  }
-  for (const r of ds.matriculasCursosLives) {
-    if (r.aluno) names.add(r.aluno.trim());
-  }
-  for (const r of ds.inscricoesGrad) {
-    if (r.nome) names.add(r.nome.trim());
-  }
-  for (const r of ds.inscricoesMestrado) {
-    if (r.nome) names.add(r.nome.trim());
-  }
-  return names;
-}
-
 function buildInscLeadSet(ds: DashboardDataset): Set<string> {
-  const inscNames = new Set<string>();
-  for (const r of ds.inscricoesGrad) {
-    if (r.nome) inscNames.add(r.nome.trim());
-  }
-  return inscNames;
+  return getSharedSets(ds).inscNames;
 }
 
 function buildMatLeadSet(ds: DashboardDataset): Set<string> {
-  const matNames = new Set<string>();
-  for (const r of ds.matriculasMestrado) {
-    if (r.aluno) matNames.add(r.aluno.trim());
-  }
-  for (const r of ds.matriculasCursosLives) {
-    if (r.aluno) matNames.add(r.aluno.trim());
-  }
-  for (const r of ds.matriculasPos) {
-    if (r.aluno) matNames.add(r.aluno.trim());
-  }
-  for (const r of ds.matriculasGrad) {
-    if (r.aluno) matNames.add(r.aluno.trim());
-  }
-  return matNames;
+  return getSharedSets(ds).matNames;
 }
 
 function countLeadsByProcesso(
@@ -398,9 +421,7 @@ export function countLeadsByProcessoPublic(
 }
 
 export function isBolsista(ds: DashboardDataset, ra: string): boolean {
-  return ds.matriculasBolsas.some(
-    (r) => r.ra === ra && BOLSAS_INCENTIVO.has((r.bolsa ?? '').trim()),
-  );
+  return getSharedSets(ds).bolsistaRas.has(ra);
 }
 
 export function modalidadePos(processoseletivo: string | null): string {
@@ -482,7 +503,10 @@ export function computeGraduacaoData(
   const rubeusFiltered = filterRubeusByDate(ds.rubeus, filters);
 
   const leads = countLeadsByProcesso(rubeusFiltered, 'Graduação');
-  const insc = inscRows.length;
+  // Fiel ao Power BI: Grad_Insc = DISTINCTCOUNT(cpf)
+  const insc = new Set(
+    inscRows.map((r) => (r.cpf ?? '').trim()).filter(Boolean),
+  ).size;
   const inscxLeads = computeConvLeadsInsc(rubeusFiltered, 'Graduação', buildInscLeadSet(ds));
 
   const matEfetRas = new Set<string>();
@@ -509,12 +533,15 @@ export function computeGraduacaoData(
   }
   const matCanc = matCancRas.size;
 
+  const bolsistaRas = getSharedSets(ds).bolsistaRas;
   const matBolsas = matRows.filter(
-    (r) => r.tipomatricula === 'Nova Matricula' && r.situacao === 'Matriculado' && r.aluno,
-  ).filter((r) => {
-    const cp = normalizeCodperlet(r.codperlet);
-    return isBolsista(ds, `${r.ra}-${cp}`) || isBolsista(ds, r.ra ?? '');
-  }).length;
+    (r) =>
+      r.tipomatricula === 'Nova Matricula' &&
+      r.situacao === 'Matriculado' &&
+      r.aluno &&
+      r.ra &&
+      bolsistaRas.has(r.ra),
+  ).length;
 
   const matPgt = matEfet - matBolsas;
 
@@ -685,9 +712,17 @@ export function computeMestradoData(
   const taxaPaga = ds.rubeus.filter((r) => r.etapa_nome === 'Taxa de Inscrição (Paga)').length;
   const taxaAPagar = ds.rubeus.filter((r) => r.etapa_nome === 'Taxa de inscrição (a pagar)').length;
 
-  // quali_lead não existe na tabela stg_rm_matriculas_mestrado; usando todas as matrículas qualificadas
-  const matQualificadas = mat;
-  const pctConversao = mat > 0 ? matQualificadas / mat : 0;
+  // quali_lead reproduzido do Power BI: aluno da matrícula existe em
+  // rubeus.pessoa_nome (cruzamento por nome, feito só em memória).
+  const rubeusNames = getSharedSets(ds).rubeusNames;
+  const matQualificadasRas = new Set<string>();
+  for (const r of ds.matriculasMestrado) {
+    if (!r.ra || !r.aluno) continue;
+    const sit = (r.situacao ?? '').trim();
+    if (sit !== 'Matriculado' && sit !== 'Matriculado- Pendente Contrato') continue;
+    if (rubeusNames.has(r.aluno.trim())) matQualificadasRas.add(r.ra);
+  }
+  const pctConversao = mat > 0 ? matQualificadasRas.size / mat : 0;
 
   const meta = 20;
   const pctMeta = mat / meta;
@@ -1025,14 +1060,13 @@ export function computeCursosLivresData(
   const rubeusFiltered = filterRubeusByDate(ds.rubeus, filters);
   const leads = countLeadsByProcesso(rubeusFiltered, 'Cursos Livres');
 
-  let inscRows = ds.inscricoesCursosLives;
+  // Inscrições de Cursos Livres já vêm agregadas por dia (ver queries.ts).
+  let clDias = ds.clInscPorDia;
   if (filters.dataInicio || filters.dataFim) {
-    inscRows = inscRows.filter((r) => dateInRange(r.datainscricao, filters.dataInicio, filters.dataFim));
+    clDias = clDias.filter((d) => d.data && dateInRange(d.data, filters.dataInicio, filters.dataFim));
   }
-  const insc = inscRows.length;
-
-  let matInscRows = inscRows.filter((r) => SITUACAO_CL_MATRICULADO.has((r.situacao_matricula ?? '').trim()));
-  const mat = matInscRows.length;
+  const insc = clDias.reduce((s, d) => s + d.total, 0);
+  const mat = clDias.reduce((s, d) => s + d.mat, 0);
 
   let matRows = ds.matriculasCursosLives.filter((r) =>
     SITUACAO_CL_MATRICULADO.has((r.situacao_matricula ?? '').trim()),
@@ -1068,14 +1102,14 @@ export function computeCursosLivresData(
     entry.leads++;
     mensalMap.set(key, entry);
   }
-  for (const r of matInscRows) {
-    const d = parseFlexibleDate(r.datainscricao);
-    if (!d) continue;
-    const ano = d.getFullYear();
-    const mes = d.getMonth() + 1;
+  for (const dia of clDias) {
+    if (!dia.data || dia.mat === 0) continue;
+    const ano = Number(dia.data.slice(0, 4));
+    const mes = Number(dia.data.slice(5, 7));
+    if (!Number.isFinite(ano) || !Number.isFinite(mes)) continue;
     const key = `${ano}-${mes}`;
     const entry = mensalMap.get(key) ?? { leads: 0, mat: 0, ano, mes };
-    entry.mat++;
+    entry.mat += dia.mat;
     mensalMap.set(key, entry);
   }
   const inscVsMatMensal: { mesAno: string; ordemFiscal: number; leads: number; mat: number }[] = [];

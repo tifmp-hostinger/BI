@@ -31,6 +31,7 @@ import { GaugeSemicircle } from '@/components/ui/GaugeSemicircle';
 import { ChartSkeleton } from '@/components/ui/Skeletons';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { useAnaliseConversaoData } from './hooks/useAnaliseConversaoData';
 import { ConversaoFilterBar } from './components/ConversaoFilterBar';
 import { GraduacaoTab } from './components/GraduacaoTab';
@@ -101,8 +102,8 @@ export function AnaliseDeConversaoPage() {
     dataFim: null,
   });
 
-  const { loading, error, filterOptions, geralKpis, leadsData, graduacaoData, rematriculaData, mestradoData, especializacoesData, presencialData, eadData, cursosLivresData, refetch } =
-    useAnaliseConversaoData(filters);
+  const { loading, error, progress, filterOptions, geralKpis, leadsData, graduacaoData, rematriculaData, mestradoData, especializacoesData, presencialData, eadData, cursosLivresData, refetch } =
+    useAnaliseConversaoData(filters, tab);
 
   const tt = useMemo(chartTooltipStyle, []);
 
@@ -185,6 +186,12 @@ export function AnaliseDeConversaoPage() {
             onDataInicioChange={(v) => setFilters((f) => ({ ...f, dataInicio: v }))}
             onDataFimChange={(v) => setFilters((f) => ({ ...f, dataFim: v }))}
           />
+        )}
+
+        {loading && progress && (
+          <div className="rounded-md border border-line bg-white p-4 text-center text-xs text-ink-3 shadow-card animate-fade-in">
+            {progress}
+          </div>
         )}
 
         {error && (
@@ -528,37 +535,37 @@ export function AnaliseDeConversaoPage() {
 
         {/* GRADUACAO */}
         {tab === 'graduacao' && (
-          <GraduacaoTab loading={loading} data={graduacaoData} />
+          <ErrorBoundary><GraduacaoTab loading={loading} data={graduacaoData} /></ErrorBoundary>
         )}
 
         {/* REMATRICULA */}
         {tab === 'rematricula' && (
-          <RematriculaTab loading={loading} data={rematriculaData} />
+          <ErrorBoundary><RematriculaTab loading={loading} data={rematriculaData} /></ErrorBoundary>
         )}
 
         {/* MESTRADO */}
         {tab === 'mestrado' && (
-          <MestradoTab loading={loading} data={mestradoData} />
+          <ErrorBoundary><MestradoTab loading={loading} data={mestradoData} /></ErrorBoundary>
         )}
 
         {/* ESPECIALIZACOES */}
         {tab === 'especializacoes' && (
-          <EspecializacoesTab loading={loading} data={especializacoesData} />
+          <ErrorBoundary><EspecializacoesTab loading={loading} data={especializacoesData} /></ErrorBoundary>
         )}
 
         {/* PRESENCIAL */}
         {tab === 'presencial' && (
-          <ModalidadePosTab loading={loading} data={presencialData} />
+          <ErrorBoundary><ModalidadePosTab loading={loading} data={presencialData} /></ErrorBoundary>
         )}
 
         {/* EAD */}
         {tab === 'ead' && (
-          <ModalidadePosTab loading={loading} data={eadData} />
+          <ErrorBoundary><ModalidadePosTab loading={loading} data={eadData} /></ErrorBoundary>
         )}
 
         {/* CURSOS LIVRES */}
         {tab === 'cursoslivres' && (
-          <CursosLivresTab loading={loading} data={cursosLivresData} />
+          <ErrorBoundary><CursosLivresTab loading={loading} data={cursosLivresData} /></ErrorBoundary>
         )}
       </div>
     </AppShell>

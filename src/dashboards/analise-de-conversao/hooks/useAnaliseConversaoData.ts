@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { fetchDashboardData } from '../queries';
-import { buildFilterOptions, computeCursosLivresData, computeEspecializacoesData, computeGeralKpis, computeGraduacaoData, computeLeadsData, computeMestradoData, computeModalidadePosData, computeRematriculaData } from '../calculations';
+import { clearDashboardCache, fetchDashboardData } from '../queries';
+import {
+  buildFilterOptions,
+  computeCursosLivresData,
+  computeEspecializacoesData,
+  computeGeralKpis,
+  computeGraduacaoData,
+  computeLeadsData,
+  computeMestradoData,
+  computeModalidadePosData,
+  computeRematriculaData,
+} from '../calculations';
 import type {
   ConversaoFilters,
   CursosLivresData,
@@ -15,35 +25,64 @@ import type {
   RematriculaData,
 } from '../types';
 
+export type ConversaoTab =
+  | 'geral'
+  | 'leads'
+  | 'graduacao'
+  | 'rematricula'
+  | 'especializacoes'
+  | 'presencial'
+  | 'ead'
+  | 'cursoslivres'
+  | 'mestrado';
+
 type State = {
   dataset: DashboardDataset | null;
   loading: boolean;
   error: string | null;
+  progress: string | null;
 };
 
-export function useAnaliseConversaoData(filters: ConversaoFilters) {
+/**
+ * Recebe a aba ativa: cada bloco de dados só é computado quando a sua aba
+ * está visível. Antes, qualquer mudança de filtro recalculava as 9 abas de
+ * uma vez (varrendo centenas de milhares de linhas ~10x), travando a UI.
+ */
+export function useAnaliseConversaoData(filters: ConversaoFilters, tab: ConversaoTab) {
   const [state, setState] = useState<State>({
     dataset: null,
     loading: true,
     error: null,
+    progress: null,
   });
 
-  const load = useCallback(async () => {
-    setState((s) => ({ ...s, loading: true, error: null }));
+  const load = useCallback(async (forceRefresh: boolean) => {
+    setState((s) => ({ ...s, loading: true, error: null, progress: null }));
     try {
-      const dataset = await fetchDashboardData();
-      setState({ dataset, loading: false, error: null });
+      const dataset = await fetchDashboardData((etapa, total, descricao) => {
+        setState((s) => ({
+          ...s,
+          progress: `Carregando dados — etapa ${etapa} de ${total} (${descricao})`,
+        }));
+      }, forceRefresh);
+      setState({ dataset, loading: false, error: null, progress: null });
     } catch (err) {
       setState({
         dataset: null,
         loading: false,
+        progress: null,
         error: err instanceof Error ? err.message : 'Erro ao carregar dados',
       });
     }
   }, []);
 
   useEffect(() => {
-    load();
+    load(false);
+  }, [load]);
+
+  const refetch = useCallback(() => {
+    clearDashboardCache();
+    load(true);
   }, [load]);
 
   const filterOptions: FilterOptions | null = useMemo(() => {
@@ -52,53 +91,54 @@ export function useAnaliseConversaoData(filters: ConversaoFilters) {
   }, [state.dataset]);
 
   const geralKpis: GeralKpis | null = useMemo(() => {
-    if (!state.dataset) return null;
+    if (!state.dataset || tab !== 'geral') return null;
     return computeGeralKpis(state.dataset, filters);
-  }, [state.dataset, filters]);
+  }, [state.dataset, filters, tab]);
 
   const leadsData: LeadsData | null = useMemo(() => {
-    if (!state.dataset) return null;
+    if (!state.dataset || tab !== 'leads') return null;
     return computeLeadsData(state.dataset, filters);
-  }, [state.dataset, filters]);
+  }, [state.dataset, filters, tab]);
 
   const graduacaoData: GraduacaoData | null = useMemo(() => {
-    if (!state.dataset) return null;
+    if (!state.dataset || tab !== 'graduacao') return null;
     return computeGraduacaoData(state.dataset, filters);
-  }, [state.dataset, filters]);
+  }, [state.dataset, filters, tab]);
 
   const rematriculaData: RematriculaData | null = useMemo(() => {
-    if (!state.dataset) return null;
+    if (!state.dataset || tab !== 'rematricula') return null;
     return computeRematriculaData(state.dataset, filters);
-  }, [state.dataset, filters]);
+  }, [state.dataset, filters, tab]);
 
   const mestradoData: MestradoData | null = useMemo(() => {
-    if (!state.dataset) return null;
+    if (!state.dataset || tab !== 'mestrado') return null;
     return computeMestradoData(state.dataset, filters);
-  }, [state.dataset, filters]);
+  }, [state.dataset, filters, tab]);
 
   const especializacoesData: EspecializacoesData | null = useMemo(() => {
-    if (!state.dataset) return null;
+    if (!state.dataset || tab !== 'especializacoes') return null;
     return computeEspecializacoesData(state.dataset, filters);
-  }, [state.dataset, filters]);
+  }, [state.dataset, filters, tab]);
 
   const presencialData: ModalidadePosData | null = useMemo(() => {
-    if (!state.dataset) return null;
+    if (!state.dataset || tab !== 'presencial') return null;
     return computeModalidadePosData(state.dataset, filters, 'Pós Presencial');
-  }, [state.dataset, filters]);
+  }, [state.dataset, filters, tab]);
 
   const eadData: ModalidadePosData | null = useMemo(() => {
-    if (!state.dataset) return null;
+    if (!state.dataset || tab !== 'ead') return null;
     return computeModalidadePosData(state.dataset, filters, 'Pós EAD');
-  }, [state.dataset, filters]);
+  }, [state.dataset, filters, tab]);
 
   const cursosLivresData: CursosLivresData | null = useMemo(() => {
-    if (!state.dataset) return null;
+    if (!state.dataset || tab !== 'cursoslivres') return null;
     return computeCursosLivresData(state.dataset, filters);
-  }, [state.dataset, filters]);
+  }, [state.dataset, filters, tab]);
 
   return {
     loading: state.loading,
     error: state.error,
+    progress: state.progress,
     filterOptions,
     geralKpis,
     leadsData,
@@ -109,6 +149,6 @@ export function useAnaliseConversaoData(filters: ConversaoFilters) {
     presencialData,
     eadData,
     cursosLivresData,
-    refetch: load,
+    refetch,
   };
 }

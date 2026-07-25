@@ -6,6 +6,7 @@ import { BolsasEDescontosPage } from '@/dashboards/bolsas-e-descontos/page';
 import { AnaliseDeConversaoPage } from '@/dashboards/analise-de-conversao/page';
 import { AppShell } from '@/components/layout/AppShell';
 import { ModulePlaceholder } from '@/components/ui/ModulePlaceholder';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 
 function DashboardRouter() {
   const { slug = '' } = useParams();
@@ -29,7 +30,14 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/dashboards/:slug" element={<DashboardRouter />} />
+        <Route
+          path="/dashboards/:slug"
+          element={
+            <ErrorBoundary title="Nao foi possivel exibir este dashboard">
+              <DashboardRouter />
+            </ErrorBoundary>
+          }
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
