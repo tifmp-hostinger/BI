@@ -1,6 +1,6 @@
 import { normalizeCodperlet } from '@/lib/supabasePaginate';
 import { CALENDAR, fiscalLabel, fiscalSortKey } from './constants';
-import { codperletToAno, dateInRange, parseDecimal, parseFlexibleDate, toISODate } from './dateUtils';
+import { dateInRange, parseDecimal, parseFlexibleDate, toISODate } from './dateUtils';
 import type {
   ChartDatum,
   ConversaoFilters,
@@ -89,13 +89,6 @@ function getSharedSets(ds: DashboardDataset): SharedSets {
   sharedSetsCache.set(ds, sets);
   return sets;
 }
-
-const PROCESSO_MAP: Record<string, string> = {
-  'Graduacao': 'Graduação',
-  'Pós Graduação': 'Pós Graduação',
-  'Mestrado': 'Mestrado',
-  'Cursos Livres': 'Cursos Livres',
-};
 
 export function buildFilterOptions(ds: DashboardDataset) {
   const codperletOptions = ds.pletivo
@@ -548,15 +541,6 @@ const EV_TIPO_TRANSFERIDO = new Set([
   'Rematr\u00edcula n\u00e3o realizada',
 ]);
 
-const EV_TIPO_TRANCADO = new Set([
-  'N\u00e3o desejou reingressar',
-  'Nova Matricula',
-  'Reingresso',
-  'Rematricula',
-  'Rematr\u00edcula n\u00e3o realizada',
-  'Renova\u00e7\u00e3o Trancamento',
-]);
-
 function filterMatriculasGradByPeriodo(
   ds: DashboardDataset,
   filters: ConversaoFilters,
@@ -741,7 +725,13 @@ export function computeRematriculaData(
   ds: DashboardDataset,
   filters: ConversaoFilters,
 ): RematriculaData {
-  const matRows = filterMatriculasGradByPeriodo(ds, filters);
+  let matRows = filterMatriculasGradByPeriodo(ds, filters);
+  if (filters.ano.length > 0) {
+    matRows = matRows.filter((r) => {
+      const a = anoFromCodperletStr(normalizeCodperlet(r.codperlet));
+      return a !== null && filters.ano.includes(a);
+    });
+  }
 
   const periodos = [...ds.pletivo].sort((a, b) => (a.indice ?? 0) - (b.indice ?? 0)).map((p) => p.periodo_letivo);
 
@@ -792,12 +782,8 @@ export function computeRematriculaData(
       (r) => r.tipomatricula === 'Rematr\u00edcula n\u00e3o realizada',
     ).length;
 
-    // BUG HERDADO do Power BI: compara o campo ra com o texto 'Pré-Matrícula'.
-    // Resultado é sempre 0 pois ra nunca contém esse texto. Preservado intencionalmente.
-    const _rematPend = rows.filter(
-      (r) => r.tipomatricula === 'Rematricula' && r.ra === 'Pré-Matrícula',
-    ).length;
-
+    // BUG HERDADO do Power BI: a métrica Remat_Pend comparava ra com o texto
+    // 'Pré-Matrícula' e por isso era sempre 0; como não é exibida, não é computada.
     return { periodo, rematConf, rematNaoRealiz };
   });
 
@@ -812,6 +798,15 @@ export function computeMestradoData(
   if (filters.codperlet.length > 0) {
     const cpSet = new Set(filters.codperlet.map(normalizeCodperlet));
     inscRows = inscRows.filter((r) => cpSet.has(normalizeCodperlet(r.periodo_letivo)));
+  }
+  if (filters.ano.length > 0 || filters.mes.length > 0) {
+    inscRows = inscRows.filter((r) => {
+      const d = parseFlexibleDate(r.datainscricao);
+      if (!d) return false;
+      if (filters.ano.length > 0 && !filters.ano.includes(d.getFullYear())) return false;
+      if (filters.mes.length > 0 && !filters.mes.includes(d.getMonth() + 1)) return false;
+      return true;
+    });
   }
 
   const rubeusMest = filterRubeusFull(ds, filters).filter((r) => r.processo === 'Mestrado');

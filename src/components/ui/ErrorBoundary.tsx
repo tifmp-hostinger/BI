@@ -1,4 +1,4 @@
-import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { Component, type ReactNode } from 'react';
 import { ErrorState } from '@/components/ui/ErrorState';
 
 type Props = {
@@ -24,10 +24,6 @@ export class ErrorBoundary extends Component<Props, State> {
       hasError: true,
       message: error instanceof Error ? error.message : 'Erro inesperado ao renderizar',
     };
-  }
-
-  componentDidCatch(_error: unknown, _info: ErrorInfo): void {
-    // Sem console.log de dados — apenas marca o estado de erro.
   }
 
   private reset = () => {

@@ -55,6 +55,9 @@ export function MultiSelect({
       </div>
       <button
         type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={`${label}: ${displayText}`}
         onClick={() => setOpen((o) => !o)}
         className={`${btnClass} w-full`}
       >
@@ -119,6 +122,7 @@ export function SelectedChips({
           {String(item.value)}
           <button
             type="button"
+            aria-label={`Remover filtro ${item.label}: ${item.value}`}
             onClick={() => onRemove(item.value)}
             className="ml-0.5 rounded-full p-0.5 transition hover:bg-fmp/20"
           >

@@ -14,7 +14,6 @@ import { TrendingDown, RefreshCw, RotateCcw } from 'lucide-react';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { ChartSkeleton } from '@/components/ui/Skeletons';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { fmtInt } from '../formatters';
 import type { RematriculaData } from '../types';
 
 const FMP_RED = '#EE2A42';

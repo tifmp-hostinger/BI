@@ -158,13 +158,19 @@ export function AnaliseDeConversaoPage() {
         </section>
 
         {/* Tabs */}
-        <div className="flex flex-wrap items-center gap-1 rounded-md border border-line bg-white p-1 shadow-card w-fit">
+        <div
+          role="tablist"
+          aria-label="Abas do dashboard"
+          className="flex max-w-full items-center gap-1 overflow-x-auto rounded-md border border-line bg-white p-1 shadow-card sm:w-fit sm:flex-wrap sm:overflow-visible"
+        >
           {TABS.map((t) => (
             <button
               key={t.id}
               type="button"
+              role="tab"
+              aria-selected={tab === t.id}
               onClick={() => setTab(t.id)}
-              className={`rounded-pill px-4 py-2 text-xs font-semibold transition ${
+              className={`whitespace-nowrap rounded-pill px-4 py-2 text-xs font-semibold transition ${
                 tab === t.id
                   ? 'bg-fmp text-white shadow-glow'
                   : 'text-ink-2 hover:bg-paper'

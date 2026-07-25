@@ -1,12 +1,38 @@
+import { Suspense, lazy } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom';
 import { HomePage } from '@/pages/HomePage';
-import { PresencaNacionalPage } from '@/pages/PresencaNacionalPage';
-import { AnaliseConversaoPresidenciaPage } from '@/dashboards/analise-conversao-presidencia/page';
-import { BolsasEDescontosPage } from '@/dashboards/bolsas-e-descontos/page';
-import { AnaliseDeConversaoPage } from '@/dashboards/analise-de-conversao/page';
 import { AppShell } from '@/components/layout/AppShell';
 import { ModulePlaceholder } from '@/components/ui/ModulePlaceholder';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
+
+// Code-split por rota: cada dashboard (com recharts/leaflet pesados) vira um
+// chunk próprio, carregado só quando o usuário navega até ele.
+const PresencaNacionalPage = lazy(() =>
+  import('@/pages/PresencaNacionalPage').then((m) => ({ default: m.PresencaNacionalPage })),
+);
+const AnaliseConversaoPresidenciaPage = lazy(() =>
+  import('@/dashboards/analise-conversao-presidencia/page').then((m) => ({
+    default: m.AnaliseConversaoPresidenciaPage,
+  })),
+);
+const BolsasEDescontosPage = lazy(() =>
+  import('@/dashboards/bolsas-e-descontos/page').then((m) => ({ default: m.BolsasEDescontosPage })),
+);
+const AnaliseDeConversaoPage = lazy(() =>
+  import('@/dashboards/analise-de-conversao/page').then((m) => ({
+    default: m.AnaliseDeConversaoPage,
+  })),
+);
+
+function RouteFallback() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-paper">
+      <p className="text-xs font-medium uppercase tracking-widest text-ink-3">
+        Carregando dashboard…
+      </p>
+    </div>
+  );
+}
 
 function DashboardRouter() {
   const { slug = '' } = useParams();
@@ -34,7 +60,9 @@ function App() {
           path="/dashboards/:slug"
           element={
             <ErrorBoundary title="Nao foi possivel exibir este dashboard">
-              <DashboardRouter />
+              <Suspense fallback={<RouteFallback />}>
+                <DashboardRouter />
+              </Suspense>
             </ErrorBoundary>
           }
         />

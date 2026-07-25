@@ -126,6 +126,10 @@ export function computeMatriculasCount(
       if (!r.ra) continue;
       if (filters.codperlet.length > 0 && !filters.codperlet.includes(r.codperletNorm))
         continue;
+      if (filters.ano.length > 0) {
+        const a = anoFromCodperlet(r.codperletNorm);
+        if (a === null || !filters.ano.includes(a)) continue;
+      }
       set.add(r.ra);
     }
   };

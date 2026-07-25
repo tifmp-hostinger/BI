@@ -28,10 +28,14 @@ export function ConversaoFilterBar({
     <div className="rounded-md border border-line bg-white p-4 shadow-card animate-fade-in">
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex flex-col gap-1">
-          <label className="text-2xs font-semibold uppercase tracking-widest text-ink-3">
+          <label
+            htmlFor="filtro-codperlet"
+            className="text-2xs font-semibold uppercase tracking-widest text-ink-3"
+          >
             Periodo Letivo
           </label>
           <select
+            id="filtro-codperlet"
             className="rounded-sm border border-line bg-paper px-3 py-2 text-xs text-ink focus:border-fmp focus:outline-none"
             value={filters.codperlet[0] ?? ''}
             onChange={(e) => {
@@ -49,14 +53,15 @@ export function ConversaoFilterBar({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-2xs font-semibold uppercase tracking-widest text-ink-3">
+          <span className="text-2xs font-semibold uppercase tracking-widest text-ink-3">
             Ano
-          </label>
-          <div className="flex items-center gap-1">
+          </span>
+          <div className="flex items-center gap-1" role="group" aria-label="Filtro de ano">
             {ANOS.map((ano) => (
               <button
                 key={ano}
                 type="button"
+                aria-pressed={filters.ano.includes(ano)}
                 onClick={() => onAnoChange(toggle(filters.ano, ano))}
                 className={`rounded-pill px-3 py-1.5 text-2xs font-semibold transition ${
                   filters.ano.includes(ano)
@@ -71,10 +76,14 @@ export function ConversaoFilterBar({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-2xs font-semibold uppercase tracking-widest text-ink-3">
+          <label
+            htmlFor="filtro-mes"
+            className="text-2xs font-semibold uppercase tracking-widest text-ink-3"
+          >
             Mes
           </label>
           <select
+            id="filtro-mes"
             className="rounded-sm border border-line bg-paper px-3 py-2 text-xs text-ink focus:border-fmp focus:outline-none"
             value={filters.mes[0] ?? ''}
             onChange={(e) => {
@@ -92,10 +101,14 @@ export function ConversaoFilterBar({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-2xs font-semibold uppercase tracking-widest text-ink-3">
+          <label
+            htmlFor="filtro-data-inicio"
+            className="text-2xs font-semibold uppercase tracking-widest text-ink-3"
+          >
             Data Inicio
           </label>
           <input
+            id="filtro-data-inicio"
             type="date"
             className="rounded-sm border border-line bg-paper px-3 py-2 text-xs text-ink focus:border-fmp focus:outline-none"
             value={filters.dataInicio ?? ''}
@@ -104,10 +117,14 @@ export function ConversaoFilterBar({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-2xs font-semibold uppercase tracking-widest text-ink-3">
+          <label
+            htmlFor="filtro-data-fim"
+            className="text-2xs font-semibold uppercase tracking-widest text-ink-3"
+          >
             Data Fim
           </label>
           <input
+            id="filtro-data-fim"
             type="date"
             className="rounded-sm border border-line bg-paper px-3 py-2 text-xs text-ink focus:border-fmp focus:outline-none"
             value={filters.dataFim ?? ''}
