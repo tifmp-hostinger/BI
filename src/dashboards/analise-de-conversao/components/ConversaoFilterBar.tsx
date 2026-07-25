@@ -26,7 +26,7 @@ export function ConversaoFilterBar({
   onDataFimChange,
 }: Props) {
   return (
-    <div className="rounded-md border border-line bg-white p-4 shadow-card animate-fade-in">
+    <div className="relative z-20 rounded-md border border-line bg-white p-4 shadow-card animate-fade-in">
       <div className="flex flex-wrap items-center gap-4">
         <MultiSelect
           label="Periodo Letivo"

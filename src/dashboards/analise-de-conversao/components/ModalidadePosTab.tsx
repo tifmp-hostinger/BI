@@ -14,6 +14,7 @@ import {
 } from 'recharts';
 import { TrendingUp, Users, GraduationCap, DollarSign, BookOpen, Wallet, Percent } from 'lucide-react';
 import { SectionCard } from '@/components/ui/SectionCard';
+import { ReorderableGrid, RItem } from '@/components/ui/ReorderableGrid';
 import { StatCard, StatCardSkeleton } from '@/components/ui/StatCard';
 import { ChartSkeleton } from '@/components/ui/Skeletons';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -90,7 +91,8 @@ export function ModalidadePosTab({ loading, data }: Props) {
         <StatCard index={7} label="Desc. Medio" value={fmtPct(data.descontoMedio)} icon={Percent} color="gray" />
       </section>
 
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <ReorderableGrid storageKey={`conv-reorder-pos-${data.modalidade === 'Pós EAD' ? 'ead' : 'presencial'}`} className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <RItem rid="fat-curso">
         <SectionCard title={`Faturamento por Curso - ${data.modalidade}`} subtitle="cursoreduzido x faturamento" icon={DollarSign}>
           {data.fatPorCurso.length === 0 || data.fatPorCurso.every((d) => d.valor === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
@@ -115,6 +117,8 @@ export function ModalidadePosTab({ loading, data }: Props) {
           )}
         </SectionCard>
 
+        </RItem>
+        <RItem rid="top-descontos">
         <SectionCard title="TOP Descontos com Maior Faturamento" subtitle="bolsas x Espec_Fat" icon={TrendingUp}>
           {data.topDescontosFat.length === 0 || data.topDescontosFat.every((d) => d.valor === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
@@ -137,6 +141,8 @@ export function ModalidadePosTab({ loading, data }: Props) {
           )}
         </SectionCard>
 
+        </RItem>
+        <RItem rid="planos-pgto">
         <SectionCard title="TOP 5 Planos de Pagamento" subtitle="codplanopgto x Espec_Fat" icon={Wallet}>
           {data.top5PlanosPgto.length === 0 || data.top5PlanosPgto.every((d) => d.valor === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
@@ -169,6 +175,8 @@ export function ModalidadePosTab({ loading, data }: Props) {
           )}
         </SectionCard>
 
+        </RItem>
+        <RItem rid="mapa-estado">
         <SectionCard title={`Faturamento por Estado - ${data.modalidade}`} subtitle="Intensidade de vermelho = faturamento" icon={TrendingUp}>
           {mapData.length === 0 ? (
             <EmptyState title="Sem dados de estado para os filtros selecionados" />
@@ -176,7 +184,8 @@ export function ModalidadePosTab({ loading, data }: Props) {
             <BrazilStateMap data={mapData} selectedUf={selectedUf} onSelect={setSelectedUf} height={420} />
           )}
         </SectionCard>
-      </section>
+        </RItem>
+      </ReorderableGrid>
     </>
   );
 }

@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import { TrendingDown, RefreshCw, RotateCcw } from 'lucide-react';
 import { SectionCard } from '@/components/ui/SectionCard';
+import { ReorderableGrid, RItem } from '@/components/ui/ReorderableGrid';
 import { ChartSkeleton } from '@/components/ui/Skeletons';
 import { EmptyState } from '@/components/ui/EmptyState';
 import type { RematriculaData } from '../types';
@@ -67,7 +68,8 @@ export function RematriculaTab({ loading, data }: Props) {
 
   return (
     <>
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <ReorderableGrid storageKey="conv-reorder-rematricula" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <RItem rid="evasao">
         <SectionCard
           title="Rematricula - Composicao (Evasao)"
           subtitle="Colunas agrupadas por Periodo Letivo"
@@ -92,6 +94,8 @@ export function RematriculaTab({ loading, data }: Props) {
           )}
         </SectionCard>
 
+        </RItem>
+        <RItem rid="reingresso">
         <SectionCard
           title="Reingresso - Comportamento"
           subtitle="Colunas: Confirmadas | Linha: Aguardando"
@@ -121,6 +125,8 @@ export function RematriculaTab({ loading, data }: Props) {
           )}
         </SectionCard>
 
+        </RItem>
+        <RItem rid="rematricula">
         <SectionCard
           title="Rematricula - Composicao"
           subtitle="Colunas: Confirmada | Linha: Nao Realizada"
@@ -149,7 +155,8 @@ export function RematriculaTab({ loading, data }: Props) {
             </ResponsiveContainer>
           )}
         </SectionCard>
-      </section>
+        </RItem>
+      </ReorderableGrid>
     </>
   );
 }

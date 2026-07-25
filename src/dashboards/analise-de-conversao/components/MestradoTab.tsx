@@ -14,6 +14,7 @@ import {
 } from 'recharts';
 import { Users, GraduationCap, Radio, DollarSign } from 'lucide-react';
 import { SectionCard } from '@/components/ui/SectionCard';
+import { ReorderableGrid, RItem } from '@/components/ui/ReorderableGrid';
 import { StatCard, StatCardSkeleton } from '@/components/ui/StatCard';
 import { GaugeSemicircle } from '@/components/ui/GaugeSemicircle';
 import { ChartSkeleton } from '@/components/ui/Skeletons';
@@ -85,7 +86,8 @@ export function MestradoTab({ loading, data }: Props) {
         />
       </div>
 
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <ReorderableGrid storageKey="conv-reorder-mestrado" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <RItem rid="insc-processo">
         <SectionCard title="Inscricoes por Processo Seletivo" subtitle="periodo_letivo x Mest_Insc" icon={Users}>
           {data.inscPorProcesso.length === 0 ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
@@ -107,6 +109,8 @@ export function MestradoTab({ loading, data }: Props) {
           )}
         </SectionCard>
 
+        </RItem>
+        <RItem rid="status-insc">
         <SectionCard title="Status das Inscricoes" subtitle="statusps x Mest_Insc" icon={Users}>
           {data.statusInscricoes.length === 0 || data.statusInscricoes.every((d) => d.valor === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
@@ -139,6 +143,8 @@ export function MestradoTab({ loading, data }: Props) {
           )}
         </SectionCard>
 
+        </RItem>
+        <RItem rid="leads-canal" className="lg:col-span-2">
         <SectionCard title="Leads Gerados por Canal" subtitle="canal_nome x Mest_Leads - Funil" icon={Radio}>
           {data.leadsPorCanal.length === 0 ? (
             <EmptyState title="Sem dados de canal para os filtros selecionados" />
@@ -171,7 +177,8 @@ export function MestradoTab({ loading, data }: Props) {
             </ResponsiveContainer>
           )}
         </SectionCard>
-      </section>
+        </RItem>
+      </ReorderableGrid>
     </>
   );
 }

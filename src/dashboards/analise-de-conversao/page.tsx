@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { SectionCard } from '@/components/ui/SectionCard';
+import { ReorderableGrid, RItem } from '@/components/ui/ReorderableGrid';
 import { GaugeSemicircle } from '@/components/ui/GaugeSemicircle';
 import { ChartSkeleton } from '@/components/ui/Skeletons';
 import { ErrorState } from '@/components/ui/ErrorState';
@@ -289,7 +290,8 @@ export function AnaliseDeConversaoPage() {
               </section>
             ) : leadsData ? (
               <>
-                <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <ReorderableGrid storageKey="conv-reorder-leads" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  <RItem rid="leads-grad">
                   <SectionCard
                     title="Comportamento - Leads Graduacao"
                     subtitle="Colunas: Leads | Linhas: Conv. Insc / Conv. Mat"
@@ -337,6 +339,8 @@ export function AnaliseDeConversaoPage() {
                     )}
                   </SectionCard>
 
+                  </RItem>
+                  <RItem rid="leads-espec">
                   <SectionCard
                     title="Comportamento - Leads Especializacoes"
                     subtitle="Colunas: Leads | Linhas: Conv. Insc / Conv. Mat"
@@ -384,6 +388,8 @@ export function AnaliseDeConversaoPage() {
                     )}
                   </SectionCard>
 
+                  </RItem>
+                  <RItem rid="leads-mest">
                   <SectionCard
                     title="Comportamento - Leads Mestrado"
                     subtitle="Colunas: Leads | Linhas: Conv. Insc / Conv. Mat"
@@ -431,6 +437,8 @@ export function AnaliseDeConversaoPage() {
                     )}
                   </SectionCard>
 
+                  </RItem>
+                  <RItem rid="leads-canal">
                   <SectionCard
                     title="Leads Gerados por Canal"
                     subtitle="Canal de origem x quantidade de leads"
@@ -487,8 +495,9 @@ export function AnaliseDeConversaoPage() {
                       </ResponsiveContainer>
                     )}
                   </SectionCard>
-                </section>
+                  </RItem>
 
+                  <RItem rid="leads-entrada" className="lg:col-span-2">
                 <SectionCard
                   title="Entrada de Leads - Graduacao e Especializacoes"
                   subtitle="Comparativo mensal de leads por processo"
@@ -534,6 +543,8 @@ export function AnaliseDeConversaoPage() {
                     </ResponsiveContainer>
                   )}
                 </SectionCard>
+                  </RItem>
+                </ReorderableGrid>
               </>
             ) : null}
           </>

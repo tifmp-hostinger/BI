@@ -14,6 +14,7 @@ import {
 } from 'recharts';
 import { Users, Radio, DollarSign, GraduationCap, TrendingUp } from 'lucide-react';
 import { SectionCard } from '@/components/ui/SectionCard';
+import { ReorderableGrid, RItem } from '@/components/ui/ReorderableGrid';
 import { StatCard, StatCardSkeleton } from '@/components/ui/StatCard';
 import { ChartSkeleton } from '@/components/ui/Skeletons';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -74,7 +75,8 @@ export function CursosLivresTab({ loading, data }: Props) {
         <StatCard index={4} label="Faturamento" value={fmtBRLCompact(data.fat)} icon={DollarSign} color="fmp" />
       </section>
 
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <ReorderableGrid storageKey="conv-reorder-cursoslivres" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <RItem rid="funil-canal">
         <SectionCard title="Leads Gerados por Canal" subtitle="canal_nome x CL_Leads - Funil" icon={Radio}>
           {data.leadsPorCanal.length === 0 ? (
             <EmptyState title="Sem dados de canal para os filtros selecionados" />
@@ -108,6 +110,8 @@ export function CursosLivresTab({ loading, data }: Props) {
           )}
         </SectionCard>
 
+        </RItem>
+        <RItem rid="insc-mat-mes">
         <SectionCard title="Inscricoes x Matriculas por Mes" subtitle="Mes x CL_Leads (colunas) + CL_Mat (linha)" icon={Users}>
           {data.inscVsMatMensal.length === 0 || data.inscVsMatMensal.every((d) => d.leads === 0 && d.mat === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
@@ -131,6 +135,8 @@ export function CursosLivresTab({ loading, data }: Props) {
           )}
         </SectionCard>
 
+        </RItem>
+        <RItem rid="fat-curso" className="lg:col-span-2">
         <SectionCard title="Faturamento por Curso" subtitle="curso x CL_Fat ordenado desc" icon={DollarSign}>
           {data.fatPorCurso.length === 0 || data.fatPorCurso.every((d) => d.valor === 0) ? (
             <EmptyState title="Sem dados de faturamento para os filtros selecionados" />
@@ -154,7 +160,8 @@ export function CursosLivresTab({ loading, data }: Props) {
             </ResponsiveContainer>
           )}
         </SectionCard>
-      </section>
+        </RItem>
+      </ReorderableGrid>
     </>
   );
 }

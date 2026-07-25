@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import { GraduationCap, Users, TrendingUp } from 'lucide-react';
 import { SectionCard } from '@/components/ui/SectionCard';
+import { ReorderableGrid, RItem } from '@/components/ui/ReorderableGrid';
 import { StatCard, StatCardSkeleton } from '@/components/ui/StatCard';
 import { GaugeSemicircle } from '@/components/ui/GaugeSemicircle';
 import { ChartSkeleton } from '@/components/ui/Skeletons';
@@ -84,7 +85,8 @@ export function GraduacaoTab({ loading, data }: Props) {
         />
       </div>
 
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <ReorderableGrid storageKey="conv-reorder-graduacao" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <RItem rid="pgt-bolsas">
         <SectionCard title="Matriculas Pagantes x Bolsistas" subtitle="Grad_Mat_Pgt vs Grad_Mat_Bolsas" icon={GraduationCap}>
           {data.pgtVsBolsas.every((d) => d.valor === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
@@ -106,6 +108,8 @@ export function GraduacaoTab({ loading, data }: Props) {
           )}
         </SectionCard>
 
+        </RItem>
+        <RItem rid="insc-turno">
         <SectionCard title="Inscricoes por Turno" subtitle="areainteresse x Grad_Insc" icon={Users}>
           {data.inscPorTurno.length === 0 || data.inscPorTurno.every((d) => d.valor === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
@@ -121,6 +125,8 @@ export function GraduacaoTab({ loading, data }: Props) {
           )}
         </SectionCard>
 
+        </RItem>
+        <RItem rid="insc-processo">
         <SectionCard title="Inscricoes por Processo Seletivo" subtitle="processoseletivo x Grad_Insc" icon={Users}>
           {data.inscPorProcesso.length === 0 ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
@@ -142,6 +148,8 @@ export function GraduacaoTab({ loading, data }: Props) {
           )}
         </SectionCard>
 
+        </RItem>
+        <RItem rid="mat-ingresso">
         <SectionCard title="Matriculas por Tipo de Ingresso" subtitle="tipoingresso x Grad_Mat_Efet" icon={GraduationCap}>
           {data.matPorTipoIngresso.length === 0 ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
@@ -162,8 +170,9 @@ export function GraduacaoTab({ loading, data }: Props) {
             </ResponsiveContainer>
           )}
         </SectionCard>
-      </section>
+        </RItem>
 
+        <RItem rid="mat-dia" className="lg:col-span-2">
       <SectionCard title="Matriculas por Dia" subtitle="datamatricula x Grad_Mat_Efet" icon={TrendingUp}>
         {data.matPorDia.length === 0 ? (
           <EmptyState title="Sem dados para os filtros selecionados" />
@@ -184,6 +193,8 @@ export function GraduacaoTab({ loading, data }: Props) {
           </ResponsiveContainer>
         )}
       </SectionCard>
+        </RItem>
+      </ReorderableGrid>
     </>
   );
 }

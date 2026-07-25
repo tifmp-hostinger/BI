@@ -16,6 +16,7 @@ import {
 } from 'recharts';
 import { TrendingUp, GraduationCap, DollarSign, Users } from 'lucide-react';
 import { SectionCard } from '@/components/ui/SectionCard';
+import { ReorderableGrid, RItem } from '@/components/ui/ReorderableGrid';
 import { StatCard, StatCardSkeleton } from '@/components/ui/StatCard';
 import { GaugeSemicircle } from '@/components/ui/GaugeSemicircle';
 import { ChartSkeleton } from '@/components/ui/Skeletons';
@@ -86,7 +87,8 @@ export function EspecializacoesTab({ loading, data }: Props) {
         />
       </div>
 
-      <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <ReorderableGrid storageKey="conv-reorder-especializacoes" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <RItem rid="fat-mes">
         <SectionCard title="Faturamento e Matriculas por Mes" subtitle="Mes fiscal x Espec_Fat (colunas) + Espec_Mat (linha)" icon={TrendingUp}>
           {data.fatMensal.length === 0 || data.fatMensal.every((d) => d.fat === 0 && d.mat === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
@@ -114,6 +116,8 @@ export function EspecializacoesTab({ loading, data }: Props) {
           )}
         </SectionCard>
 
+        </RItem>
+        <RItem rid="fat-modalidade-mes">
         <SectionCard title="Faturamento por Modalidade de Ensino" subtitle="Mes x Espec_Fat_EAD + Espec_Fat_Pres + Espec_Mat (eixo sec.)" icon={TrendingUp}>
           {data.fatMensal.length === 0 || data.fatMensal.every((d) => d.fatEad === 0 && d.fatPres === 0 && d.mat === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
@@ -134,6 +138,8 @@ export function EspecializacoesTab({ loading, data }: Props) {
           )}
         </SectionCard>
 
+        </RItem>
+        <RItem rid="top5-cursos">
         <SectionCard title="Top 5 Cursos com Maior Faturamento" subtitle="cursoreduzido x Espec_Fat" icon={DollarSign}>
           {data.top5CursosFat.length === 0 || data.top5CursosFat.every((d) => d.valor === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
@@ -158,6 +164,8 @@ export function EspecializacoesTab({ loading, data }: Props) {
           )}
         </SectionCard>
 
+        </RItem>
+        <RItem rid="pizzas">
         <div className="grid grid-cols-1 gap-4">
           <SectionCard title="% Faturamento por Modalidade" subtitle="EAD vs Presencial" icon={TrendingUp}>
             {data.fatPorModalidade.length === 0 || data.fatPorModalidade.every((d) => d.valor === 0) ? (
@@ -190,7 +198,8 @@ export function EspecializacoesTab({ loading, data }: Props) {
             )}
           </SectionCard>
         </div>
-      </section>
+        </RItem>
+      </ReorderableGrid>
     </>
   );
 }
