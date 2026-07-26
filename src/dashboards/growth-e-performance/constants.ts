@@ -132,6 +132,18 @@ export function classificaFimDeSemana(
 }
 
 /**
+ * Campanhas Meta removidas ANTES de qualquer cálculo (regra do PBI original).
+ * Comparação por igualdade EXATA da string — os espaços duplos fazem parte
+ * dos nomes reais; não normalizar. Juntas somam R$ 94.752,46 no histórico.
+ */
+export const CAMPANHAS_META_EXCLUIDAS = new Set([
+  'DOT  [FMP] [WHATSAPP] Pós Setembro',
+  '[CAD] - [ACT] - [PÓS PRESENCIAL] - [FMP] -  CURSOS PRESENCIAIS ABRIL/26',
+  '[CONV] - [ACT] - [PÓS PRESENCIAL] - [FMP] - [LP] -  CURSOS PRESENCIAIS ABRIL/26',
+  '[CONV] - [ACT] - [PÓS PRES] - [FMP] -  [SITE] - Pós Presencial',
+]);
+
+/**
  * Ações do Meta que contam como lead (leadsMeta = SUM(value) destas).
  */
 export const META_LEAD_ACTIONS = new Set([

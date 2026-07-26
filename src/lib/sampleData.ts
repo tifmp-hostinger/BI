@@ -54,6 +54,19 @@ export const SAMPLE_DASHBOARDS: Dashboard[] = [
     created_at: new Date().toISOString(),
   },
   {
+    id: '10',
+    slug: 'growth-e-performance',
+    title: 'Growth e Performance',
+    description:
+      'Midia paga (Google + Meta) cruzada com o funil de captacao, segmentada por produto.',
+    icon: 'TrendingUp',
+    color: 'fmp',
+    category: 'Comercial',
+    is_active: true,
+    sort_order: 5,
+    created_at: new Date().toISOString(),
+  },
+  {
     id: '2',
     slug: 'academic-performance',
     title: 'Desempenho Academico',

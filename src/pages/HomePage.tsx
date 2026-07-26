@@ -11,6 +11,7 @@ import {
   Percent,
   Sparkles,
   Target,
+  TrendingUp,
   UserPlus,
   Users,
 } from 'lucide-react';
@@ -29,6 +30,7 @@ const ICONS: Record<string, LucideIcon> = {
   Users,
   Target,
   Percent,
+  TrendingUp,
 };
 
 const ACCENT: Record<

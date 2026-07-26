@@ -10,6 +10,7 @@ import {
   Settings,
   Shield,
   Target,
+  TrendingUp,
   UserPlus,
   Users,
   X,
@@ -27,6 +28,7 @@ const ICONS: Record<string, LucideIcon> = {
   Settings,
   Target,
   Percent,
+  TrendingUp,
 };
 
 type SidebarItem = {

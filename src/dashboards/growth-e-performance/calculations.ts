@@ -6,6 +6,7 @@ import {
 import {
   AJUSTE_ALUNO,
   AJUSTE_DATA,
+  CAMPANHAS_META_EXCLUIDAS,
   META_LEAD_ACTIONS,
   REGION_ID_UF,
   buildMesAnoCalendar,
@@ -44,25 +45,48 @@ function properCase(s: string): string {
 }
 
 /**
- * Modalidade a partir de campaign_name do Meta (§4.1). A ordem dos replaces
- * importa: '[PÓS PRESENCIAL]' → 'Pós Presencial' → o replace de 'Pós' o
- * transforma em 'Pós EAD Presencial' → o replace seguinte conserta. Não
- * reordenar.
+ * Modalidade a partir de campaign_name do Meta (regra COMPLETA — a
+ * nomenclatura mudou ~dez/2025 e convivem dois padrões no banco).
  *
- * HERANÇA: duas campanhas têm '[LP]' no 3º bloco e resultam em 'Lp', que não
- * existe em MODALIDADES — ficam órfãs e somem da segmentação, como no BI.
+ * A ordem dos replaces importa e são substituições de SUBSTRING:
+ * '[PÓS PRESENCIAL]' → 'Pós Presencial' → o replace de 'Pós' o transforma em
+ * 'Pós EAD Presencial' → o replace seguinte conserta. O passo final
+ * 'Pós EAD EAD'→'Pós EAD' desfaz a reaplicação do passo 5 sobre o que já
+ * virou 'Pós EAD' no passo 3. Não reordenar.
+ *
+ * HERANÇA (preservar, não consertar): campanhas com '[LP]' no 3º bloco viram
+ * 'Lp' e uma vira 'Palestra' — modalidades fora da lista canônica que somem
+ * da segmentação, como no BI (R$ 6.049,63 + R$ 4.455,01 no histórico). Não
+ * criar categoria "Outros" nem forçar modalidade.
  */
 export function modalidadeMeta(campaignName: string | null | undefined): string {
-  const blocos = (campaignName ?? '').split(' - ');
+  const nome = campaignName ?? '';
+  const blocos = nome.split(' - ');
+  // Objetivo = texto antes do primeiro " - " (a string inteira se não houver)
+  const objetivo = blocos[0] ?? '';
+  // Modalidade = 3º bloco, removendo colchetes, depois Title Case
   const bloco3 = blocos[2] ?? '';
-  const m = bloco3.match(/\[([^\]]*)\]/);
-  let mod = properCase((m ? m[1] : bloco3).trim());
+  let mod = properCase(replaceAll(replaceAll(bloco3, '[', ''), ']', '').trim());
   mod = replaceAll(mod, 'Grad', 'Graduação');
   mod = replaceAll(mod, 'Ia', 'Cursos Livres');
   mod = replaceAll(mod, 'Pós', 'Pós EAD');
   mod = replaceAll(mod, 'Pós EAD Presencial', 'Pós Presencial');
   mod = replaceAll(mod, 'Curso Livre', 'Cursos Livres');
   mod = replaceAll(mod, 'Pós EAD Pres', 'Pós Presencial');
+
+  // FALLBACK (padrão antigo de nomenclatura, sem blocos " - "): texto após a
+  // ÚLTIMA ocorrência de "] " no Objetivo, depois o texto antes do 1º espaço.
+  if (!mod) {
+    const idx = objetivo.lastIndexOf('] ');
+    const resto = (idx >= 0 ? objetivo.slice(idx + 2) : objetivo).trim();
+    const sp = resto.indexOf(' ');
+    mod = sp >= 0 ? resto.slice(0, sp) : resto;
+  }
+
+  // Replaces finais — aplicados SEMPRE (daí o 'Pós EAD EAD' de correção).
+  mod = replaceAll(mod, 'Pós', 'Pós EAD');
+  mod = replaceAll(mod, 'Pós EAD Presencial', 'Pós Presencial');
+  mod = replaceAll(mod, 'Pós EAD EAD', 'Pós EAD');
   return mod;
 }
 
@@ -151,6 +175,9 @@ function getClassified(ds: GrowthDataset): ClassifiedData {
 
   const meta: MetaClassified[] = [];
   for (const r of ds.meta) {
+    // Campanhas removidas ANTES de qualquer cálculo (regra do PBI) —
+    // igualdade exata da string, espaços duplos preservados (§B.2).
+    if (CAMPANHAS_META_EXCLUIDAS.has(r.campaign_name ?? '')) continue;
     const dateIso = toISODate(r.date_start);
     if (!dateIso) continue;
     meta.push({
