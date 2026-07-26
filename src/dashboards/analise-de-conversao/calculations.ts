@@ -33,12 +33,22 @@ const BOLSAS_INCENTIVO = new Set([
 ]);
 
 /**
- * Exceções nominais herdadas do Power BI (BasePos de Especializações).
- * Exportadas para reutilização pelo dashboard growth-e-performance — não
- * duplicar estes nomes em outros arquivos.
+ * Exceções herdadas do Power BI (BasePos de Especializações), por RA em vez de
+ * nome: o BI identificava os alunos pelo nome completo, o que colocava dado
+ * pessoal no código e no bundle. O RA cobre exatamente o mesmo conjunto de
+ * registros — validado contra o banco antes da troca (3 e 4 linhas
+ * respectivamente, 1 RA por pessoa, sem homônimo nem grafia divergente).
+ *
+ * Variável de ambiente NÃO resolveria: no Vite tudo que tem prefixo VITE_ é
+ * embutido no bundle em tempo de build, então sairia do Git mas chegaria ao
+ * navegador de qualquer usuário. Numa aplicação só de frontend não existe
+ * valor secreto.
+ *
+ * Exportadas para reuso pelo growth-e-performance — não duplicar em outros
+ * arquivos.
  */
-export const EXCLUSOES_FATURAMENTO_POS = new Set(['Eric Maldaner Molter']);
-export const EXCECAO_TROCA_PL = 'Bruno Barbosa da Silveira';
+export const EXCLUSOES_FATURAMENTO_POS_RA = new Set(['21100143']);
+export const EXCECAO_TROCA_PL_RA = '26064143';
 
 // Strings literais herdadas do DAX do Power BI ('Pré Matricula' não existe no
 // banco — filtro morto herdado, preservado de propósito para paridade).
@@ -350,13 +360,12 @@ function computeBasePos(
     const sit = (r.situacao ?? '').trim();
     if (SITUACOES_EXCLUIR_BASE_POS.has(sit)) return false;
 
-    const aluno = (r.aluno ?? '').trim();
-    if (EXCLUSOES_FATURAMENTO_POS.has(aluno)) return false;
+    if (EXCLUSOES_FATURAMENTO_POS_RA.has((r.ra ?? '').trim())) return false;
 
     const bolsas = (r.bolsas ?? '').toUpperCase();
     const bolsa3 = (r.bolsa3 ?? '').toUpperCase();
     const temTrocaPL = bolsas.includes('TROCA DE PL') || bolsa3.includes('TROCA DE PL');
-    if (temTrocaPL && aluno !== EXCECAO_TROCA_PL) return false;
+    if (temTrocaPL && (r.ra ?? '').trim() !== EXCECAO_TROCA_PL_RA) return false;
 
     const baixaIso = toISODate(r.databaixa);
     if (!baixaIso) return false;

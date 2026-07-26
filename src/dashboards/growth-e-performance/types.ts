@@ -54,6 +54,8 @@ export type RawMatGradMestRow = {
 
 export type RawMatPosGrowthRow = {
   aluno: string | null;
+  /** Identifica as exceções nominais herdadas do BI sem expor o nome. */
+  ra: string | null;
   curso: string | null;
   situacao: string | null;
   processoseletivo: string | null;

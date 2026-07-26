@@ -109,7 +109,7 @@ export async function fetchGrowthData(
   const matMestrado = (await loadAllFrom('stg_rm_matriculas_mestrado', gradMestCols)) as RawMatGradMestRow[];
   const matPos = (await loadAllFrom(
     'stg_rm_matriculas_pos',
-    'aluno,curso,situacao,processoseletivo,descontoaluno,distanciapresencial,bolsas,bolsa3,codplanopgto,databaixa,datacancelamentomatricula,inscricaodata,faturadoliq',
+    'aluno,ra,curso,situacao,processoseletivo,descontoaluno,distanciapresencial,bolsas,bolsa3,codplanopgto,databaixa,datacancelamentomatricula,inscricaodata,faturadoliq',
   )) as RawMatPosGrowthRow[];
   const matCL = (await loadAllFrom(
     'stg_rm_matriculas_cursoslivres',

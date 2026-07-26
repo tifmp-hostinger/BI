@@ -48,15 +48,18 @@ export const POS_CURSO_EXCLUIDO_NORMALIZED = normalizeStr(
 
 export const POS_DESCONTOALUNO_VALIDO = 'Pagante';
 
+/*
+ * Exceções nominais do Power BI trocadas por RA: o nome completo é dado
+ * pessoal e ficava visível no código e no bundle. Cada RA cobre exatamente o
+ * mesmo conjunto de registros que o nome cobria — validado no banco antes da
+ * troca (contagem por nome == contagem por RA, 1 RA por pessoa, sem homônimo).
+ */
+
 /** Alunos excluidos globalmente (regra Power BI). */
-export const POS_ALUNOS_EXCLUIDOS_NORMALIZED = new Set(
-  ['Eric Maldaner Molter'].map(normalizeStr)
-);
+export const POS_ALUNOS_EXCLUIDOS_RA = new Set(['21100143']);
 
 /** Alunos excluidos apenas do EAD (regra Power BI). */
-export const POS_ALUNOS_EXCLUIDOS_EAD_NORMALIZED = new Set(
-  ['joanderson costa ribeiro'].map(normalizeStr)
-);
+export const POS_ALUNOS_EXCLUIDOS_EAD_RA = new Set(['26063775']);
 
 /** Alunos "testes" identificados por substring (regra Power BI). */
 export const POS_ALUNO_TESTE_SUBSTR = 'teste';
@@ -65,14 +68,10 @@ export const POS_ALUNO_TESTE_SUBSTR = 'teste';
  * Excecoes aa regra "excluir se bolsas contem TROCA DE PL".
  * Estes alunos permanecem incluidos mesmo com TROCA DE PL nas bolsas.
  */
-export const POS_TROCA_DE_PL_EXCECOES_NORMALIZED = new Set(
-  ['Bruno Barbosa da Silveira'].map(normalizeStr)
-);
+export const POS_TROCA_DE_PL_EXCECOES_RA = new Set(['26064143']);
 
 /** Alunos com tratamento especial de cancelamentos EAD. */
-export const POS_EAD_CANCEL_EXCECOES_NORMALIZED = new Set(
-  ['Daiana Cerutti'].map(normalizeStr)
-);
+export const POS_EAD_CANCEL_EXCECOES_RA = new Set(['26064137']);
 
 /**
  * Data limite de cancelamentos EAD que muda tratamento (regra Power BI).
@@ -94,6 +93,8 @@ export function modalidadePos(processoseletivo: string | null | undefined):
 /** Regra 1.7: registro passa nas exclusoes gerais do faturamento. */
 export function passesPosExclusoesGerais(row: {
   aluno?: string | null;
+  /** Identifica as excecoes nominais herdadas do BI sem expor o nome. */
+  ra?: string | null;
   curso?: string | null;
   descontoaluno?: string | null;
   situacao?: string | null;
@@ -110,18 +111,17 @@ export function passesPosExclusoesGerais(row: {
   if (cursoN === POS_CURSO_EXCLUIDO_NORMALIZED) return false;
   if (POS_SITUACOES_EXCLUIDAS_NORMALIZED.has(situacaoN)) return false;
   if (alunoN.includes(POS_ALUNO_TESTE_SUBSTR)) return false;
-  if (POS_ALUNOS_EXCLUIDOS_NORMALIZED.has(alunoN)) return false;
+  if (POS_ALUNOS_EXCLUIDOS_RA.has((row.ra ?? '').trim())) return false;
 
   const bolsasStr = `${row.bolsas ?? ''} ${row.bolsa3 ?? ''}`;
   if (/TROCA DE PL/i.test(bolsasStr)) {
-    if (!POS_TROCA_DE_PL_EXCECOES_NORMALIZED.has(alunoN)) return false;
+    if (!POS_TROCA_DE_PL_EXCECOES_RA.has((row.ra ?? '').trim())) return false;
   }
 
   return true;
 }
 
-/** Verifica se aluno esta excluido especificamente do EAD (alem das regras gerais). */
-export function isExcluidoEad(aluno: string | null | undefined): boolean {
-  const n = normalizeStr(aluno ?? '');
-  return POS_ALUNOS_EXCLUIDOS_EAD_NORMALIZED.has(n);
+/** Verifica se o registro esta excluido especificamente do EAD (identificado por RA). */
+export function isExcluidoEad(ra: string | null | undefined): boolean {
+  return POS_ALUNOS_EXCLUIDOS_EAD_RA.has((ra ?? '').trim());
 }

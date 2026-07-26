@@ -157,7 +157,7 @@ export async function fetchMatriculasPos(): Promise<MatriculaPosRow[]> {
     supabase
       .from('stg_rm_matriculas_pos')
       .select(
-        'aluno, curso, processoseletivo, descontoaluno, situacao, bolsas, bolsa3, databaixa, datacancelamentomatricula, faturadoliq'
+        'aluno, ra, curso, processoseletivo, descontoaluno, situacao, bolsas, bolsa3, databaixa, datacancelamentomatricula, faturadoliq'
       )
       .range(from, to)
   );

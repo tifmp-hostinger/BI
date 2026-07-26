@@ -74,6 +74,8 @@ export type MatriculaGradRow = {
 export type MatriculaMestradoRow = MatriculaGradRow;
 
 export type MatriculaPosRow = {
+  /** Identifica as exceções herdadas do BI sem expor o nome do aluno. */
+  ra?: string | null;
   aluno: string | null;
   curso: string | null;
   processoseletivo: string | null;

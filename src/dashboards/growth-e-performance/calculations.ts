@@ -1,7 +1,7 @@
 import { parseDecimal, toISODate } from '../analise-de-conversao/dateUtils';
 import {
-  EXCECAO_TROCA_PL,
-  EXCLUSOES_FATURAMENTO_POS,
+  EXCECAO_TROCA_PL_RA,
+  EXCLUSOES_FATURAMENTO_POS_RA,
 } from '../analise-de-conversao/calculations';
 import {
   AJUSTE_ALUNO,
@@ -674,11 +674,10 @@ function faturamentoPos(
     if ((r.curso ?? '').trim() === 'Pós-graduação em Direito Público (ead)') return false;
     if ((r.descontoaluno ?? '').trim() !== 'Pagante') return false;
     if (SITUACOES_EXCLUIR_FAT_POS.has((r.situacao ?? '').trim())) return false;
-    const aluno = (r.aluno ?? '').trim();
-    if (EXCLUSOES_FATURAMENTO_POS.has(aluno)) return false;
+    if (EXCLUSOES_FATURAMENTO_POS_RA.has((r.ra ?? '').trim())) return false;
     const bolsas = (r.bolsas ?? '').toUpperCase();
     const bolsa3 = (r.bolsa3 ?? '').toUpperCase();
-    if ((bolsas.includes('TROCA DE PL') || bolsa3.includes('TROCA DE PL')) && aluno !== EXCECAO_TROCA_PL) {
+    if ((bolsas.includes('TROCA DE PL') || bolsa3.includes('TROCA DE PL')) && (r.ra ?? '').trim() !== EXCECAO_TROCA_PL_RA) {
       return false;
     }
     const baixa = toISODate(r.databaixa);

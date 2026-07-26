@@ -17,7 +17,7 @@ import {
   MATRICULA_SITUACAO_ATIVA,
   MATRICULA_TIPO_NOVA,
   MESTRADO_SITUACOES_QUALIFICADAS,
-  POS_EAD_CANCEL_EXCECOES_NORMALIZED,
+  POS_EAD_CANCEL_EXCECOES_RA,
   POS_EAD_DATA_LIMITE_CANCEL,
   isExcluidoEad,
   modalidadePos,
@@ -206,8 +206,7 @@ function cancelamentoImpedeFaturamento(row: MatriculaPosRow, modalidade: string)
   const cancel = (row.datacancelamentomatricula ?? '').trim();
   if (!cancel) return false;
 
-  const alunoN = normalizeStr(row.aluno);
-  if (POS_EAD_CANCEL_EXCECOES_NORMALIZED.has(alunoN)) return false;
+  if (POS_EAD_CANCEL_EXCECOES_RA.has((row.ra ?? '').trim())) return false;
 
   // EAD: cancelamentos aa partir da data limite mantem o faturamento.
   if (modalidade === 'Pos EAD' && cancel >= POS_EAD_DATA_LIMITE_CANCEL) return false;
@@ -244,7 +243,7 @@ export function computeEspecializacoesKpis(
 
     const modalidade = modalidadePos(row.processoseletivo);
 
-    if (modalidade === 'Pos EAD' && isExcluidoEad(row.aluno)) continue;
+    if (modalidade === 'Pos EAD' && isExcluidoEad(row.ra)) continue;
     if (cancelamentoImpedeFaturamento(row, modalidade)) continue;
 
     const valor = parseBRNumber(row.faturadoliq) ?? 0;
