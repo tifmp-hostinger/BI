@@ -514,7 +514,10 @@ function faturamentoPos(
         escolhido = r;
       }
     }
-    if (escolhido) total += num(escolhido.faturadoliq) / 10_000; // §2.3
+    // Sem divisor: os valores no Supabase já estão em reais (decimais com
+    // ponto → CAST direto, conforme o CLAUDE.md). Os divisores do Power Query
+    // do PBIP exportado estão defasados em relação à carga atual.
+    if (escolhido) total += num(escolhido.faturadoliq);
   }
 
   // HERANÇA §7.6: ajuste manual amarrado a 28/05/2026 — soma um valor extra
@@ -526,7 +529,7 @@ function faturamentoPos(
     for (const r of ds.matPos) {
       if ((r.aluno ?? '').trim() !== AJUSTE_ALUNO) continue;
       if (toISODate(r.databaixa) !== AJUSTE_DATA) continue;
-      total += num(r.faturadoliq) / 10_000;
+      total += num(r.faturadoliq);
     }
   }
 
@@ -593,7 +596,6 @@ const SITUACOES_PAGINA_MEST = new Set(['Matriculado', 'Cancelado – Curso']);
 
 function computeGradMestNegocio(
   rows: RawMatGradMestRow[],
-  divisor: number,
   inscritos: number,
   filters: GrowthFilters,
   media: MediaMetrics,
@@ -646,7 +648,8 @@ function computeGradMestNegocio(
       if (!aluno) continue;
       const atual = porAluno.get(aluno);
       if (!atual || ref >= atual.ref) {
-        porAluno.set(aluno, { ref, fat: num(r.faturadoliq) / divisor });
+        // Sem divisor — ver comentário em faturamentoPos.
+        porAluno.set(aluno, { ref, fat: num(r.faturadoliq) });
       }
     }
     let total = 0;
@@ -675,7 +678,7 @@ function computeCLNegocio(
     const baixa = toISODate(r.databaixa);
     if (!baixa || !inRange(baixa, ini, fim)) continue;
     matriculas++;
-    faturamento += num(r.valor_curso_com_desconto) / 100; // §2.3
+    faturamento += num(r.valor_curso_com_desconto); // sem divisor — já em reais
   }
 
   const inscritos = countInsc(ds.inscCL, ini, fim);
@@ -737,7 +740,6 @@ export function computeNegocioMetrics(
     case 'Graduação':
       return computeGradMestNegocio(
         ds.matGrad,
-        100, // §2.3: grad divide valores por 100
         countInsc(ds.inscGrad, filters.dataInicio, filters.dataFim),
         filters,
         media,
@@ -746,7 +748,6 @@ export function computeNegocioMetrics(
     case 'Mestrado':
       return computeGradMestNegocio(
         ds.matMestrado,
-        1, // §2.3: mestrado sem divisão
         countInsc(ds.inscMestrado, filters.dataInicio, filters.dataFim),
         filters,
         media,
