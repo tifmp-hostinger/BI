@@ -861,7 +861,9 @@ export function computeMapa(ds: GrowthDataset, filters: GrowthFilters): MapaUfDa
     row.investimento += r.cost;
     porUf.set(r.uf, row);
   }
-  return Array.from(porUf.values()).sort((a, b) => b.conversoes - a.conversoes);
+  // Ordena por INVESTIMENTO: no PBI o mapa é um esriVisual de bolhas onde
+  // Size = Sum(cost) (rótulo "Investimento") e Color = Sum(conversions).
+  return Array.from(porUf.values()).sort((a, b) => b.investimento - a.investimento);
 }
 
 export function computeHorarios(ds: GrowthDataset, filters: GrowthFilters): HorarioDatum[] {

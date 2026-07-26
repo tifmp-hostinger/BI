@@ -10,9 +10,51 @@ type Props = {
   selectedUf: string | null;
   onSelect: (uf: string | null) => void;
   height?: number;
+  /**
+   * Rótulo da métrica principal no tooltip (o campo `total` do StateAgg).
+   * Default 'matriculas' — o texto histórico do Presença Nacional.
+   */
+  metricLabel?: string;
+  /** Formatação de `total` na bolha e no tooltip. Default 'int'. */
+  metricFormat?: 'int' | 'currency';
+  /**
+   * Segunda linha do tooltip. Default: "Pos: N · Cursos livres: N", do
+   * Presença Nacional. Retornar null omite a linha.
+   */
+  secondaryLine?: (agg: StateAgg) => string | null;
+  /**
+   * Valor que governa a INTENSIDADE de cor (bolha e mapa de calor), quando
+   * ela deve ser diferente do tamanho. Default: o próprio `total`.
+   */
+  colorValue?: (agg: StateAgg) => number;
 };
 
 const FMP_SAND = '#BFBAA4';
+
+function fmtMetric(v: number, format: 'int' | 'currency'): string {
+  if (format === 'currency') {
+    return v.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
+  return v.toLocaleString('pt-BR');
+}
+
+function fmtBubble(v: number, format: 'int' | 'currency'): string {
+  if (v <= 0) return '';
+  if (format === 'currency') {
+    if (v >= 1000) return `${(v / 1000).toFixed(v >= 10000 ? 0 : 1)}k`;
+    return String(Math.round(v));
+  }
+  return v > 999 ? `${(v / 1000).toFixed(1)}k` : String(v);
+}
+
+function defaultSecondaryLine(agg: StateAgg): string {
+  return `Pos: ${agg.pos} &middot; Cursos livres: ${agg.livres}`;
+}
 
 function interpolateSandToRed(t: number): string {
   const clamp = Math.max(0, Math.min(1, t));
@@ -29,12 +71,21 @@ export function BrazilStateMap({
   selectedUf,
   onSelect,
   height = 520,
+  metricLabel = 'matriculas',
+  metricFormat = 'int',
+  secondaryLine = defaultSecondaryLine,
+  colorValue,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const layerRef = useRef<L.LayerGroup | null>(null);
   const heatRef = useRef<L.Layer | null>(null);
   const selectedRef = useRef<string | null>(selectedUf);
+  // Callbacks de apresentação em ref: as chamadoras passam funções inline
+  // (identidade nova a cada render); nas dependências do efeito elas
+  // redesenhariam o mapa inteiro em todo render.
+  const fnsRef = useRef({ secondaryLine, colorValue });
+  fnsRef.current = { secondaryLine, colorValue };
 
   const byUf = useMemo(() => {
     const m = new Map<string, StateAgg>();
@@ -94,13 +145,24 @@ export function BrazilStateMap({
       heatRef.current = null;
     }
 
-    const max = data[0]?.total ?? 1;
+    // Tamanho vem de `total`; a cor pode vir de outra métrica (colorValue).
+    const { secondaryLine: linhaSecundaria, colorValue: corDe } = fnsRef.current;
+    const sizeOf = (agg: StateAgg) => agg.total;
+    const colorOf = corDe ?? sizeOf;
+
+    // Max calculado de verdade (não assume que `data` chega ordenado).
+    let max = 1;
+    let maxColor = 1;
+    for (const s of data) {
+      if (sizeOf(s) > max) max = sizeOf(s);
+      if (colorOf(s) > maxColor) maxColor = colorOf(s);
+    }
 
     const heatPoints: [number, number, number][] = BR_STATES.filter(
       (s) => (byUf.get(s.uf)?.total ?? 0) > 0
     ).map((s) => {
       const agg = byUf.get(s.uf)!;
-      const norm = Math.max(0.25, Math.min(1, Math.log10(1 + agg.total) / Math.log10(1 + max)));
+      const norm = Math.max(0.25, Math.min(1, Math.log10(1 + colorOf(agg)) / Math.log10(1 + maxColor)));
       return [s.lat, s.lng, norm];
     });
 
@@ -130,33 +192,46 @@ export function BrazilStateMap({
     for (const s of BR_STATES) {
       const agg = byUf.get(s.uf);
       const total = agg?.total ?? 0;
+      const corBase = agg ? colorOf(agg) : 0;
       const intensity =
-        total === 0
+        corBase <= 0
           ? 0
-          : Math.max(0.2, Math.min(1, Math.log10(1 + total) / Math.log10(1 + max)));
+          : Math.max(0.2, Math.min(1, Math.log10(1 + corBase) / Math.log10(1 + maxColor)));
+      const escala =
+        total === 0 ? 0 : Math.max(0.2, Math.min(1, Math.log10(1 + total) / Math.log10(1 + max)));
       const color = total === 0 ? FMP_SAND : interpolateSandToRed(intensity);
 
       const isSelected = selectedRef.current === s.uf;
-      const scale = total === 0 ? 0.35 : 0.4 + intensity * 0.6;
+      const scale = total === 0 ? 0.35 : 0.4 + escala * 0.6;
       const size = Math.round(30 + scale * 30);
 
       const marker = L.marker([s.lat, s.lng], {
         icon: L.divIcon({
           className: 'br-state-marker',
-          html: renderBubble({ state: s, total, color, size, isSelected, hasData: total > 0 }),
+          html: renderBubble({
+            state: s,
+            label: fmtBubble(total, metricFormat),
+            color,
+            size,
+            isSelected,
+            hasData: total > 0,
+          }),
           iconSize: [size, size],
           iconAnchor: [size / 2, size / 2],
         }),
       });
 
+      const linha2 = agg ? linhaSecundaria(agg) : null;
       marker.bindTooltip(
         `<div style="font-family:Inter,sans-serif;">
           <div style="font-size:10px;color:#64748B;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;">${s.region}</div>
           <div style="font-size:13px;font-weight:600;color:#0F172A;margin-top:2px;">${s.name} <span style="color:#94A3B8;font-weight:500;">(${s.uf})</span></div>
-          <div style="font-size:12px;color:#B81E32;margin-top:4px;font-weight:600;">${total.toLocaleString('pt-BR')} matriculas</div>
+          <div style="font-size:12px;color:#B81E32;margin-top:4px;font-weight:600;">${fmtMetric(total, metricFormat)} ${metricLabel}</div>
           ${
             agg
-              ? `<div style="font-size:10px;color:#64748B;margin-top:2px;">Pos: ${agg.pos} &middot; Cursos livres: ${agg.livres}</div>`
+              ? linha2
+                ? `<div style="font-size:10px;color:#64748B;margin-top:2px;">${linha2}</div>`
+                : ''
               : '<div style="font-size:10px;color:#94A3B8;margin-top:2px;">Sem dados</div>'
           }
         </div>`,
@@ -170,7 +245,7 @@ export function BrazilStateMap({
 
       marker.addTo(layer);
     }
-  }, [byUf, data, onSelect]);
+  }, [byUf, data, onSelect, metricLabel, metricFormat]);
 
   return (
     <div
@@ -183,14 +258,14 @@ export function BrazilStateMap({
 
 function renderBubble({
   state,
-  total,
+  label: valorLabel,
   color,
   size,
   isSelected,
   hasData,
 }: {
   state: BrState;
-  total: number;
+  label: string;
   color: string;
   size: number;
   isSelected: boolean;
@@ -208,7 +283,7 @@ function renderBubble({
 
   const fontColor = hasData ? '#ffffff' : '#8A8578';
   const fontSize = size > 46 ? 12 : size > 38 ? 11 : 10;
-  const label = total > 999 ? `${(total / 1000).toFixed(1)}k` : total > 0 ? total : state.uf;
+  const label = valorLabel || state.uf;
 
   return `
     <div style="

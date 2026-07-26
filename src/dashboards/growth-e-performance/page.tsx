@@ -42,6 +42,16 @@ const VIEWS: { id: GrowthView; label: string; icon: typeof TableIcon }[] = [
   { id: 'matriculas', label: 'Matrículas', icon: BarChart3 },
 ];
 
+/**
+ * Cursos Livres não tem mapa: o Google Ads nunca teve campanha dessa
+ * modalidade (R$ 0,00 em todo o histórico) e o mapa só usa Google. O PBI
+ * original também removeu o esriVisual dessa página — é a única das 5 sem
+ * mapa. Paridade exata com o BI.
+ */
+function viewsDoProduto(produto: Produto) {
+  return produto === 'Cursos Livres' ? VIEWS.filter((v) => v.id !== 'mapa') : VIEWS;
+}
+
 function hojeISO(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -70,6 +80,11 @@ export function GrowthEPerformancePage() {
   const [fimDeSemana, setFimDeSemana] = useState<'Fim de Semana' | 'Dia de Semana' | null>(null);
   const [painelAberto, setPainelAberto] = useState(true);
 
+  const viewsVisiveis = viewsDoProduto(produto);
+  // Se a aba ativa não existe no produto atual (Mapa em Cursos Livres),
+  // cai no padrão Matrículas em vez de mostrar uma visão vazia.
+  const viewAtiva: GrowthView = viewsVisiveis.some((v) => v.id === view) ? view : 'matriculas';
+
   const filters: GrowthFilters = useMemo(
     () => ({
       produto,
@@ -85,7 +100,7 @@ export function GrowthEPerformancePage() {
   const {
     loading, error, progress, atualizadoEm, pletivo,
     media, negocio, campanhas, mapa, horarios, serieLeads, serieMatriculas, refetch,
-  } = useGrowthData(filters, view);
+  } = useGrowthData(filters, viewAtiva);
 
   const limparFiltros = () => {
     setGoogleOn(false);
@@ -303,15 +318,15 @@ export function GrowthEPerformancePage() {
                       aria-label="Visões do dashboard"
                       className="flex max-w-full items-center gap-1 overflow-x-auto rounded-md border border-line bg-white p-1 shadow-card sm:w-fit"
                     >
-                      {VIEWS.map((v) => (
+                      {viewsVisiveis.map((v) => (
                         <button
                           key={v.id}
                           type="button"
                           role="tab"
-                          aria-selected={view === v.id}
+                          aria-selected={viewAtiva === v.id}
                           onClick={() => setView(v.id)}
                           className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-pill px-4 py-2 text-xs font-semibold transition ${
-                            view === v.id ? 'bg-fmp text-white shadow-glow' : 'text-ink-2 hover:bg-paper'
+                            viewAtiva === v.id ? 'bg-fmp text-white shadow-glow' : 'text-ink-2 hover:bg-paper'
                           }`}
                         >
                           <v.icon className="h-3.5 w-3.5" />
@@ -321,22 +336,22 @@ export function GrowthEPerformancePage() {
                     </div>
 
                     <ErrorBoundary title="Não foi possível exibir esta visão">
-                      {view === 'campanhas' && (
+                      {viewAtiva === 'campanhas' && (
                         <SectionCard title="Campanhas" subtitle="Campanha × Leads, Investimento e Impressões" icon={TableIcon}>
                           {campanhas ? <CampanhasView rows={campanhas} /> : <ChartSkeleton height={320} />}
                         </SectionCard>
                       )}
-                      {view === 'mapa' && (
-                        <SectionCard title="Mapa por UF" subtitle="Conversões e investimento — só Google" icon={MapIcon}>
+                      {viewAtiva === 'mapa' && (
+                        <SectionCard title="Mapa por UF" subtitle="Investimento por UF — só Google Ads" icon={MapIcon}>
                           {mapa ? <MapaView data={mapa} /> : <ChartSkeleton height={420} />}
                         </SectionCard>
                       )}
-                      {view === 'horarios' && (
+                      {viewAtiva === 'horarios' && (
                         <SectionCard title="Leads por Horário" subtitle="Faixa de 2h × Leads + Taxa de Conversão (Rubeus)" icon={Clock}>
                           {horarios ? <HorariosView data={horarios} /> : <ChartSkeleton height={360} />}
                         </SectionCard>
                       )}
-                      {view === 'leads' && (
+                      {viewAtiva === 'leads' && (
                         <SectionCard
                           title="Leads por Mês"
                           subtitle="Mês Ano × Leads + Investimento — série completa (não segue o filtro de data, como no BI)"
@@ -345,7 +360,7 @@ export function GrowthEPerformancePage() {
                           {serieLeads ? <SerieMensalView data={serieLeads} label="Leads" /> : <ChartSkeleton height={360} />}
                         </SectionCard>
                       )}
-                      {view === 'matriculas' && (
+                      {viewAtiva === 'matriculas' && (
                         <SectionCard
                           title="Matrículas por Mês"
                           subtitle="Mês Ano × Matrículas + Investimento — série completa (não segue o filtro de data, como no BI)"

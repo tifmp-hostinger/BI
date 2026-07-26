@@ -73,13 +73,20 @@ export function CampanhasView({ rows }: { rows: CampanhaRow[] }) {
 
 export function MapaView({ data }: { data: MapaUfDatum[] }) {
   const [selectedUf, setSelectedUf] = useState<string | null>(null);
-  if (data.length === 0) return <EmptyState title="Sem dados de estado para os filtros selecionados" />;
+  if (data.length === 0) {
+    return (
+      <EmptyState title="Não há investimento em Google Ads para os filtros selecionados. O mapa considera apenas o Google, única fonte com dado geográfico." />
+    );
+  }
+  // Dupla codificação do esriVisual do BI: tamanho = investimento (métrica
+  // principal), cor = conversões. `total` carrega o investimento e
+  // `matriculados` transporta as conversões para o colorValue/tooltip.
   const mapData: StateAgg[] = data.map((d) => ({
     uf: d.uf,
-    total: Math.round(d.conversoes),
+    total: d.investimento,
     pos: 0,
     livres: 0,
-    matriculados: 0,
+    matriculados: d.conversoes,
     faturado: d.investimento,
     ticket: 0,
     region: '',
@@ -87,9 +94,21 @@ export function MapaView({ data }: { data: MapaUfDatum[] }) {
   return (
     <div>
       {/* HERANÇA §7.10: só Google — Meta não tem dimensão de estado no BI. */}
-      <BrazilStateMap data={mapData} selectedUf={selectedUf} onSelect={setSelectedUf} height={420} />
+      <BrazilStateMap
+        data={mapData}
+        selectedUf={selectedUf}
+        onSelect={setSelectedUf}
+        height={420}
+        metricLabel="em investimento"
+        metricFormat="currency"
+        colorValue={(agg) => agg.matriculados}
+        secondaryLine={(agg) =>
+          `${agg.matriculados.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} conversões`
+        }
+      />
       <p className="mt-2 text-2xs text-ink-3">
-        Conversões e investimento por UF — somente Google Ads (o Meta não entra no mapa, como no BI original).
+        Investimento por UF (tamanho da bolha) e conversões (intensidade de cor) — somente Google Ads
+        (o Meta não entra no mapa, como no BI original).
       </p>
     </div>
   );
