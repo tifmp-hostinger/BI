@@ -1,5 +1,12 @@
 import { normalizeCodperlet } from '@/lib/supabasePaginate';
-import { CALENDAR, DATA_FIM_PADRAO, DATA_INICIO_PADRAO, fiscalLabel, fiscalSortKey } from './constants';
+import {
+  CALENDAR,
+  DATA_FIM_PADRAO,
+  DATA_INICIO_PADRAO,
+  MEST_META,
+  fiscalLabel,
+  fiscalSortKey,
+} from './constants';
 import { dateInRange, parseDecimal, parseFlexibleDate, toISODate } from './dateUtils';
 import type {
   ChartDatum,
@@ -302,7 +309,7 @@ export function computeGeralKpis(
     return true;
   }).length;
 
-  const mestMeta = 20;
+  const mestMeta = MEST_META;
   const mestPctMeta = mestMat / mestMeta;
 
   return {
@@ -949,7 +956,7 @@ export function computeMestradoData(
   }
   const pctConversao = mat > 0 ? matQualificadasRas.size / mat : 0;
 
-  const meta = 20;
+  const meta = MEST_META;
   const pctMeta = mat / meta;
 
   const procMap = new Map<string, number>();

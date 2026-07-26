@@ -1,6 +1,18 @@
 import { supabase, type Dashboard } from '@/lib/supabase';
 import { SAMPLE_DASHBOARDS } from '@/lib/sampleData';
 
+/*
+ * Sobre o fallback abaixo: ele NÃO é o padrão perigoso de "dado fictício com
+ * cara de real". SAMPLE_DASHBOARDS contém exatamente os 5 dashboards que
+ * existem — é o catálogo de navegação da aplicação, não número de negócio.
+ * Nenhuma métrica sai daqui, e a tabela `dashboards` sequer existe neste
+ * projeto Supabase, então este é o catálogo de verdade.
+ *
+ * O fallback silencioso que precisava sumir era o do cepService (dados de CEP
+ * sintéticos passando por reais) — aquele arquivo foi REMOVIDO junto com a
+ * página órfã que o usava.
+ */
+
 /**
  * Dashboards registrados em código que podem ainda não existir na tabela
  * `dashboards` do banco. Sem este merge, um dashboard novo fica roteado mas

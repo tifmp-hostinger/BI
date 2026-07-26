@@ -48,3 +48,18 @@ export function fiscalLabel(ano: number, mes: number): string {
 export function fiscalSortKey(ano: number, mes: number): number {
   return ano * 100 + (mes >= 11 ? mes - 10 : mes + 2);
 }
+
+/**
+ * Meta anual de matrículas do Mestrado — VALOR FIXO herdado do Power BI.
+ * Origem: %2A%2AMedidas.tmdl:794, `measure Mest_Meta = 20`.
+ *
+ * Fase 1 = paridade: o valor NÃO é alterado. Registrado aqui porque estava
+ * duplicado em dois pontos do calculations.ts, sem comentário, com risco de
+ * divergirem numa manutenção futura.
+ *
+ * ⚠️ A tabela `meta_mestrado` EXISTE no banco e tem a meta, mas este
+ * dashboard não a consulta — o BI original usava a constante. O dashboard
+ * Presidência lê a tabela corretamente. Trocar aqui mudaria o número, então
+ * fica como pendência de Fase 2.
+ */
+export const MEST_META = 20;

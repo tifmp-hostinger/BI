@@ -13,8 +13,6 @@ import type {
   RawMatriculaGradRow,
   RawMatriculaMestradoRow,
   RawMatriculaPosRow,
-  RawMetaGraduacaoRow,
-  RawMetaMestradoRow,
   RawMetaPosRow,
   RawPletivoRow,
   RawRubeusRow,
@@ -44,10 +42,11 @@ export async function fetchDashboardData(
 
   // Lote 1 — tabelas pequenas (metas/pletivo) + rubeus
   onProgress?.(1, TOTAL_ETAPAS, 'Carregando leads e metas');
-  const [pletivo, metaGraduacao, metaMestrado, metaPos, rubeus] = [
+  // meta_graduacao e meta_mestrado NÃO são consultadas: este dashboard usa a
+  // constante MEST_META (herança do BI) e não lê a meta de graduação. Baixá-las
+  // era tráfego sem uso.
+  const [pletivo, metaPos, rubeus] = [
     await loadPletivo(),
-    await loadMetaGraduacao(),
-    await loadMetaMestrado(),
     await loadMetaPos(),
     await loadRubeus(),
   ];
@@ -87,8 +86,6 @@ export async function fetchDashboardData(
     matriculasCursosLives,
     matriculasBolsas,
     pletivo,
-    metaGraduacao,
-    metaMestrado,
     metaPos,
   };
   return cachedDataset;
@@ -191,18 +188,6 @@ async function loadPletivo(): Promise<RawPletivoRow[]> {
   const { data, error } = await supabase.from('pletivo').select('*').order('indice');
   if (error) throw error;
   return (data ?? []) as RawPletivoRow[];
-}
-
-async function loadMetaGraduacao(): Promise<RawMetaGraduacaoRow[]> {
-  const { data, error } = await supabase.from('meta_graduacao').select('*');
-  if (error) throw error;
-  return (data ?? []) as RawMetaGraduacaoRow[];
-}
-
-async function loadMetaMestrado(): Promise<RawMetaMestradoRow[]> {
-  const { data, error } = await supabase.from('meta_mestrado').select('*');
-  if (error) throw error;
-  return (data ?? []) as RawMetaMestradoRow[];
 }
 
 async function loadMetaPos(): Promise<RawMetaPosRow[]> {

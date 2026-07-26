@@ -320,7 +320,5 @@ export type DashboardDataset = {
   matriculasCursosLives: RawMatriculaCursosLivesRow[];
   matriculasBolsas: RawMatriculaBolsaRow[];
   pletivo: RawPletivoRow[];
-  metaGraduacao: RawMetaGraduacaoRow[];
-  metaMestrado: RawMetaMestradoRow[];
   metaPos: RawMetaPosRow[];
 };
