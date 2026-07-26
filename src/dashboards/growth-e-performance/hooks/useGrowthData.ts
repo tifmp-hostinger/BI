@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { clearGrowthCache, fetchGrowthData } from '../queries';
+import { avisaAjusteManualAusente } from '../constants';
 import {
   computeCampanhas,
   computeHorarios,
@@ -53,6 +54,9 @@ export function useGrowthData(filters: GrowthFilters, view: GrowthView) {
   }, []);
 
   useEffect(() => {
+    // Sem a env var do ajuste manual o faturamento do Pós diverge do BI em
+    // silêncio — avisa uma vez na inicialização do dashboard.
+    avisaAjusteManualAusente();
     load(false);
   }, [load]);
 

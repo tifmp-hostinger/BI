@@ -57,6 +57,24 @@ function properCase(s: string): string {
 }
 
 /**
+ * Blocos de modalidade conhecidos (após remover colchetes e aplicar
+ * Text.Proper) → resultado final. Precisa produzir EXATAMENTE o mesmo que a
+ * cadeia de replaces de substring; validado contra as 77 campanhas do banco.
+ */
+const MODALIDADE_BLOCO_EXATO: Record<string, string> = {
+  Grad: 'Graduação',
+  Graduação: 'Graduação',
+  Pós: 'Pós EAD',
+  'Pós Presencial': 'Pós Presencial',
+  'Pós Pres': 'Pós Presencial',
+  'Curso Livre': 'Cursos Livres',
+  'Cursos Livres': 'Cursos Livres',
+  Ia: 'Cursos Livres',
+  Mestrado: 'Mestrado',
+  'Nova Marca': 'Nova Marca',
+};
+
+/**
  * Modalidade a partir de campaign_name do Meta (regra COMPLETA — a
  * nomenclatura mudou ~dez/2025 e convivem dois padrões no banco).
  *
@@ -79,6 +97,15 @@ export function modalidadeMeta(campaignName: string | null | undefined): string 
   // Modalidade = 3º bloco, removendo colchetes, depois Title Case
   const bloco3 = blocos[2] ?? '';
   let mod = properCase(replaceAll(replaceAll(bloco3, '[', ''), ']', '').trim());
+
+  // Atalho por IGUALDADE do bloco inteiro para os valores conhecidos. Os
+  // replaces abaixo são de SUBSTRING e são frágeis: um bloco '[GRADUAÇÃO]'
+  // por extenso viraria 'Graduaçãouação' e a campanha sumiria do dashboard.
+  // Hoje todas as campanhas usam as formas curtas; o mapa evita a regressão
+  // sem alterar nenhum resultado atual.
+  const exato = MODALIDADE_BLOCO_EXATO[mod];
+  if (exato) return exato;
+
   mod = replaceAll(mod, 'Grad', 'Graduação');
   mod = replaceAll(mod, 'Ia', 'Cursos Livres');
   mod = replaceAll(mod, 'Pós', 'Pós EAD');
@@ -336,6 +363,10 @@ function filterGoogle(ds: GrowthDataset, filters: GrowthFilters): GoogleClassifi
 function dedupMetaSum(rows: MetaClassified[], field: 'spend' | 'impressions' | 'reach' | 'clicks'): number {
   const porAdsetDia = new Map<string, number>();
   for (const r of rows) {
+    // Sem adset_id não há como deduplicar: agrupar tudo numa chave só faria o
+    // Math.max descartar o resto e SUBESTIMAR o investimento. Hoje não há
+    // linha assim no banco; a guarda evita erro silencioso se passar a haver.
+    if (!r.adsetId) continue;
     const k = `${r.dateIso}|${r.adsetId}`;
     porAdsetDia.set(k, Math.max(porAdsetDia.get(k) ?? 0, r[field]));
   }
@@ -545,7 +576,15 @@ function faturamentoPos(
     for (const r of grupo) {
       const baixa = toISODate(r.databaixa) ?? '';
       if (ultimoCancel && baixa <= ultimoCancel) continue;
-      if (baixa > melhorBaixa) {
+      // Empate de databaixa: desempata pelo maior codplanopgto. Sem critério
+      // estável, a ordem de chegada das páginas (concorrência 3 no
+      // supabasePaginate) mudaria o resultado entre recargas.
+      if (
+        baixa > melhorBaixa ||
+        (baixa === melhorBaixa &&
+          escolhido !== null &&
+          String(r.codplanopgto ?? '') > String(escolhido.codplanopgto ?? ''))
+      ) {
         melhorBaixa = baixa;
         escolhido = r;
       }
@@ -585,7 +624,11 @@ function computePosNegocio(
   // modalidade (herança §7.4) — quem segmenta a aba é o filtro de página
   // Modalidade_Pos ('D'/'P') aplicado aqui.
   // HERANÇA §7.9: contagem de LINHAS — aluno com 2 contratos conta 2 vezes.
-  const basePagina = ds.matPos.filter((r) => passaFiltroPaginaPos(r, filters.produto));
+  // O Power Query de f_matriculas_pos removia alunos com 'teste' no nome —
+  // são 27 linhas hoje, que inflavam Matrículas, Faturamento, CAC e Ticket.
+  const basePagina = ds.matPos.filter(
+    (r) => !isTeste(r.aluno) && passaFiltroPaginaPos(r, filters.produto),
+  );
 
   let matriculas = 0;
   let cancelamentos = 0;
@@ -679,7 +722,7 @@ function computeGradMestNegocio(
 
   const fatPorRef = (origemContrato: boolean): number => {
     // por aluno, faturadoliq do registro de maior DataReferencia no período
-    const porAluno = new Map<string, { ref: string; fat: number }>();
+    const porAluno = new Map<string, { ref: string; fat: number; contrato: string }>();
     for (const r of base) {
       const ref = dataRef(r);
       if (!inRange(ref, ini, fim)) continue;
@@ -690,9 +733,12 @@ function computeGradMestNegocio(
       const aluno = (r.aluno ?? '').trim();
       if (!aluno) continue;
       const atual = porAluno.get(aluno);
-      if (!atual || ref >= atual.ref) {
+      const contrato = String(r.codcontrato ?? '');
+      // '>' (não '>=') + desempate por maior codcontrato: mesmo critério
+      // estável usado em faturamentoPos.
+      if (!atual || ref > atual.ref || (ref === atual.ref && contrato > atual.contrato)) {
         // Sem divisor — ver comentário em faturamentoPos.
-        porAluno.set(aluno, { ref, fat: num(r.faturadoliq) });
+        porAluno.set(aluno, { ref, fat: num(r.faturadoliq), contrato });
       }
     }
     let total = 0;
@@ -718,6 +764,9 @@ function computeCLNegocio(
   let matriculas = 0;
   let faturamento = 0;
   for (const r of ds.matCL) {
+    // O Power Query de f_matriculas_CL removia alunos com 'teste' no nome
+    // (26 linhas hoje).
+    if (isTeste(r.aluno)) continue;
     const baixa = toISODate(r.databaixa);
     if (!baixa || !inRange(baixa, ini, fim)) continue;
     matriculas++;
@@ -887,7 +936,9 @@ export function computeHorarios(ds: GrowthDataset, filters: GrowthFilters): Hora
       inicio,
       faixa: v.rotulo,
       leads: v.leads,
-      taxaConv: v.comStatus > 0 ? v.ganhos / v.comStatus : 0,
+      // null (e não 0) para o gráfico abrir lacuna em vez de desenhar
+      // uma linha em 0% onde simplesmente não há lead com status.
+      taxaConv: v.comStatus > 0 ? v.ganhos / v.comStatus : null,
     }));
 }
 

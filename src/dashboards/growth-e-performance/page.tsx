@@ -300,6 +300,20 @@ export function GrowthEPerformancePage() {
               ) : media && negocio ? (
                 <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
                   <div className="min-w-0 space-y-4">
+                    {/*
+                      Fiel ao BI: Período Letivo e Fim de Semana filtram só a
+                      tabela do Rubeus (CRM) — o filtro não se propaga para
+                      API Meta / API Google pelos relacionamentos. O cálculo
+                      está certo; o aviso existe porque a leitura engana.
+                    */}
+                    {(periodoLetivo.length > 0 || fimDeSemana) && (
+                      <div className="rounded-md border border-line bg-paper px-4 py-2.5 text-2xs text-ink-2 animate-fade-in">
+                        <strong className="font-semibold">Atenção:</strong> Período Letivo e Fim de Semana
+                        filtram apenas os leads do CRM; o investimento em mídia não é filtrado — CPL, CAC,
+                        ROAS e Conversão ficam distorcidos.
+                      </div>
+                    )}
+
                     {/* Faixa de KPIs — 2 linhas de 4 */}
                     <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                       <StatCard index={0} label="Investimento" value={fmtBRLCompact(media.investimento)} icon={DollarSign} color="fmp" highlight />

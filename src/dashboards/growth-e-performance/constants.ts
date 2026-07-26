@@ -3,18 +3,6 @@
  * Migração do Power BI homônimo; heranças documentadas em cada ponto.
  */
 
-export const MODALIDADES = [
-  'Pós EAD',
-  'Pós Presencial',
-  'Graduação',
-  'Cursos Livres',
-  'Mestrado',
-  'Nova Marca',
-  'Preparatório',
-] as const;
-
-export const FONTES_LEAD = ['Google', 'Meta', 'Todos'] as const;
-
 export type Produto =
   | 'Graduação'
   | 'Mestrado'
@@ -49,15 +37,6 @@ export const REGION_ID_UF: Record<string, string> = {
   '20101': 'PR', '20099': 'PE', '20100': 'PI', '20102': 'RJ', '20103': 'RN',
   '20104': 'RS', '21227': 'RO', '21228': 'RR', '20105': 'SC', '20106': 'SP',
   '21229': 'SE', '21230': 'TO',
-};
-
-export const UF_REGIAO: Record<string, string> = {
-  RS: 'Sul', SC: 'Sul', PR: 'Sul',
-  SP: 'Sudeste', RJ: 'Sudeste', MG: 'Sudeste', ES: 'Sudeste',
-  BA: 'Nordeste', SE: 'Nordeste', AL: 'Nordeste', PE: 'Nordeste',
-  PB: 'Nordeste', RN: 'Nordeste', CE: 'Nordeste', PI: 'Nordeste', MA: 'Nordeste',
-  PA: 'Norte', AP: 'Norte', AM: 'Norte', RR: 'Norte', AC: 'Norte', RO: 'Norte', TO: 'Norte',
-  GO: 'Centro-Oeste', MT: 'Centro-Oeste', MS: 'Centro-Oeste', DF: 'Centro-Oeste',
 };
 
 const MESES_EXT = [
@@ -163,3 +142,18 @@ export const META_LEAD_ACTIONS = new Set([
  */
 export const AJUSTE_ALUNO = (import.meta.env.VITE_GROWTH_AJUSTE_ALUNO ?? '') as string;
 export const AJUSTE_DATA = (import.meta.env.VITE_GROWTH_AJUSTE_DATA ?? '2026-05-28') as string;
+
+let avisoAjusteEmitido = false;
+
+/**
+ * Sem a env var o ajuste manual simplesmente não é aplicado e o faturamento do
+ * Pós diverge do BI SEM nenhum sinal — o pior tipo de defeito. Avisa uma única
+ * vez na inicialização. Nunca loga o valor da variável.
+ */
+export function avisaAjusteManualAusente(): void {
+  if (avisoAjusteEmitido || AJUSTE_ALUNO) return;
+  avisoAjusteEmitido = true;
+  console.warn(
+    '[growth] VITE_GROWTH_AJUSTE_ALUNO não configurada — ajuste manual de faturamento do Pós não será aplicado',
+  );
+}

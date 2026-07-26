@@ -35,6 +35,8 @@ export type RawRubeusGrowthRow = {
 /** Grad e Mestrado compartilham o mesmo shape (mesmas colunas no RM). */
 export type RawMatGradMestRow = {
   aluno: string | null;
+  /** Desempate estável de DataReferencia (ver fatPorRef). */
+  codcontrato: string | null;
   situacao: string | null;
   tipomatricula: string | null;
   datamatricula: string | null;
@@ -52,6 +54,8 @@ export type RawMatPosGrowthRow = {
   distanciapresencial: string | null;
   bolsas: string | null;
   bolsa3: string | null;
+  /** Desempate estável quando duas databaixa empatam (ver faturamentoPos). */
+  codplanopgto: string | null;
   databaixa: string | null;
   datacancelamentomatricula: string | null;
   inscricaodata: string | null;
@@ -60,9 +64,7 @@ export type RawMatPosGrowthRow = {
 
 export type RawMatCLGrowthRow = {
   aluno: string | null;
-  situacao_matricula: string | null;
   databaixa: string | null;
-  data_contrato: string | null;
   valor_curso_com_desconto: string | null;
 };
 
@@ -148,7 +150,8 @@ export type HorarioDatum = {
   inicio: number;
   faixa: string;
   leads: number;
-  taxaConv: number;
+  /** null = sem lead com status na faixa (o gráfico abre lacuna). */
+  taxaConv: number | null;
 };
 
 export type SerieMensalDatum = {

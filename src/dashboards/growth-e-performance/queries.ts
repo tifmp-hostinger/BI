@@ -103,16 +103,17 @@ export async function fetchGrowthData(
 
   // Lote 3 — matrículas
   onProgress?.(3, TOTAL_ETAPAS, 'Carregando matrículas');
-  const gradMestCols = 'aluno,situacao,tipomatricula,datamatricula,datacontrato,datacancelamentocontrato,faturadoliq';
+  const gradMestCols =
+    'aluno,codcontrato,situacao,tipomatricula,datamatricula,datacontrato,datacancelamentocontrato,faturadoliq';
   const matGrad = (await loadAllFrom('stg_rm_matriculas_grad', gradMestCols)) as RawMatGradMestRow[];
   const matMestrado = (await loadAllFrom('stg_rm_matriculas_mestrado', gradMestCols)) as RawMatGradMestRow[];
   const matPos = (await loadAllFrom(
     'stg_rm_matriculas_pos',
-    'aluno,curso,situacao,processoseletivo,descontoaluno,distanciapresencial,bolsas,bolsa3,databaixa,datacancelamentomatricula,inscricaodata,faturadoliq',
+    'aluno,curso,situacao,processoseletivo,descontoaluno,distanciapresencial,bolsas,bolsa3,codplanopgto,databaixa,datacancelamentomatricula,inscricaodata,faturadoliq',
   )) as RawMatPosGrowthRow[];
   const matCL = (await loadAllFrom(
     'stg_rm_matriculas_cursoslivres',
-    'aluno,situacao_matricula,databaixa,data_contrato,valor_curso_com_desconto',
+    'aluno,databaixa,valor_curso_com_desconto',
   )) as RawMatCLGrowthRow[];
 
   // Lote 4 — inscrições (agregadas por dia; CL tem 110k+ linhas)

@@ -143,7 +143,9 @@ export function HorariosView({ data }: { data: HorarioDatum[] }) {
           labelStyle={TT.labelStyle}
           itemStyle={TT.itemStyle}
           formatter={(v: unknown, name: unknown) =>
-            name === 'taxaConv' ? [fmtPct(v as number), 'Taxa de Conversão'] : [fmtInt(v as number), 'Leads']
+            name === 'taxaConv'
+              ? [v === null ? '--' : fmtPct(v as number), 'Taxa de Conversão']
+              : [fmtInt(v as number), 'Leads']
           }
         />
         <Legend
@@ -155,7 +157,9 @@ export function HorariosView({ data }: { data: HorarioDatum[] }) {
           }}
         />
         <Bar yAxisId="left" dataKey="leads" fill="url(#barHorario)" radius={[8, 8, 4, 4]} maxBarSize={36} />
-        <Line yAxisId="right" type="monotone" dataKey="taxaConv" stroke={NEUTRAL} strokeWidth={2.5} dot={{ r: 3, fill: NEUTRAL }} />
+        {/* connectNulls={false}: faixas sem lead com status ficam como lacuna,
+            em vez de uma linha em 0% que pareceria "converteu zero". */}
+        <Line yAxisId="right" type="monotone" dataKey="taxaConv" stroke={NEUTRAL} strokeWidth={2.5} dot={{ r: 3, fill: NEUTRAL }} connectNulls={false} />
       </ComposedChart>
     </ResponsiveContainer>
   );
