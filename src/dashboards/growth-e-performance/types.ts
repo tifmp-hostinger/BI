@@ -24,9 +24,10 @@ export type RawGoogleAdsRow = {
 };
 
 export type RawRubeusGrowthRow = {
-  /** ID numérico da pessoa. O agrupamento da aba Origem usa SÓ este campo —
-   *  nunca pessoa_nome (privacidade). */
-  pessoa: string | null;
+  /** ID da pessoa. É `bigint` no Postgres, então o PostgREST devolve NÚMERO
+   *  em JSON — daí o `string | number`. O agrupamento da aba Origem usa SÓ
+   *  este campo, nunca pessoa_nome (privacidade). */
+  pessoa: string | number | null;
   /** timestamptz completo — ordena a jornada (momento_date só tem o dia). */
   momento: string | null;
   momento_date: string | null;

@@ -359,9 +359,10 @@ function getJornadas(ds: GrowthDataset): Jornada[] {
   const porPessoa = new Map<string, Acc>();
 
   for (const r of ds.rubeus) {
-    const pessoa = (r.pessoa ?? '').trim();
+    // String(): `pessoa` é bigint no banco e chega como número.
+    const pessoa = String(r.pessoa ?? '').trim();
     if (!pessoa) continue;
-    const momento = (r.momento ?? '').trim();
+    const momento = String(r.momento ?? '').trim();
     if (!momento) continue;
     const dataIso = toISODate(r.momento_date) ?? toISODate(r.momento);
     if (!dataIso) continue;
