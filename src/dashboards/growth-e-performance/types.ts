@@ -36,6 +36,7 @@ export type RawRubeusGrowthRow = {
 export type RawMatGradMestRow = {
   aluno: string | null;
   situacao: string | null;
+  tipomatricula: string | null;
   datamatricula: string | null;
   datacontrato: string | null;
   datacancelamentocontrato: string | null;
@@ -46,6 +47,7 @@ export type RawMatPosGrowthRow = {
   aluno: string | null;
   curso: string | null;
   situacao: string | null;
+  processoseletivo: string | null;
   descontoaluno: string | null;
   distanciapresencial: string | null;
   bolsas: string | null;

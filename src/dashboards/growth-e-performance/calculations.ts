@@ -159,6 +159,7 @@ type RubeusClassified = {
   fimDeSemana: 'Fim de Semana' | 'Dia de Semana';
   ganho: boolean;
   temStatus: boolean;
+  isCRM: boolean;
 };
 
 type ClassifiedData = {
@@ -229,6 +230,7 @@ function getClassified(ds: GrowthDataset): ClassifiedData {
       fimDeSemana: classificaFimDeSemana(r.nome_dia, r.momento_hora),
       ganho: status === 'Ganho',
       temStatus: status !== '',
+      isCRM: (r.canal_nome ?? '').trim() === 'CRM',
     });
   }
 
@@ -262,10 +264,22 @@ function pletivoWindows(ds: GrowthDataset, filters: GrowthFilters): { ini: strin
     .map((p) => ({ ini: String(p.data_inicio_matricula), fim: String(p.data_fim_matricula) }));
 }
 
+/**
+ * FILTRO DE PÁGINA do PBI: Rubeus[canal_nome] EXCLUI 'CRM' nas abas
+ * Graduação, Mestrado e Pós EAD — corta ~32% da base de leads (11.894 de
+ * 37.520 registros). NÃO se aplica a Pós Presencial nem Cursos Livres; a
+ * assimetria muda a base de comparação entre abas e é HERANÇA INTENCIONAL —
+ * não "consertar" adicionando a exclusão nas outras abas.
+ */
+const PRODUTOS_EXCLUEM_CRM = new Set(['Graduação', 'Mestrado', 'Pós EAD']);
+
 function filterRubeus(ds: GrowthDataset, filters: GrowthFilters): RubeusClassified[] {
   const windows = pletivoWindows(ds, filters);
   return getClassified(ds).rubeus.filter((r) => {
+    // Filtro de página d_modalidade[Modalidade] (sempre ativo, não é limpo
+    // pelo "Limpar filtros" — só os slicers são).
     if (r.modalidade !== filters.produto) return false;
+    if (PRODUTOS_EXCLUEM_CRM.has(filters.produto) && r.isCRM) return false;
     if (!inRange(r.dateIso, filters.dataInicio, filters.dataFim)) return false;
     if (filters.fimDeSemana && r.fimDeSemana !== filters.fimDeSemana) return false;
     if (windows.length > 0 && !windows.some((w) => r.dateIso >= w.ini && r.dateIso <= w.fim)) {
@@ -388,20 +402,69 @@ const SITUACOES_EXCLUIR_FAT_POS = new Set([
   'Formado',
   'Troca de Ciclo',
   'Transferência Interna',
-  // HERANÇA §7.5: filtro morto — o valor real no banco é 'Pré-Matrícula'
-  // (hífen + acento, 61 linhas); esta string nunca casa. Preservada exata.
+  // HERANÇA (medida DAX Faturamento_Pos): filtro morto — o valor real no
+  // banco é 'Pré-Matrícula' (hífen + acento); esta string sem hífen/acento
+  // nunca casa. Preservada EXATA. Atenção: o FILTRO DE PÁGINA do Pós EAD usa
+  // a grafia correta 'Pré-Matrícula' e FUNCIONA (exclui as 61 linhas) — as
+  // duas strings coexistem de propósito, não unificar (§3 do adendo).
   'Pré Matricula',
 ]);
 
+/**
+ * FILTRO DE PÁGINA da aba Pós EAD (situações excluídas) — aqui a grafia é a
+ * correta do banco ('Pré-Matrícula' com hífen e acento) e o filtro casa.
+ */
+const SITUACOES_EXCLUIR_PAGINA_POS_EAD = new Set([
+  'Evadido Curso',
+  'Formado',
+  'Óbito',
+  'Pré-Matrícula',
+  'Transferência Interna',
+  'Troca de Ciclo',
+]);
+
+const PS_EXCLUIDO_PAGINA_POS_EAD = 'Inscrição Pós Graduação EAD - Direito Público';
+
+/**
+ * FILTROS DE PÁGINA do PBI para f_matriculas_pos, por aba. Sempre ativos —
+ * o "Limpar filtros" não os desliga. Modalidade_Pos segue a decisão do §4.4:
+ * distanciapresencial 'D' = Pós EAD, 'P' = Pós Presencial.
+ *
+ * ⚠ ASSIMETRIA INTENCIONAL (herança — NÃO "consertar"): Pós Presencial tem SÓ
+ * modalidade + Pagante; não filtra situacao nem processoseletivo, e não
+ * exclui 'CRM' do Rubeus. Na prática as pré-matrículas entram no Presencial
+ * e são excluídas no EAD (§3 do adendo).
+ */
+function passaFiltroPaginaPos(r: GrowthDataset['matPos'][number], produto: string): boolean {
+  const dp = (r.distanciapresencial ?? '').trim().toUpperCase();
+  if (produto === 'Pós EAD') {
+    if (dp !== 'D') return false;
+    if ((r.descontoaluno ?? '').trim() !== 'Pagante') return false;
+    if ((r.processoseletivo ?? '').trim() === PS_EXCLUIDO_PAGINA_POS_EAD) return false;
+    if (SITUACOES_EXCLUIR_PAGINA_POS_EAD.has((r.situacao ?? '').trim())) return false;
+    return true;
+  }
+  // Pós Presencial: só isto mesmo.
+  if (dp !== 'P') return false;
+  if ((r.descontoaluno ?? '').trim() !== 'Pagante') return false;
+  return true;
+}
+
 type PosWindow = { ini: string | null; fim: string | null; origemInscricao?: boolean };
 
-function faturamentoPos(ds: GrowthDataset, w: PosWindow): number {
-  // Filtros da base de faturamento (§5.3). §4.4: 'D' = Pós EAD — decisão do
-  // dono do projeto, coerente com o analise-de-conversao (o PBI do Growth
-  // usava processoseletivo e classificava 2.445 matrículas EaD como
-  // Presencial, inflando Pós Presencial 12×).
-  const candidatos = ds.matPos.filter((r) => {
-    if ((r.distanciapresencial ?? '').trim().toUpperCase() !== 'D') return false;
+function faturamentoPos(
+  basePagina: GrowthDataset['matPos'],
+  ds: GrowthDataset,
+  w: PosWindow,
+): number {
+  // Filtros da MEDIDA (§5.3) aplicados sobre a base já restrita pelos filtros
+  // de página da aba. A restrição de modalidade vem do filtro de página
+  // (Modalidade_Pos via distanciapresencial, decisão do §4.4) — o antigo 'D'
+  // fixo da medida foi substituído por ela; sem isso a aba Pós Presencial
+  // teria faturamento sempre zero.
+  // TODO: confirmar com o BI publicado o faturamento da aba Pós Presencial
+  // (herança do PBI misturava bases via classificação por processoseletivo).
+  const candidatos = basePagina.filter((r) => {
     if ((r.curso ?? '').trim() === 'Pós-graduação em Direito Público (ead)') return false;
     if ((r.descontoaluno ?? '').trim() !== 'Pagante') return false;
     if (SITUACOES_EXCLUIR_FAT_POS.has((r.situacao ?? '').trim())) return false;
@@ -457,6 +520,8 @@ function faturamentoPos(ds: GrowthDataset, w: PosWindow): number {
   // HERANÇA §7.6: ajuste manual amarrado a 28/05/2026 — soma um valor extra
   // sempre que o período selecionado contém essa data. Nome do aluno vem de
   // variável de ambiente (§6); cruzamento só em memória, nunca renderizar.
+  // TODO: confirmar se o ajuste manual respeita os filtros de página da aba
+  // (aqui varre a tabela completa, como a medida original).
   if (!w.origemInscricao && AJUSTE_ALUNO && inRange(AJUSTE_DATA, w.ini, w.fim)) {
     for (const r of ds.matPos) {
       if ((r.aluno ?? '').trim() !== AJUSTE_ALUNO) continue;
@@ -476,14 +541,16 @@ function computePosNegocio(
   const ini = filters.dataInicio;
   const fim = filters.dataFim;
 
-  // HERANÇA §7.4 (bem visível): matriculasPos NÃO filtra modalidade, mas
-  // faturamentoPos filtra só EAD. ticketMedio e ROAS misturam bases, e a aba
-  // Pós Presencial mostra o faturamento do Pós EAD. Comportamento do BI,
-  // preservado por decisão do dono do projeto.
+  // FILTROS DE PÁGINA do PBI (adendo §2): restringem a base ANTES das
+  // medidas. A MEDIDA matriculasPos continua sem filtro próprio de
+  // modalidade (herança §7.4) — quem segmenta a aba é o filtro de página
+  // Modalidade_Pos ('D'/'P') aplicado aqui.
   // HERANÇA §7.9: contagem de LINHAS — aluno com 2 contratos conta 2 vezes.
+  const basePagina = ds.matPos.filter((r) => passaFiltroPaginaPos(r, filters.produto));
+
   let matriculas = 0;
   let cancelamentos = 0;
-  for (const r of ds.matPos) {
+  for (const r of basePagina) {
     const baixa = toISODate(r.databaixa);
     if (!baixa || !inRange(baixa, ini, fim)) continue;
     const cancel = toISODate(r.datacancelamentomatricula);
@@ -491,8 +558,8 @@ function computePosNegocio(
     if (cancel && eomLt(baixa, cancel)) cancelamentos++;
   }
 
-  const faturamento = faturamentoPos(ds, { ini, fim });
-  const fatMidia = faturamentoPos(ds, { ini, fim, origemInscricao: true }); // ROAS Mídia: origem = inscricaodata
+  const faturamento = faturamentoPos(basePagina, ds, { ini, fim });
+  const fatMidia = faturamentoPos(basePagina, ds, { ini, fim, origemInscricao: true }); // ROAS Mídia: origem = inscricaodata
 
   const inscritos = countInsc(ds.inscPos, ini, fim);
   const rub = filterRubeus(ds, filters);
@@ -510,6 +577,20 @@ function dataRef(r: RawMatGradMestRow): string {
   return mat > cancel ? mat : cancel;
 }
 
+// FILTROS DE PÁGINA do PBI para f_matriculas_grad_mest (adendo §2).
+// 'Cancelado – Curso' usa TRAVESSÃO (U+2013), não hífen — existem no banco
+// 'Cancelado - Curso' (hífen, 41 linhas) e 'Cancelado - Curso (Assin_Cont)'
+// (68 linhas) que NÃO entram. 'Matriculado- Pendente Contrato' sem espaço
+// antes do hífen é o valor real do banco. 'Nova Matricula' sem acento está
+// correto (é o valor do banco) e corta bastante: de 6.737 linhas de
+// graduação sobram 746.
+const SITUACOES_PAGINA_GRAD = new Set([
+  'Matriculado',
+  'Matriculado- Pendente Contrato',
+  'Cancelado – Curso',
+]);
+const SITUACOES_PAGINA_MEST = new Set(['Matriculado', 'Cancelado – Curso']);
+
 function computeGradMestNegocio(
   rows: RawMatGradMestRow[],
   divisor: number,
@@ -520,9 +601,22 @@ function computeGradMestNegocio(
 ): NegocioMetrics {
   const ini = filters.dataInicio;
   const fim = filters.dataFim;
+  const mestrado = filters.produto === 'Mestrado';
+  const situacoesPagina = mestrado ? SITUACOES_PAGINA_MEST : SITUACOES_PAGINA_GRAD;
   // Base exclui alunos de teste (append Grad+Mestrado no BI; aqui cada aba
-  // usa a sua tabela com as mesmas fórmulas).
-  const base = rows.filter((r) => !isTeste(r.aluno));
+  // usa a sua tabela — é o equivalente do filtro de página d_modalidade →
+  // nivel_ensino) e aplica os FILTROS DE PÁGINA da aba: tipomatricula
+  // 'Nova Matricula' + situações incluídas. No Mestrado o PBI tem um SEGUNDO
+  // filtro na mesma coluna (EXCLUI 'Formado'), redundante na prática, mas
+  // reproduzido de propósito.
+  const base = rows.filter((r) => {
+    if (isTeste(r.aluno)) return false;
+    if ((r.tipomatricula ?? '').trim() !== 'Nova Matricula') return false;
+    const sit = (r.situacao ?? '').trim();
+    if (!situacoesPagina.has(sit)) return false;
+    if (mestrado && sit === 'Formado') return false;
+    return true;
+  });
 
   const alunosMat = new Set<string>();
   let cancelamentos = 0;

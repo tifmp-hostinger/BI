@@ -30,8 +30,13 @@ export const PRODUTOS: { id: string; label: Produto }[] = [
   { id: 'cursos-livres', label: 'Cursos Livres' },
 ];
 
-// Data inicial que o seletor de intervalo do BI original trazia preenchida.
-export const DATA_INICIO_DEFAULT = '2026-06-01';
+/**
+ * Padrão único do seletor de datas para as 5 abas: o domínio completo do
+ * calendário (01/10/2025 até hoje). O PBIP salvou um intervalo diferente em
+ * cada aba (último estado do autor, não um padrão intencional) — no app usamos
+ * um único padrão coerente.
+ */
+export const DATA_INICIO_DEFAULT = '2025-10-01';
 
 /**
  * De-para region_id → UF, derivado de stg_google_ads.geotargetstate
