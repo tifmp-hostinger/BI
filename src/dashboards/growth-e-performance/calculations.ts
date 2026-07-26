@@ -750,6 +750,120 @@ function faturamentoPos(
   return total;
 }
 
+
+// ---------------------------------------------------------------------------
+// Bases e contagens compartilhadas
+//
+// Extraídas para que a série mensal conte matrículas sem recalcular
+// faturamento (que ela descarta) — e para que a regra de contagem exista em
+// UM lugar só, sem risco de os dois caminhos divergirem.
+// ---------------------------------------------------------------------------
+
+function basePaginaPos(ds: GrowthDataset, produto: string): GrowthDataset['matPos'] {
+  // O Power Query de f_matriculas_pos removia alunos com 'teste' no nome —
+  // são 27 linhas hoje, que inflavam Matrículas, Faturamento, CAC e Ticket.
+  return ds.matPos.filter((r) => !isTeste(r.aluno) && passaFiltroPaginaPos(r, produto));
+}
+
+function contagemPos(
+  base: GrowthDataset['matPos'],
+  ini: string | null,
+  fim: string | null,
+): { matriculas: number; cancelamentos: number } {
+  // HERANÇA §7.9: contagem de LINHAS — aluno com 2 contratos conta 2 vezes.
+  let matriculas = 0;
+  let cancelamentos = 0;
+  for (const r of base) {
+    const baixa = toISODate(r.databaixa);
+    if (!baixa || !inRange(baixa, ini, fim)) continue;
+    const cancel = toISODate(r.datacancelamentomatricula);
+    if (!(cancel && inRange(cancel, ini, fim))) matriculas++;
+    if (cancel && eomLt(baixa, cancel)) cancelamentos++;
+  }
+  return { matriculas, cancelamentos };
+}
+
+/**
+ * Base de Grad/Mestrado: exclui alunos de teste e aplica os FILTROS DE PÁGINA
+ * da aba (tipomatricula 'Nova Matricula' + situações incluídas). No Mestrado o
+ * PBI tem um SEGUNDO filtro na mesma coluna (EXCLUI 'Formado'), redundante na
+ * prática, mas reproduzido de propósito.
+ */
+function baseGradMest(rows: RawMatGradMestRow[], produto: string): RawMatGradMestRow[] {
+  const mestrado = produto === 'Mestrado';
+  const situacoesPagina = mestrado ? SITUACOES_PAGINA_MEST : SITUACOES_PAGINA_GRAD;
+  return rows.filter((r) => {
+    if (isTeste(r.aluno)) return false;
+    if ((r.tipomatricula ?? '').trim() !== 'Nova Matricula') return false;
+    const sit = (r.situacao ?? '').trim();
+    if (!situacoesPagina.has(sit)) return false;
+    if (mestrado && sit === 'Formado') return false;
+    return true;
+  });
+}
+
+function contagemGradMest(
+  base: RawMatGradMestRow[],
+  ini: string | null,
+  fim: string | null,
+): { matriculas: number; cancelamentos: number } {
+  const alunosMat = new Set<string>();
+  let cancelamentos = 0;
+  for (const r of base) {
+    const mat = toISODate(r.datamatricula);
+    if (!mat || !inRange(mat, ini, fim)) continue;
+    const cancel = toISODate(r.datacancelamentocontrato);
+    if (!(cancel && inRange(cancel, ini, fim))) {
+      const aluno = (r.aluno ?? '').trim();
+      if (aluno) alunosMat.add(aluno);
+    }
+    if (cancel && eomLt(mat, cancel)) cancelamentos++;
+  }
+  return { matriculas: alunosMat.size, cancelamentos };
+}
+
+function contagemCL(
+  ds: GrowthDataset,
+  ini: string | null,
+  fim: string | null,
+): { matriculas: number; faturamento: number } {
+  // HERANÇA §7.7: matriculasCL NÃO desconta cancelamentos (diferente de Pós e
+  // Grad/Mest). HERANÇA §7.9: contagem de linhas, não de alunos distintos.
+  let matriculas = 0;
+  let faturamento = 0;
+  for (const r of ds.matCL) {
+    // O Power Query de f_matriculas_CL removia alunos com 'teste' no nome.
+    if (isTeste(r.aluno)) continue;
+    const baixa = toISODate(r.databaixa);
+    if (!baixa || !inRange(baixa, ini, fim)) continue;
+    matriculas++;
+    faturamento += num(r.valor_curso_com_desconto); // sem divisor — já em reais
+  }
+  return { matriculas, faturamento };
+}
+
+/**
+ * SÓ a contagem de matrículas, sem faturamento nem varredura do Rubeus.
+ * A série mensal chama isto por mês; usar computeNegocioMetrics ali fazia
+ * faturamentoPos rodar 2x por mês (sobre 8,7 mil linhas, com dedup por
+ * aluno+curso) e o resultado era descartado.
+ */
+export function contaMatriculas(ds: GrowthDataset, filters: GrowthFilters): number {
+  const ini = filters.dataInicio;
+  const fim = filters.dataFim;
+  switch (filters.produto) {
+    case 'Pós EAD':
+    case 'Pós Presencial':
+      return contagemPos(basePaginaPos(ds, filters.produto), ini, fim).matriculas;
+    case 'Graduação':
+      return contagemGradMest(baseGradMest(ds.matGrad, filters.produto), ini, fim).matriculas;
+    case 'Mestrado':
+      return contagemGradMest(baseGradMest(ds.matMestrado, filters.produto), ini, fim).matriculas;
+    case 'Cursos Livres':
+      return contagemCL(ds, ini, fim).matriculas;
+  }
+}
+
 function computePosNegocio(
   ds: GrowthDataset,
   filters: GrowthFilters,
@@ -765,19 +879,8 @@ function computePosNegocio(
   // HERANÇA §7.9: contagem de LINHAS — aluno com 2 contratos conta 2 vezes.
   // O Power Query de f_matriculas_pos removia alunos com 'teste' no nome —
   // são 27 linhas hoje, que inflavam Matrículas, Faturamento, CAC e Ticket.
-  const basePagina = ds.matPos.filter(
-    (r) => !isTeste(r.aluno) && passaFiltroPaginaPos(r, filters.produto),
-  );
-
-  let matriculas = 0;
-  let cancelamentos = 0;
-  for (const r of basePagina) {
-    const baixa = toISODate(r.databaixa);
-    if (!baixa || !inRange(baixa, ini, fim)) continue;
-    const cancel = toISODate(r.datacancelamentomatricula);
-    if (!(cancel && inRange(cancel, ini, fim))) matriculas++;
-    if (cancel && eomLt(baixa, cancel)) cancelamentos++;
-  }
+  const basePagina = basePaginaPos(ds, filters.produto);
+  const { matriculas, cancelamentos } = contagemPos(basePagina, ini, fim);
 
   const faturamento = faturamentoPos(basePagina, ds, { ini, fim });
   const fatMidia = faturamentoPos(basePagina, ds, { ini, fim, origemInscricao: true }); // ROAS Mídia: origem = inscricaodata
@@ -828,36 +931,8 @@ function computeGradMestNegocio(
 ): NegocioMetrics {
   const ini = filters.dataInicio;
   const fim = filters.dataFim;
-  const mestrado = filters.produto === 'Mestrado';
-  const situacoesPagina = mestrado ? SITUACOES_PAGINA_MEST : SITUACOES_PAGINA_GRAD;
-  // Base exclui alunos de teste (append Grad+Mestrado no BI; aqui cada aba
-  // usa a sua tabela — é o equivalente do filtro de página d_modalidade →
-  // nivel_ensino) e aplica os FILTROS DE PÁGINA da aba: tipomatricula
-  // 'Nova Matricula' + situações incluídas. No Mestrado o PBI tem um SEGUNDO
-  // filtro na mesma coluna (EXCLUI 'Formado'), redundante na prática, mas
-  // reproduzido de propósito.
-  const base = rows.filter((r) => {
-    if (isTeste(r.aluno)) return false;
-    if ((r.tipomatricula ?? '').trim() !== 'Nova Matricula') return false;
-    const sit = (r.situacao ?? '').trim();
-    if (!situacoesPagina.has(sit)) return false;
-    if (mestrado && sit === 'Formado') return false;
-    return true;
-  });
-
-  const alunosMat = new Set<string>();
-  let cancelamentos = 0;
-  for (const r of base) {
-    const mat = toISODate(r.datamatricula);
-    if (!mat || !inRange(mat, ini, fim)) continue;
-    const cancel = toISODate(r.datacancelamentocontrato);
-    if (!(cancel && inRange(cancel, ini, fim))) {
-      const aluno = (r.aluno ?? '').trim();
-      if (aluno) alunosMat.add(aluno);
-    }
-    if (cancel && eomLt(mat, cancel)) cancelamentos++;
-  }
-  const matriculas = alunosMat.size;
+  const base = baseGradMest(rows, filters.produto);
+  const { matriculas, cancelamentos } = contagemGradMest(base, ini, fim);
 
   const fatPorRef = (origemContrato: boolean): number => {
     // por aluno, faturadoliq do registro de maior DataReferencia no período
@@ -898,19 +973,7 @@ function computeCLNegocio(
 ): NegocioMetrics {
   const ini = filters.dataInicio;
   const fim = filters.dataFim;
-  // HERANÇA §7.7: matriculasCL NÃO desconta cancelamentos (diferente de Pós
-  // e Grad/Mest). HERANÇA §7.9: contagem de linhas, não de alunos distintos.
-  let matriculas = 0;
-  let faturamento = 0;
-  for (const r of ds.matCL) {
-    // O Power Query de f_matriculas_CL removia alunos com 'teste' no nome
-    // (26 linhas hoje).
-    if (isTeste(r.aluno)) continue;
-    const baixa = toISODate(r.databaixa);
-    if (!baixa || !inRange(baixa, ini, fim)) continue;
-    matriculas++;
-    faturamento += num(r.valor_curso_com_desconto); // sem divisor — já em reais
-  }
+  const { matriculas, faturamento } = contagemCL(ds, ini, fim);
 
   const inscritos = countInsc(ds.inscCL, ini, fim);
   const rub = filterRubeus(ds, filters);
@@ -1185,7 +1248,7 @@ export function computeSerieMensal(
     if (tipo === 'leads') {
       valor = media.leads; // herda a semântica do seletor Fonte (§7.3)
     } else {
-      valor = computeNegocioMetrics(ds, fMes, media).matriculas;
+      valor = contaMatriculas(ds, fMes);
     }
     out.push({ cod: c.cod, mesAno: c.label, valor, investimento: media.investimento });
   }

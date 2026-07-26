@@ -295,7 +295,10 @@ export function GrowthEPerformancePage() {
             )}
             {error && <ErrorState title="Não foi possível carregar os dados" message={error} onRetry={refetch} />}
 
-            <ErrorBoundary title="Não foi possível exibir este produto">
+            {/* key: sem ela o boundary guarda o estado de erro e trocar de
+                produto/visão continuaria mostrando o cartão de falha até
+                clicar em "Tentar novamente". A key remonta o boundary. */}
+            <ErrorBoundary key={produto} title="Não foi possível exibir este produto">
               {loading ? (
                 <>
                   <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -357,7 +360,7 @@ export function GrowthEPerformancePage() {
                       ))}
                     </div>
 
-                    <ErrorBoundary title="Não foi possível exibir esta visão">
+                    <ErrorBoundary key={viewAtiva} title="Não foi possível exibir esta visão">
                       {viewAtiva === 'campanhas' && (
                         <SectionCard title="Campanhas" subtitle="Campanha × Leads, Investimento e Impressões" icon={TableIcon}>
                           {campanhas ? <CampanhasView rows={campanhas} /> : <ChartSkeleton height={320} />}
