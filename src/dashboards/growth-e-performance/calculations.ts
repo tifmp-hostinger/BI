@@ -36,12 +36,24 @@ function replaceAll(s: string, busca: string, troca: string): string {
   return s.split(busca).join(troca);
 }
 
+/**
+ * Réplica do Text.Proper do Power Query: capitaliza a primeira letra de cada
+ * sequência alfabética — ou seja, depois de QUALQUER caractere não-alfabético,
+ * não só depois de espaço. É isso que faz '[ACT] - ARWARNESS' virar
+ * '[Act] - Arwarness' e casar com o replace da regra do Google; capitalizando
+ * só após espaço o resultado seria '[act] - Arwarness' e a campanha (582 mil
+ * impressões) ficaria sem modalidade.
+ */
 function properCase(s: string): string {
-  return s
-    .toLowerCase()
-    .split(' ')
-    .map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : w))
-    .join(' ');
+  const lower = s.toLowerCase();
+  let out = '';
+  let anteriorEhLetra = false;
+  for (const ch of lower) {
+    const ehLetra = ch.toLowerCase() !== ch.toUpperCase();
+    out += ehLetra && !anteriorEhLetra ? ch.toUpperCase() : ch;
+    anteriorEhLetra = ehLetra;
+  }
+  return out;
 }
 
 /**
@@ -90,7 +102,18 @@ export function modalidadeMeta(campaignName: string | null | undefined): string 
   return mod;
 }
 
-/** Modalidade a partir de campaign_name do Google (§4.2). */
+/**
+ * Modalidade a partir de campaign_name do Google (§4.2). Os replaces de
+ * 'Especializações Presenciais' e '[Act] - Arwarness' precisam rodar ANTES do
+ * replace final 'Especialização'→'Pós Presencial' — a ordem abaixo garante
+ * isso.
+ *
+ * HERANÇA: o corte no primeiro ' |' descarta o sufixo do nome, então TODA
+ * campanha 'ARWARNESS' cai em '[Act] - Arwarness' e vira Pós Presencial —
+ * inclusive a '[ACT] - ARWARNESS | CONT | FMP GRADUAÇÃO EM DIREITO', que é
+ * de Graduação. É o comportamento do BI e está embutido nos números de
+ * referência; preservar.
+ */
 export function modalidadeGoogle(campaignName: string | null | undefined): string {
   let s = replaceAll(campaignName ?? '', '[ACT] - SEARCH | CONT | FMP ', '');
   const idx = s.indexOf(' |');
@@ -460,10 +483,23 @@ function faturamentoPos(
   // Filtros da MEDIDA (§5.3) aplicados sobre a base já restrita pelos filtros
   // de página da aba. A restrição de modalidade vem do filtro de página
   // (Modalidade_Pos via distanciapresencial, decisão do §4.4) — o antigo 'D'
-  // fixo da medida foi substituído por ela; sem isso a aba Pós Presencial
-  // teria faturamento sempre zero.
-  // TODO: confirmar com o BI publicado o faturamento da aba Pós Presencial
-  // (herança do PBI misturava bases via classificação por processoseletivo).
+  // fixo da medida foi substituído por ela.
+  //
+  // TODO (aguardando decisão do dono do projeto): o faturamento da aba Pós
+  // Presencial diverge do BI de propósito, e a decisão é qual dos dois manter.
+  //  - No BI, a medida Faturamento_Pos filtra Modalidade_Pos = 'Pós EAD'
+  //    internamente; cruzado com o filtro de página Modalidade =
+  //    'Pós Presencial', sobra quase nada: R$ 7.840,56 de faturamento,
+  //    ROAS 0,24 e ticket médio de R$ 280,02 para uma especialização
+  //    presencial — números irreais, que ninguém consegue usar (é o defeito
+  //    herdado documentado em §7.4).
+  //  - O comportamento atual do app calcula o faturamento real dos alunos
+  //    presenciais (~R$ 292 mil, ticket ~R$ 10 mil), que é o financeiramente
+  //    correto e coerente com o preço do produto.
+  //  - A divergência decorre da decisão já tomada de classificar modalidade de
+  //    Pós por distanciapresencial em vez de processoseletivo (§4.4).
+  // As MATRÍCULAS já batem com o BI (29 vs 28); só o valor diverge.
+  // Mantido o comportamento atual até a decisão.
   const candidatos = basePagina.filter((r) => {
     if ((r.curso ?? '').trim() === 'Pós-graduação em Direito Público (ead)') return false;
     if ((r.descontoaluno ?? '').trim() !== 'Pagante') return false;
@@ -564,7 +600,14 @@ function computePosNegocio(
   const faturamento = faturamentoPos(basePagina, ds, { ini, fim });
   const fatMidia = faturamentoPos(basePagina, ds, { ini, fim, origemInscricao: true }); // ROAS Mídia: origem = inscricaodata
 
-  const inscritos = countInsc(ds.inscPos, ini, fim);
+  // Inscritos por modalidade: stg_rm_inscricoes_pos separada por
+  // processoseletivo contendo 'Presencial' (ver queries.ts) — sem isso as duas
+  // abas mostrariam o total somado de Pós.
+  const inscritos = countInsc(
+    filters.produto === 'Pós Presencial' ? ds.inscPosPresencial : ds.inscPosEad,
+    ini,
+    fim,
+  );
   const rub = filterRubeus(ds, filters);
 
   return derive(matriculas, faturamento, cancelamentos, inscritos, fatMidia, media, rub);

@@ -78,7 +78,9 @@ export type GrowthDataset = {
   matPos: RawMatPosGrowthRow[];
   matCL: RawMatCLGrowthRow[];
   inscGrad: InscPorDia[];
-  inscPos: InscPorDia[];
+  /** stg_rm_inscricoes_pos separada por processoseletivo (ver queries.ts). */
+  inscPosEad: InscPorDia[];
+  inscPosPresencial: InscPorDia[];
   inscMestrado: InscPorDia[];
   inscCL: InscPorDia[];
   pletivo: RawPletivoRow[];

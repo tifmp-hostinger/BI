@@ -31,17 +31,44 @@ const TOTAL_ETAPAS = 4;
  * Herança §7.11: o Power Query truncava essa tabela em 100.000 linhas; aqui
  * não há teto, então o app tende a mostrar MAIS inscritos que o BI. Esperado.
  */
-async function loadInscPorDia(table: string): Promise<InscPorDia[]> {
-  const rows = (await loadAllFrom(table, 'datainscricao')) as { datainscricao: string | null }[];
+function agregaPorDia(datas: (string | null)[]): InscPorDia[] {
   const porDia = new Map<string, number>();
-  for (const r of rows) {
-    const iso = toISODate(r.datainscricao);
+  for (const d of datas) {
+    const iso = toISODate(d);
     if (!iso) continue;
     porDia.set(iso, (porDia.get(iso) ?? 0) + 1);
   }
   return Array.from(porDia.entries())
     .map(([data, total]) => ({ data, total }))
     .sort((a, b) => a.data.localeCompare(b.data));
+}
+
+async function loadInscPorDia(table: string): Promise<InscPorDia[]> {
+  const rows = (await loadAllFrom(table, 'datainscricao')) as { datainscricao: string | null }[];
+  return agregaPorDia(rows.map((r) => r.datainscricao));
+}
+
+/**
+ * stg_rm_inscricoes_pos não tem coluna de modalidade: a separação é pelo texto
+ * de processoseletivo — contém 'Presencial' (case-insensitive) = Pós
+ * Presencial, senão Pós EAD. Sem isso, as duas abas mostrariam o total
+ * somado de Pós.
+ */
+async function loadInscPosSeparadas(): Promise<{ ead: InscPorDia[]; presencial: InscPorDia[] }> {
+  const rows = (await loadAllFrom('stg_rm_inscricoes_pos', 'datainscricao,processoseletivo')) as {
+    datainscricao: string | null;
+    processoseletivo: string | null;
+  }[];
+  const ead: (string | null)[] = [];
+  const presencial: (string | null)[] = [];
+  for (const r of rows) {
+    if ((r.processoseletivo ?? '').toLowerCase().includes('presencial')) {
+      presencial.push(r.datainscricao);
+    } else {
+      ead.push(r.datainscricao);
+    }
+  }
+  return { ead: agregaPorDia(ead), presencial: agregaPorDia(presencial) };
 }
 
 /**
@@ -91,7 +118,7 @@ export async function fetchGrowthData(
   // Lote 4 — inscrições (agregadas por dia; CL tem 110k+ linhas)
   onProgress?.(4, TOTAL_ETAPAS, 'Carregando inscrições');
   const inscGrad = await loadInscPorDia('stg_rm_inscricoes_graduacao');
-  const inscPos = await loadInscPorDia('stg_rm_inscricoes_pos');
+  const inscPos = await loadInscPosSeparadas();
   const inscMestrado = await loadInscPorDia('stg_rm_inscricoes_mestrado');
   const inscCL = await loadInscPorDia('stg_rm_inscricoes_cursoslivres');
 
@@ -104,7 +131,8 @@ export async function fetchGrowthData(
     matPos,
     matCL,
     inscGrad,
-    inscPos,
+    inscPosEad: inscPos.ead,
+    inscPosPresencial: inscPos.presencial,
     inscMestrado,
     inscCL,
     pletivo,
