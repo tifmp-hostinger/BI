@@ -24,11 +24,17 @@ export type RawGoogleAdsRow = {
 };
 
 export type RawRubeusGrowthRow = {
+  /** ID numérico da pessoa. O agrupamento da aba Origem usa SÓ este campo —
+   *  nunca pessoa_nome (privacidade). */
+  pessoa: string | null;
+  /** timestamptz completo — ordena a jornada (momento_date só tem o dia). */
+  momento: string | null;
   momento_date: string | null;
   momento_hora: string | null;
   nome_dia: string | null;
   processo: string | null;
   canal_nome: string | null;
+  fonte_action: string | null;
   status_oportunidade: string | null;
 };
 
@@ -100,7 +106,25 @@ export type GrowthFilters = {
   fimDeSemana: 'Fim de Semana' | 'Dia de Semana' | null;
 };
 
-export type GrowthView = 'campanhas' | 'mapa' | 'horarios' | 'leads' | 'matriculas';
+export type GrowthView = 'campanhas' | 'mapa' | 'horarios' | 'leads' | 'matriculas' | 'origem';
+
+/** Uma linha da aba Origem (agregado por canal ou por plataforma). */
+export type OrigemDatum = {
+  nome: string;
+  pessoas: number;
+  matriculas: number;
+  /** null quando não há pessoas no recorte. */
+  taxa: number | null;
+  /** true quando pessoas < 50 — taxa sem significado estatístico. */
+  amostraPequena: boolean;
+};
+
+export type OrigemData = {
+  porPlataforma: OrigemDatum[];
+  porCanal: OrigemDatum[];
+  totalPessoas: number;
+  totalMatriculas: number;
+};
 
 export type MediaMetrics = {
   leadsGoogle: number;

@@ -7,6 +7,7 @@ import {
   computeMapa,
   computeMediaMetrics,
   computeNegocioMetrics,
+  computeOrigem,
   computeSerieMensal,
 } from '../calculations';
 import type { GrowthDataset, GrowthFilters, GrowthView } from '../types';
@@ -90,6 +91,11 @@ export function useGrowthData(filters: GrowthFilters, view: GrowthView) {
     return computeHorarios(state.dataset, filters);
   }, [state.dataset, filters, view]);
 
+  const origem = useMemo(() => {
+    if (!state.dataset || view !== 'origem') return null;
+    return computeOrigem(state.dataset, filters);
+  }, [state.dataset, filters, view]);
+
   const serieLeads = useMemo(() => {
     if (!state.dataset || view !== 'leads') return null;
     return computeSerieMensal(state.dataset, filters, 'leads');
@@ -111,6 +117,7 @@ export function useGrowthData(filters: GrowthFilters, view: GrowthView) {
     campanhas,
     mapa,
     horarios,
+    origem,
     serieLeads,
     serieMatriculas,
     refetch,

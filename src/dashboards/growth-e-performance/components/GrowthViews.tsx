@@ -14,7 +14,14 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { BrazilStateMap } from '@/components/maps/BrazilStateMap';
 import type { StateAgg } from '@/services/matriculasService';
 import { fmtBRLCompact, fmtInt, fmtPct, truncateLabel } from '../../analise-de-conversao/formatters';
-import type { CampanhaRow, HorarioDatum, MapaUfDatum, SerieMensalDatum } from '../types';
+import type {
+  CampanhaRow,
+  HorarioDatum,
+  MapaUfDatum,
+  OrigemData,
+  OrigemDatum,
+  SerieMensalDatum,
+} from '../types';
 
 const FMP_RED = '#EE2A42';
 const FMP_DARK = '#B81E32';
@@ -162,6 +169,127 @@ export function HorariosView({ data }: { data: HorarioDatum[] }) {
         <Line yAxisId="right" type="monotone" dataKey="taxaConv" stroke={NEUTRAL} strokeWidth={2.5} dot={{ r: 3, fill: NEUTRAL }} connectNulls={false} />
       </ComposedChart>
     </ResponsiveContainer>
+  );
+}
+
+/**
+ * Aba Origem — atribuição de primeiro toque.
+ * ⚠️ NÃO existe no Power BI: é funcionalidade nova, sem número de referência
+ * do BI para comparar. Por isso a aba explica o próprio conceito antes de
+ * mostrar qualquer número.
+ */
+function OrigemLinha({ d, maxPessoas }: { d: OrigemDatum; maxPessoas: number }) {
+  const larguraTotal = maxPessoas > 0 ? Math.max(2, (d.pessoas / maxPessoas) * 100) : 0;
+  // A parte vermelha é a fração da própria barra que virou matrícula: o
+  // comprimento total codifica volume, o preenchido codifica eficiência.
+  const fracaoConvertida = d.pessoas > 0 ? (d.matriculas / d.pessoas) * 100 : 0;
+
+  return (
+    <li className="py-2">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="truncate text-xs font-medium text-ink-2" title={d.nome}>
+          {d.nome}
+        </span>
+        <span className="flex-shrink-0 text-2xs text-ink-3">
+          <strong className="font-semibold text-ink">{fmtInt(d.pessoas)}</strong> pessoas ·{' '}
+          <strong className="font-semibold text-ink">{fmtInt(d.matriculas)}</strong> matrículas ·{' '}
+          {d.taxa === null ? (
+            '--'
+          ) : d.amostraPequena ? (
+            <span
+              className="text-ink-3"
+              title="Poucas pessoas neste canal — a taxa oscila muito e não serve para comparação."
+            >
+              {fmtPct(d.taxa)} <em className="not-italic">(amostra pequena)</em>
+            </span>
+          ) : (
+            <span className="font-semibold text-fmp">{fmtPct(d.taxa)}</span>
+          )}
+        </span>
+      </div>
+      <div className="mt-1 h-2.5 w-full">
+        <div
+          className="h-full overflow-hidden rounded-full"
+          style={{ width: `${larguraTotal}%`, background: NEUTRAL }}
+          aria-hidden="true"
+        >
+          <div className="h-full rounded-full" style={{ width: `${fracaoConvertida}%`, background: FMP_RED }} />
+        </div>
+      </div>
+    </li>
+  );
+}
+
+export function OrigemView({ data }: { data: OrigemData }) {
+  if (data.totalPessoas === 0) {
+    return <EmptyState title="Sem pessoas para os filtros selecionados" />;
+  }
+  const maxPlat = Math.max(...data.porPlataforma.map((d) => d.pessoas), 0);
+  const maxCanal = Math.max(...data.porCanal.map((d) => d.pessoas), 0);
+
+  return (
+    <div className="space-y-6">
+      {/* Texto de abertura — vem ANTES de qualquer número; sem ele a aba é
+          indecifrável, já que conta pessoas e não interações. */}
+      <p className="rounded-md border border-line bg-paper p-3 text-xs leading-relaxed text-ink-2">
+        <strong className="font-semibold text-ink">
+          Cada pessoa é contada uma vez, pelo canal em que apareceu pela primeira vez.
+        </strong>{' '}
+        Se alguém chegou por um anúncio e só se matriculou meses depois, depois de passar por um
+        Action Day, o crédito fica com o anúncio. Por isso os números aqui são menores que os das
+        outras abas: lá contamos interações, aqui contamos pessoas.
+      </p>
+
+      <section>
+        <h4
+          className="text-xs font-semibold text-ink"
+          style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic' }}
+          title="O canal em que a pessoa apareceu pela primeira vez no CRM. Toda a jornada dela é creditada a esse canal."
+        >
+          Por plataforma de mídia
+        </h4>
+        <p className="mt-0.5 text-2xs text-ink-3">
+          <span title="Pessoas distintas, não interações. Alguém com 4 contatos conta 1.">
+            {fmtInt(data.totalPessoas)} pessoas
+          </span>{' '}
+          ·{' '}
+          <span title="Percentual de pessoas desse canal que viraram matrícula, em qualquer momento depois.">
+            {fmtInt(data.totalMatriculas)} matrículas no total
+          </span>
+          . <span title="Pessoas que chegaram sem passar por anúncio do Meta ou do Google — inscrição direta, prospecção do time comercial, parcerias ou eventos.">
+            &quot;Sem toque de mídia&quot; = nunca passou por anúncio.
+          </span>
+        </p>
+        <ul className="mt-2 divide-y divide-line/60">
+          {data.porPlataforma.map((d) => (
+            <OrigemLinha key={d.nome} d={d} maxPessoas={maxPlat} />
+          ))}
+        </ul>
+      </section>
+
+      <section>
+        <h4
+          className="text-xs font-semibold text-ink"
+          style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic' }}
+        >
+          Por canal de origem
+        </h4>
+        <p className="mt-0.5 text-2xs text-ink-3">
+          Ordenado por matrículas — não por taxa, para que canais minúsculos não liderem a lista.
+        </p>
+        <ul className="mt-2 divide-y divide-line/60">
+          {data.porCanal.map((d) => (
+            <OrigemLinha key={d.nome} d={d} maxPessoas={maxCanal} />
+          ))}
+        </ul>
+      </section>
+
+      <p className="border-t border-line pt-3 text-2xs text-ink-3">
+        Não é possível descer ao nível de campanha individual: o CRM registra a plataforma e a
+        página de origem, mas não o identificador da campanha. Para isso seria necessário marcar as
+        landing pages com UTM.
+      </p>
+    </div>
   );
 }
 

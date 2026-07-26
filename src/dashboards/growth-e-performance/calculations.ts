@@ -21,6 +21,8 @@ import type {
   MapaUfDatum,
   MediaMetrics,
   NegocioMetrics,
+  OrigemData,
+  OrigemDatum,
   RawMatGradMestRow,
   SerieMensalDatum,
 } from './types';
@@ -286,6 +288,142 @@ function getClassified(ds: GrowthDataset): ClassifiedData {
 
   const out: ClassifiedData = { meta, google, rubeus };
   classifiedCache.set(ds, out);
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Jornada por pessoa (aba Origem)
+//
+// ⚠️ ESTA ABA NÃO EXISTE NO POWER BI. É funcionalidade nova, construída sobre
+// dado que já está no banco — não há paridade a manter nem número do BI para
+// comparar. Não "corrigir" para bater com o relatório publicado.
+//
+// A tabela do Rubeus é uma lista de MOMENTOS, não de pessoas: 37,5 mil
+// registros para bem menos gente. As outras abas contam registros; aqui
+// agrupamos por pessoa e creditamos o primeiro toque (first-touch).
+// ---------------------------------------------------------------------------
+
+export type Jornada = {
+  canalOrigem: string;
+  plataforma: string;
+  modalidade: string;
+  /** Data do PRIMEIRO toque — é ela que decide se a pessoa entra no recorte. */
+  dataPrimeiroToque: string;
+  fimDeSemana: 'Fim de Semana' | 'Dia de Semana';
+  converteu: boolean;
+  isCRM: boolean;
+};
+
+const PLATAFORMA_SEM_MIDIA = 'Sem toque de mídia';
+
+/**
+ * Plataforma a partir do texto de fonte_action. 'NULL' vem como STRING no
+ * banco (22.915 registros), não como null de verdade.
+ */
+function plataformaDeFonte(fonte: string | null | undefined): string | null {
+  const f = (fonte ?? '').trim();
+  if (!f || f.toUpperCase() === 'NULL') return null;
+  const low = f.toLowerCase();
+  if (low.includes('facebook') || low.includes('audience')) return 'Meta';
+  if (low.includes('google')) return 'Google';
+  if (low.includes('indireta')) return 'Mídia Indireta';
+  return null;
+}
+
+const jornadasCache = new WeakMap<GrowthDataset, Jornada[]>();
+
+/**
+ * Reconstrói a jornada de cada pessoa UMA vez por dataset (WeakMap): varre os
+ * 37,5 mil registros só na primeira chamada. A jornada não muda com o filtro —
+ * o que muda é quais pessoas entram no recorte.
+ *
+ * Privacidade: agrupa por `pessoa` (ID numérico), NUNCA por pessoa_nome.
+ */
+function getJornadas(ds: GrowthDataset): Jornada[] {
+  const cached = jornadasCache.get(ds);
+  if (cached) return cached;
+
+  type Acc = {
+    primeiroMomento: string;
+    canalOrigem: string;
+    modalidade: string;
+    dataPrimeiroToque: string;
+    fimDeSemana: 'Fim de Semana' | 'Dia de Semana';
+    isCRM: boolean;
+    /** momento do primeiro registro COM fonte de mídia preenchida */
+    momentoMidia: string | null;
+    plataforma: string | null;
+    converteu: boolean;
+  };
+
+  const porPessoa = new Map<string, Acc>();
+
+  for (const r of ds.rubeus) {
+    const pessoa = (r.pessoa ?? '').trim();
+    if (!pessoa) continue;
+    const momento = (r.momento ?? '').trim();
+    if (!momento) continue;
+    const dataIso = toISODate(r.momento_date) ?? toISODate(r.momento);
+    if (!dataIso) continue;
+
+    const ganho = (r.status_oportunidade ?? '').trim() === 'Ganho';
+    const plat = plataformaDeFonte(r.fonte_action);
+    const canal = (r.canal_nome ?? 'Não informado').trim();
+
+    const atual = porPessoa.get(pessoa);
+    if (!atual) {
+      porPessoa.set(pessoa, {
+        primeiroMomento: momento,
+        canalOrigem: canal,
+        modalidade: modalidadeLead(r.processo, r.canal_nome),
+        dataPrimeiroToque: dataIso,
+        fimDeSemana: classificaFimDeSemana(r.nome_dia, r.momento_hora),
+        isCRM: canal === 'CRM',
+        momentoMidia: plat ? momento : null,
+        plataforma: plat,
+        // Converteu = teve 'Ganho' em QUALQUER momento da jornada, não só no
+        // primeiro toque.
+        converteu: ganho,
+      });
+      continue;
+    }
+
+    if (ganho) atual.converteu = true;
+
+    // Primeiro toque: menor `momento` da jornada.
+    if (momento < atual.primeiroMomento) {
+      atual.primeiroMomento = momento;
+      atual.canalOrigem = canal;
+      atual.modalidade = modalidadeLead(r.processo, r.canal_nome);
+      atual.dataPrimeiroToque = dataIso;
+      atual.fimDeSemana = classificaFimDeSemana(r.nome_dia, r.momento_hora);
+      atual.isCRM = canal === 'CRM';
+    }
+
+    // Plataforma: primeira fonte_action PREENCHIDA da jornada. Não é
+    // necessariamente a do primeiro toque — quem entra por um canal sem fonte
+    // (Ficha de Inscrição, Action Day) e depois vem por anúncio é creditado à
+    // mídia. É o que o rótulo "Sem toque de mídia" significa: nunca passou por
+    // anúncio em momento nenhum.
+    if (plat && (!atual.momentoMidia || momento < atual.momentoMidia)) {
+      atual.momentoMidia = momento;
+      atual.plataforma = plat;
+    }
+  }
+
+  const out: Jornada[] = [];
+  for (const a of porPessoa.values()) {
+    out.push({
+      canalOrigem: a.canalOrigem,
+      plataforma: a.plataforma ?? PLATAFORMA_SEM_MIDIA,
+      modalidade: a.modalidade,
+      dataPrimeiroToque: a.dataPrimeiroToque,
+      fimDeSemana: a.fimDeSemana,
+      converteu: a.converteu,
+      isCRM: a.isCRM,
+    });
+  }
+  jornadasCache.set(ds, out);
   return out;
 }
 
@@ -940,6 +1078,79 @@ export function computeHorarios(ds: GrowthDataset, filters: GrowthFilters): Hora
       // uma linha em 0% onde simplesmente não há lead com status.
       taxaConv: v.comStatus > 0 ? v.ganhos / v.comStatus : null,
     }));
+}
+
+const AMOSTRA_MINIMA = 50;
+
+function montaLinha(nome: string, pessoas: number, matriculas: number): OrigemDatum {
+  return {
+    nome,
+    pessoas,
+    matriculas,
+    taxa: pessoas > 0 ? matriculas / pessoas : null,
+    // Abaixo de 50 pessoas a taxa oscila demais para servir de comparação — a
+    // linha aparece, mas marcada (nunca escondida).
+    amostraPequena: pessoas < AMOSTRA_MINIMA,
+  };
+}
+
+/**
+ * Aba Origem: atribuição de primeiro toque, uma linha por canal/plataforma.
+ * Respeita os mesmos filtros das outras abas.
+ *
+ * ⚠️ A exclusão de canal_nome='CRM' em Graduação/Mestrado/Pós EAD vale aqui
+ * também (via PRODUTOS_EXCLUEM_CRM): o card de Leads dessas abas exclui CRM, e
+ * se o canal aparecesse só aqui o usuário não conseguiria reconciliar os
+ * totais. Por isso o canal CRM não aparece nessas três abas — é proposital.
+ */
+export function computeOrigem(ds: GrowthDataset, filters: GrowthFilters): OrigemData {
+  const windows = pletivoWindows(ds, filters);
+  const excluiCRM = PRODUTOS_EXCLUEM_CRM.has(filters.produto);
+
+  const porPlataforma = new Map<string, { pessoas: number; matriculas: number }>();
+  const porCanal = new Map<string, { pessoas: number; matriculas: number }>();
+  let totalPessoas = 0;
+  let totalMatriculas = 0;
+
+  for (const j of getJornadas(ds)) {
+    if (j.modalidade !== filters.produto) continue;
+    if (excluiCRM && j.isCRM) continue;
+    if (!inRange(j.dataPrimeiroToque, filters.dataInicio, filters.dataFim)) continue;
+    if (filters.fimDeSemana && j.fimDeSemana !== filters.fimDeSemana) continue;
+    if (
+      windows.length > 0 &&
+      !windows.some((w) => j.dataPrimeiroToque >= w.ini && j.dataPrimeiroToque <= w.fim)
+    ) {
+      continue;
+    }
+
+    totalPessoas++;
+    if (j.converteu) totalMatriculas++;
+
+    const p = porPlataforma.get(j.plataforma) ?? { pessoas: 0, matriculas: 0 };
+    p.pessoas++;
+    if (j.converteu) p.matriculas++;
+    porPlataforma.set(j.plataforma, p);
+
+    const c = porCanal.get(j.canalOrigem) ?? { pessoas: 0, matriculas: 0 };
+    c.pessoas++;
+    if (j.converteu) c.matriculas++;
+    porCanal.set(j.canalOrigem, c);
+  }
+
+  // Ordenar por MATRÍCULAS, não por taxa: canais minúsculos com taxa alta
+  // liderariam a lista e enganariam a leitura.
+  const ordena = (m: Map<string, { pessoas: number; matriculas: number }>) =>
+    Array.from(m.entries())
+      .map(([nome, v]) => montaLinha(nome, v.pessoas, v.matriculas))
+      .sort((a, b) => b.matriculas - a.matriculas || b.pessoas - a.pessoas);
+
+  return {
+    porPlataforma: ordena(porPlataforma),
+    porCanal: ordena(porCanal),
+    totalPessoas,
+    totalMatriculas,
+  };
 }
 
 /**

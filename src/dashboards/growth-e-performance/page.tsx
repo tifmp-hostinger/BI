@@ -14,6 +14,7 @@ import {
   PanelLeftOpen,
   Percent,
   RefreshCw,
+  Share2,
   Table as TableIcon,
   Target,
   TrendingUp,
@@ -31,7 +32,13 @@ import { fmtBRLCompact, fmtPct } from '../analise-de-conversao/formatters';
 import { DATA_INICIO_DEFAULT, PRODUTOS, type Produto } from './constants';
 import { useGrowthData } from './hooks/useGrowthData';
 import { FunnelPanel } from './components/FunnelPanel';
-import { CampanhasView, HorariosView, MapaView, SerieMensalView } from './components/GrowthViews';
+import {
+  CampanhasView,
+  HorariosView,
+  MapaView,
+  OrigemView,
+  SerieMensalView,
+} from './components/GrowthViews';
 import type { Fonte, GrowthFilters, GrowthView } from './types';
 
 const VIEWS: { id: GrowthView; label: string; icon: typeof TableIcon }[] = [
@@ -40,6 +47,7 @@ const VIEWS: { id: GrowthView; label: string; icon: typeof TableIcon }[] = [
   { id: 'horarios', label: 'Horários', icon: Clock },
   { id: 'leads', label: 'Leads', icon: Users },
   { id: 'matriculas', label: 'Matrículas', icon: BarChart3 },
+  { id: 'origem', label: 'Origem', icon: Share2 },
 ];
 
 /**
@@ -99,7 +107,7 @@ export function GrowthEPerformancePage() {
 
   const {
     loading, error, progress, atualizadoEm, pletivo,
-    media, negocio, campanhas, mapa, horarios, serieLeads, serieMatriculas, refetch,
+    media, negocio, campanhas, mapa, horarios, origem, serieLeads, serieMatriculas, refetch,
   } = useGrowthData(filters, viewAtiva);
 
   const limparFiltros = () => {
@@ -372,6 +380,15 @@ export function GrowthEPerformancePage() {
                           icon={Calendar}
                         >
                           {serieLeads ? <SerieMensalView data={serieLeads} label="Leads" /> : <ChartSkeleton height={360} />}
+                        </SectionCard>
+                      )}
+                      {viewAtiva === 'origem' && (
+                        <SectionCard
+                          title="Origem das matrículas"
+                          subtitle="Primeiro toque por pessoa — visão nova, sem equivalente no Power BI"
+                          icon={Share2}
+                        >
+                          {origem ? <OrigemView data={origem} /> : <ChartSkeleton height={360} />}
                         </SectionCard>
                       )}
                       {viewAtiva === 'matriculas' && (

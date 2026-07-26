@@ -87,7 +87,7 @@ export async function fetchGrowthData(
   const pletivo = await loadPletivo();
   const rubeus = (await loadAllFrom(
     'rubeus_registros_personalizada',
-    'momento_date,momento_hora,nome_dia,processo,canal_nome,status_oportunidade',
+    'pessoa,momento,momento_date,momento_hora,nome_dia,processo,canal_nome,fonte_action,status_oportunidade',
   )) as RawRubeusGrowthRow[];
 
   // Lote 2 — mídia paga
