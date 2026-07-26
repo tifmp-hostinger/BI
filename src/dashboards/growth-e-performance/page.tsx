@@ -337,12 +337,20 @@ export function GrowthEPerformancePage() {
                         </SectionCard>
                       )}
                       {view === 'leads' && (
-                        <SectionCard title="Leads por Mês" subtitle="Mês Ano × Leads + Investimento" icon={Calendar}>
+                        <SectionCard
+                          title="Leads por Mês"
+                          subtitle="Mês Ano × Leads + Investimento — série completa (não segue o filtro de data, como no BI)"
+                          icon={Calendar}
+                        >
                           {serieLeads ? <SerieMensalView data={serieLeads} label="Leads" /> : <ChartSkeleton height={360} />}
                         </SectionCard>
                       )}
                       {view === 'matriculas' && (
-                        <SectionCard title="Matrículas por Mês" subtitle="Mês Ano × Matrículas + Investimento" icon={Calendar}>
+                        <SectionCard
+                          title="Matrículas por Mês"
+                          subtitle="Mês Ano × Matrículas + Investimento — série completa (não segue o filtro de data, como no BI)"
+                          icon={Calendar}
+                        >
                           {serieMatriculas ? <SerieMensalView data={serieMatriculas} label="Matrículas" /> : <ChartSkeleton height={360} />}
                         </SectionCard>
                       )}

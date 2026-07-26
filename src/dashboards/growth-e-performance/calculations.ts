@@ -845,7 +845,17 @@ export function computeHorarios(ds: GrowthDataset, filters: GrowthFilters): Hora
     }));
 }
 
-/** Série mensal de Leads (ou Matrículas) + Investimento, eixo Mês Ano Ext. */
+/**
+ * Série mensal de Leads (ou Matrículas) + Investimento, eixo Mês Ano Ext.
+ *
+ * HERANÇA DO BI (escopo de filtro diferente do dos cards): estes gráficos
+ * IGNORAM o filtro de data — no relatório publicado, com o slicer em
+ * "01/06/2026 em diante", o gráfico continua exibindo a série completa
+ * (out/25 → jun/26) enquanto os cards mostram só o período selecionado.
+ * Não é inconsistência do BI: o card responde ao slicer e o visual não.
+ * Os demais filtros (produto/página, Fonte, Período Letivo, Fim de Semana)
+ * continuam valendo. Não "consertar" recortando pelo período.
+ */
 export function computeSerieMensal(
   ds: GrowthDataset,
   filters: GrowthFilters,
@@ -858,12 +868,9 @@ export function computeSerieMensal(
     const mIni = `${c.ano}-${String(c.mes).padStart(2, '0')}-01`;
     const ultimoDia = new Date(c.ano, c.mes, 0).getDate();
     const mFim = `${c.ano}-${String(c.mes).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
-    // Recorta o mês pela janela de datas ativa; meses fora dela ficam de fora.
-    const ini = filters.dataInicio && filters.dataInicio > mIni ? filters.dataInicio : mIni;
-    const fim = filters.dataFim && filters.dataFim < mFim ? filters.dataFim : mFim;
-    if (ini > fim) continue;
 
-    const fMes: GrowthFilters = { ...filters, dataInicio: ini, dataFim: fim };
+    // Janela = o mês inteiro, sem cruzar com filters.dataInicio/dataFim.
+    const fMes: GrowthFilters = { ...filters, dataInicio: mIni, dataFim: mFim };
     const media = computeMediaMetrics(ds, fMes);
     let valor = 0;
     if (tipo === 'leads') {
