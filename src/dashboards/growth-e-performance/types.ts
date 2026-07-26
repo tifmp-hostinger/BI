@@ -1,0 +1,157 @@
+import type { Produto } from './constants';
+import type { RawPletivoRow } from '../analise-de-conversao/types';
+
+export type RawMetaAdsRow = {
+  date_start: string | null;
+  campaign_name: string | null;
+  adset_id: string | null;
+  impressions: string | null;
+  clicks: string | null;
+  spend: string | null;
+  reach: string | null;
+  action_type: string | null;
+  value: string | null;
+};
+
+export type RawGoogleAdsRow = {
+  date: string | null;
+  geotargetstate: string | null;
+  campaign_name: string | null;
+  impressions: string | null;
+  clicks: string | null;
+  costmicros: string | null;
+  conversions: string | null;
+};
+
+export type RawRubeusGrowthRow = {
+  momento_date: string | null;
+  momento_hora: string | null;
+  nome_dia: string | null;
+  processo: string | null;
+  canal_nome: string | null;
+  status_oportunidade: string | null;
+};
+
+/** Grad e Mestrado compartilham o mesmo shape (mesmas colunas no RM). */
+export type RawMatGradMestRow = {
+  aluno: string | null;
+  situacao: string | null;
+  datamatricula: string | null;
+  datacontrato: string | null;
+  datacancelamentocontrato: string | null;
+  faturadoliq: string | null;
+};
+
+export type RawMatPosGrowthRow = {
+  aluno: string | null;
+  curso: string | null;
+  situacao: string | null;
+  descontoaluno: string | null;
+  distanciapresencial: string | null;
+  bolsas: string | null;
+  bolsa3: string | null;
+  databaixa: string | null;
+  datacancelamentomatricula: string | null;
+  inscricaodata: string | null;
+  faturadoliq: string | null;
+};
+
+export type RawMatCLGrowthRow = {
+  aluno: string | null;
+  situacao_matricula: string | null;
+  databaixa: string | null;
+  data_contrato: string | null;
+  valor_curso_com_desconto: string | null;
+};
+
+/** Inscrições agregadas por dia logo após o fetch (memória). */
+export type InscPorDia = { data: string; total: number };
+
+export type GrowthDataset = {
+  meta: RawMetaAdsRow[];
+  google: RawGoogleAdsRow[];
+  rubeus: RawRubeusGrowthRow[];
+  matGrad: RawMatGradMestRow[];
+  matMestrado: RawMatGradMestRow[];
+  matPos: RawMatPosGrowthRow[];
+  matCL: RawMatCLGrowthRow[];
+  inscGrad: InscPorDia[];
+  inscPos: InscPorDia[];
+  inscMestrado: InscPorDia[];
+  inscCL: InscPorDia[];
+  pletivo: RawPletivoRow[];
+};
+
+export type Fonte = 'Google' | 'Meta' | 'Todos';
+
+export type GrowthFilters = {
+  produto: Produto;
+  /** null = sem filtro de fonte (leads contam registros do Rubeus — §5.2). */
+  fonte: Fonte | null;
+  dataInicio: string | null;
+  dataFim: string | null;
+  periodoLetivo: string[];
+  fimDeSemana: 'Fim de Semana' | 'Dia de Semana' | null;
+};
+
+export type GrowthView = 'campanhas' | 'mapa' | 'horarios' | 'leads' | 'matriculas';
+
+export type MediaMetrics = {
+  leadsGoogle: number;
+  leadsMeta: number;
+  investimentoGoogle: number;
+  investimentoMeta: number;
+  impressoesGoogle: number;
+  impressoesMeta: number;
+  clicksGoogle: number;
+  clicksMeta: number;
+  alcanceMeta: number;
+  /** Combinados conforme o seletor Fonte */
+  investimento: number;
+  impressoes: number;
+  clicks: number;
+  /** null = "--" (Google não expõe reach) */
+  alcance: number | null;
+  cpl: number | null;
+  cpc: number | null;
+  ctr: number | null;
+  frequencia: number | null;
+  leads: number;
+};
+
+export type NegocioMetrics = {
+  matriculas: number;
+  faturamento: number;
+  cancelamentos: number;
+  inscritos: number;
+  cac: number | null;
+  ticketMedio: number | null;
+  taxaConv: number | null;
+  roas: number | null;
+  roasMidia: number | null;
+  conversaoRubeus: number | null;
+};
+
+export type CampanhaRow = {
+  campanha: string;
+  plataforma: 'Google' | 'Meta';
+  leads: number;
+  investimento: number;
+  impressoes: number;
+};
+
+export type HorarioDatum = {
+  inicio: number;
+  faixa: string;
+  leads: number;
+  taxaConv: number;
+};
+
+export type SerieMensalDatum = {
+  cod: number;
+  mesAno: string;
+  valor: number;
+  investimento: number;
+};
+
+export type MapaUfDatum = { uf: string; conversoes: number; investimento: number };

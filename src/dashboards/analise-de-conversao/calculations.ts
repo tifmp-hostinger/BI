@@ -25,6 +25,14 @@ const BOLSAS_INCENTIVO = new Set([
   'BOLSA SOCIOECONÔMICA',
 ]);
 
+/**
+ * Exceções nominais herdadas do Power BI (BasePos de Especializações).
+ * Exportadas para reutilização pelo dashboard growth-e-performance — não
+ * duplicar estes nomes em outros arquivos.
+ */
+export const EXCLUSOES_FATURAMENTO_POS = new Set(['Eric Maldaner Molter']);
+export const EXCECAO_TROCA_PL = 'Bruno Barbosa da Silveira';
+
 // Strings literais herdadas do DAX do Power BI ('Pré Matricula' não existe no
 // banco — filtro morto herdado, preservado de propósito para paridade).
 const SITUACOES_EXCLUIR_BASE_POS = new Set([
@@ -336,12 +344,12 @@ function computeBasePos(
     if (SITUACOES_EXCLUIR_BASE_POS.has(sit)) return false;
 
     const aluno = (r.aluno ?? '').trim();
-    if (aluno === 'Eric Maldaner Molter') return false;
+    if (EXCLUSOES_FATURAMENTO_POS.has(aluno)) return false;
 
     const bolsas = (r.bolsas ?? '').toUpperCase();
     const bolsa3 = (r.bolsa3 ?? '').toUpperCase();
     const temTrocaPL = bolsas.includes('TROCA DE PL') || bolsa3.includes('TROCA DE PL');
-    if (temTrocaPL && aluno !== 'Bruno Barbosa da Silveira') return false;
+    if (temTrocaPL && aluno !== EXCECAO_TROCA_PL) return false;
 
     const baixaIso = toISODate(r.databaixa);
     if (!baixaIso) return false;

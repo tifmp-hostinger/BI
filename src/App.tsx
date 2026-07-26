@@ -23,6 +23,11 @@ const AnaliseDeConversaoPage = lazy(() =>
     default: m.AnaliseDeConversaoPage,
   })),
 );
+const GrowthEPerformancePage = lazy(() =>
+  import('@/dashboards/growth-e-performance/page').then((m) => ({
+    default: m.GrowthEPerformancePage,
+  })),
+);
 
 function RouteFallback() {
   return (
@@ -41,6 +46,7 @@ function DashboardRouter() {
     return <AnaliseConversaoPresidenciaPage />;
   if (slug === 'bolsas-e-descontos') return <BolsasEDescontosPage />;
   if (slug === 'analise-de-conversao') return <AnaliseDeConversaoPage />;
+  if (slug === 'growth-e-performance') return <GrowthEPerformancePage />;
   return (
     <AppShell title="Dashboard em breve" subtitle={`Modulo: ${slug}`}>
       <ModulePlaceholder
