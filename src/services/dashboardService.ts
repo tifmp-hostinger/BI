@@ -3,8 +3,8 @@ import { SAMPLE_DASHBOARDS } from '@/lib/sampleData';
 
 /**
  * Dashboards registrados em código que podem ainda não existir na tabela
- * `dashboards` do banco (o registro no banco é feito à parte). Sem este
- * merge, um dashboard novo fica roteado mas invisível no menu.
+ * `dashboards` do banco. Sem este merge, um dashboard novo fica roteado mas
+ * invisível no menu.
  */
 const LOCAL_DASHBOARD_SLUGS = new Set(['growth-e-performance']);
 
@@ -17,16 +17,38 @@ function mergeLocalDashboards(fromDb: Dashboard[]): Dashboard[] {
   return [...fromDb, ...missing].sort((a, b) => a.sort_order - b.sort_order);
 }
 
+/**
+ * A tabela `dashboards` NÃO existe neste projeto Supabase — o catálogo vive em
+ * SAMPLE_DASHBOARDS. Cada consulta a ela devolvia PGRST205 ("Could not find
+ * the table 'public.dashboards' in the schema cache"): o código tratava o erro
+ * em silêncio e caía no fallback, mas o navegador registra o 404 no console a
+ * cada navegação, o que parecia falha do app sem ser.
+ *
+ * Depois da primeira resposta de "tabela ausente" paramos de perguntar. Se um
+ * dia a tabela for criada, basta recarregar a página: a primeira consulta
+ * volta a funcionar e o banco passa a mandar no catálogo de novo — nenhuma
+ * mudança de código é necessária.
+ */
+let tabelaAusente = false;
+
+/** PGRST205 = tabela inexistente; 42P01 = undefined_table no Postgres. */
+function ehTabelaAusente(code: string | undefined): boolean {
+  return code === 'PGRST205' || code === '42P01';
+}
+
 export async function listDashboards(): Promise<Dashboard[]> {
+  if (tabelaAusente) return SAMPLE_DASHBOARDS;
   try {
     const { data, error } = await supabase
       .from('dashboards')
       .select('*')
       .order('sort_order', { ascending: true });
 
-    if (error || !data || data.length === 0) {
+    if (error) {
+      if (ehTabelaAusente(error.code)) tabelaAusente = true;
       return SAMPLE_DASHBOARDS;
     }
+    if (!data || data.length === 0) return SAMPLE_DASHBOARDS;
     return mergeLocalDashboards(data as Dashboard[]);
   } catch {
     return SAMPLE_DASHBOARDS;
@@ -34,6 +56,8 @@ export async function listDashboards(): Promise<Dashboard[]> {
 }
 
 export async function getDashboardBySlug(slug: string): Promise<Dashboard | null> {
+  const local = () => SAMPLE_DASHBOARDS.find((d) => d.slug === slug) ?? null;
+  if (tabelaAusente) return local();
   try {
     const { data, error } = await supabase
       .from('dashboards')
@@ -41,11 +65,12 @@ export async function getDashboardBySlug(slug: string): Promise<Dashboard | null
       .eq('slug', slug)
       .maybeSingle();
 
-    if (error || !data) {
-      return SAMPLE_DASHBOARDS.find((d) => d.slug === slug) ?? null;
+    if (error) {
+      if (ehTabelaAusente(error.code)) tabelaAusente = true;
+      return local();
     }
-    return data as Dashboard;
+    return (data as Dashboard | null) ?? local();
   } catch {
-    return SAMPLE_DASHBOARDS.find((d) => d.slug === slug) ?? null;
+    return local();
   }
 }
