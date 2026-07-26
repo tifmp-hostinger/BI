@@ -29,8 +29,10 @@ import { AppShell } from '@/components/layout/AppShell';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { ReorderableGrid, RItem } from '@/components/ui/ReorderableGrid';
 import { GaugeSemicircle } from '@/components/ui/GaugeSemicircle';
-import { ChartSkeleton } from '@/components/ui/Skeletons';
+import { ChartSkeleton, LoadingSteps } from '@/components/ui/Skeletons';
 import { ErrorState } from '@/components/ui/ErrorState';
+import { DataFreshness } from '@/components/ui/DataFreshness';
+import { FONTES_POR_DASHBOARD } from '@/lib/dataFreshness';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { useAnaliseConversaoData } from './hooks/useAnaliseConversaoData';
@@ -126,6 +128,9 @@ export function AnaliseDeConversaoPage() {
                 <ArrowLeft className="h-3 w-3" />
                 Central de Dashboards
               </Link>
+              <div className="mt-2">
+                <DataFreshness tabelas={FONTES_POR_DASHBOARD['analise-de-conversao']} />
+              </div>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium uppercase tracking-widest text-cream/85 ring-1 ring-inset ring-cream/15">
                   <Target className="h-3 w-3" />
@@ -195,11 +200,7 @@ export function AnaliseDeConversaoPage() {
           />
         )}
 
-        {loading && progress && (
-          <div className="rounded-md border border-line bg-white p-4 text-center text-xs text-ink-3 shadow-card animate-fade-in">
-            {progress}
-          </div>
-        )}
+        {loading && progress && <LoadingSteps mensagem={progress} />}
 
         {error && (
           <ErrorState

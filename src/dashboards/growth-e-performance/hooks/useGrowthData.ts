@@ -17,7 +17,6 @@ type State = {
   loading: boolean;
   error: string | null;
   progress: string | null;
-  atualizadoEm: Date | null;
 };
 
 /**
@@ -30,7 +29,6 @@ export function useGrowthData(filters: GrowthFilters, view: GrowthView) {
     loading: true,
     error: null,
     progress: null,
-    atualizadoEm: null,
   });
 
   const load = useCallback(async (forceRefresh: boolean) => {
@@ -42,14 +40,13 @@ export function useGrowthData(filters: GrowthFilters, view: GrowthView) {
           progress: `Carregando dados — etapa ${etapa} de ${total} (${descricao})`,
         }));
       }, forceRefresh);
-      setState({ dataset, loading: false, error: null, progress: null, atualizadoEm: new Date() });
+      setState({ dataset, loading: false, error: null, progress: null });
     } catch (err) {
       setState({
         dataset: null,
         loading: false,
         progress: null,
-        atualizadoEm: null,
-        error: err instanceof Error ? err.message : 'Erro ao carregar dados',
+            error: err instanceof Error ? err.message : 'Erro ao carregar dados',
       });
     }
   }, []);
@@ -110,7 +107,6 @@ export function useGrowthData(filters: GrowthFilters, view: GrowthView) {
     loading: state.loading,
     error: state.error,
     progress: state.progress,
-    atualizadoEm: state.atualizadoEm,
     pletivo: state.dataset?.pletivo ?? [],
     media,
     negocio,

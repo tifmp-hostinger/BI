@@ -106,18 +106,25 @@ export function StatCard({
 export function StatCardSkeleton({ index = 0 }: { index?: number }) {
   return (
     <div
-      className="rounded-md border border-line bg-white p-5 shadow-card animate-pulse"
+      className="relative animate-slide-up overflow-hidden rounded-md border border-line bg-white p-5 shadow-card"
       style={{ animationDelay: `${index * 60}ms` }}
     >
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <div className="h-3 w-24 rounded bg-line" />
-          <div className="mt-3 h-8 w-20 rounded bg-line" />
-          <div className="mt-2 h-3 w-32 rounded bg-paper" />
-        </div>
-        <div className="h-10 w-10 rounded-sm bg-paper" />
+      <div className="absolute inset-x-0 top-0 h-1 overflow-hidden bg-paper">
+        <div className="h-full w-1/3 animate-shimmer bg-gradient-to-r from-transparent via-fmp/50 to-transparent" />
       </div>
-      <div className="mt-4 h-4 w-28 rounded-full bg-paper" />
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1 space-y-2">
+          <div className="relative h-2 w-20 overflow-hidden rounded bg-paper">
+            <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/70 to-transparent" />
+          </div>
+          <div className="relative h-7 w-24 overflow-hidden rounded bg-paper">
+            <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/70 to-transparent" />
+          </div>
+        </div>
+        <div className="relative h-10 w-10 overflow-hidden rounded-sm bg-paper">
+          <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/70 to-transparent" />
+        </div>
+      </div>
     </div>
   );
 }

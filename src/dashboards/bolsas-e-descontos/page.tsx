@@ -33,6 +33,8 @@ import { StatCard, StatCardSkeleton } from '@/components/ui/StatCard';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { ChartSkeleton } from '@/components/ui/Skeletons';
 import { ErrorState } from '@/components/ui/ErrorState';
+import { DataFreshness } from '@/components/ui/DataFreshness';
+import { FONTES_POR_DASHBOARD } from '@/lib/dataFreshness';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useBolsasDescontosData } from './hooks/useBolsasDescontosData';
 import { BolsasFilterBar } from './components/BolsasFilterBar';
@@ -110,6 +112,9 @@ export function BolsasEDescontosPage() {
                 <ArrowLeft className="h-3 w-3" />
                 Central de Dashboards
               </Link>
+              <div className="mt-2">
+                <DataFreshness tabelas={FONTES_POR_DASHBOARD['bolsas-e-descontos']} />
+              </div>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium uppercase tracking-widest text-cream/85 ring-1 ring-inset ring-cream/15">
                   <Percent className="h-3 w-3" />

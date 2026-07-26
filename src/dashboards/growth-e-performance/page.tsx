@@ -25,9 +25,11 @@ import {
 import { AppShell } from '@/components/layout/AppShell';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { StatCard, StatCardSkeleton } from '@/components/ui/StatCard';
-import { ChartSkeleton } from '@/components/ui/Skeletons';
+import { ChartSkeleton, LoadingSteps } from '@/components/ui/Skeletons';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
+import { DataFreshness } from '@/components/ui/DataFreshness';
+import { FONTES_POR_DASHBOARD } from '@/lib/dataFreshness';
 import { MultiSelect } from '@/components/ui/MultiSelect';
 import { fmtBRLCompact, fmtPct } from '../analise-de-conversao/formatters';
 import { DATA_INICIO_DEFAULT, PRODUTOS, type Produto } from './constants';
@@ -130,7 +132,7 @@ export function GrowthEPerformancePage() {
   );
 
   const {
-    loading, error, progress, atualizadoEm, pletivo,
+    loading, error, progress, pletivo,
     media, negocio, campanhas, mapa, horarios, origem, serieLeads, serieMatriculas, refetch,
   } = useGrowthData(filters, viewAtiva);
 
@@ -189,12 +191,7 @@ export function GrowthEPerformancePage() {
               <ArrowLeft className="h-3 w-3" />
               Central de Dashboards
             </Link>
-            {atualizadoEm && (
-              <span className="text-2xs text-ink-3">
-                Atualizado em {atualizadoEm.toLocaleDateString('pt-BR')} às{' '}
-                {atualizadoEm.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            )}
+            <DataFreshness tabelas={FONTES_POR_DASHBOARD['growth-e-performance']} />
           </div>
           <div className="flex items-center gap-2">
             <span className="hidden text-xs text-ink-3 sm:inline">Olá, Equipe FMP</span>
@@ -354,11 +351,7 @@ export function GrowthEPerformancePage() {
 
           {/* Conteúdo */}
           <div className="min-w-0 flex-1 space-y-4">
-            {loading && progress && (
-              <div className="rounded-md border border-line bg-white p-4 text-center text-xs text-ink-3 shadow-card animate-fade-in">
-                {progress}
-              </div>
-            )}
+            {loading && progress && <LoadingSteps mensagem={progress} />}
             {error && <ErrorState title="Não foi possível carregar os dados" message={error} onRetry={refetch} />}
 
             {/* key: sem ela o boundary guarda o estado de erro e trocar de

@@ -8,6 +8,8 @@ import {
   MapPin,
   Percent,
   Settings,
+  PanelLeftClose,
+  PanelLeftOpen,
   Shield,
   Target,
   TrendingUp,
@@ -43,9 +45,12 @@ type Props = {
   items: SidebarItem[];
   open: boolean;
   onClose: () => void;
+  /** Modo compacto (só ícones) no desktop. */
+  colapsado?: boolean;
+  onToggleColapso?: () => void;
 };
 
-export function Sidebar({ items, open, onClose }: Props) {
+export function Sidebar({ items, open, onClose, colapsado = false, onToggleColapso }: Props) {
   return (
     <>
       {open && (
@@ -57,9 +62,9 @@ export function Sidebar({ items, open, onClose }: Props) {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col glass-drawer text-cream transition-transform duration-300 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col glass-drawer text-cream transition-all duration-300 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
           open ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        } ${colapsado ? 'lg:w-20' : ''}`}
       >
         {/* Brand */}
         <div className="flex items-center justify-between px-5 py-5">
@@ -67,17 +72,19 @@ export function Sidebar({ items, open, onClose }: Props) {
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-fmp">
               <LayoutDashboard className="h-5 w-5 text-white" strokeWidth={2.4} />
             </div>
-            <div>
-              <p
-                className="text-sm font-semibold tracking-tight text-cream"
-                style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic' }}
-              >
-                FMP Analytics
-              </p>
-              <p className="text-2xs uppercase tracking-widest text-sand/70">
-                Central de Dashboards
-              </p>
-            </div>
+            {!colapsado && (
+              <div>
+                <p
+                  className="text-sm font-semibold tracking-tight text-cream"
+                  style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic' }}
+                >
+                  FMP Analytics
+                </p>
+                <p className="text-2xs uppercase tracking-widest text-sand/70">
+                  Central de Dashboards
+                </p>
+              </div>
+            )}
           </NavLink>
           <button
             type="button"
@@ -87,13 +94,31 @@ export function Sidebar({ items, open, onClose }: Props) {
           >
             <X className="h-5 w-5" />
           </button>
+          {/* Recolher/expandir: só faz sentido no desktop, onde a barra é fixa. */}
+          {onToggleColapso && (
+            <button
+              type="button"
+              onClick={onToggleColapso}
+              title={colapsado ? 'Expandir menu' : 'Recolher menu'}
+              aria-label={colapsado ? 'Expandir menu' : 'Recolher menu'}
+              className="hidden rounded-lg p-1.5 text-cream/60 transition hover:bg-white/10 hover:text-cream lg:block"
+            >
+              {colapsado ? (
+                <PanelLeftOpen className="h-4 w-4" />
+              ) : (
+                <PanelLeftClose className="h-4 w-4" />
+              )}
+            </button>
+          )}
         </div>
 
         {/* Nav */}
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
-          <p className="mb-2 mt-2 px-3 text-2xs font-semibold uppercase tracking-widest text-sand/50">
-            Painel
-          </p>
+          {!colapsado && (
+            <p className="mb-2 mt-2 px-3 text-2xs font-semibold uppercase tracking-widest text-sand/50">
+              Painel
+            </p>
+          )}
           <NavLink
             to="/"
             end
@@ -107,29 +132,35 @@ export function Sidebar({ items, open, onClose }: Props) {
             }
           >
             <LayoutDashboard className="h-4 w-4 flex-shrink-0" strokeWidth={2.3} />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium">Inicio</p>
-              <p className="truncate text-2xs text-cream/40">Visao geral</p>
-            </div>
+            {!colapsado && (
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">Inicio</p>
+                <p className="truncate text-2xs text-cream/40">Visao geral</p>
+              </div>
+            )}
           </NavLink>
 
-          <p className="mb-2 mt-5 px-3 text-2xs font-semibold uppercase tracking-widest text-sand/50">
-            Dashboards
-          </p>
+          {!colapsado && (
+            <p className="mb-2 mt-5 px-3 text-2xs font-semibold uppercase tracking-widest text-sand/50">
+              Dashboards
+            </p>
+          )}
           {items.map((item, i) => {
             const Icon = ICONS[item.icon] ?? LayoutDashboard;
             const commonInner = (
               <>
                 <Icon className="h-4 w-4 flex-shrink-0" strokeWidth={2.3} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{item.title}</p>
-                  {item.subtitle && (
-                    <p className="truncate text-2xs text-cream/40">
-                      {item.subtitle}
-                    </p>
-                  )}
-                </div>
-                {item.disabled && (
+                {!colapsado && (
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{item.title}</p>
+                    {item.subtitle && (
+                      <p className="truncate text-2xs text-cream/40">
+                        {item.subtitle}
+                      </p>
+                    )}
+                  </div>
+                )}
+                {!colapsado && item.disabled && (
                   <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-2xs font-semibold text-cream/50">
                     Em breve
                   </span>
@@ -154,6 +185,7 @@ export function Sidebar({ items, open, onClose }: Props) {
                 key={item.slug}
                 to={`/dashboards/${item.slug}`}
                 onClick={onClose}
+                title={colapsado ? `${item.title}${item.subtitle ? ` — ${item.subtitle}` : ''}` : undefined}
                 style={{ animationDelay: `${i * 40}ms` }}
                 className={({ isActive }) =>
                   `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all no-underline animate-slide-right ${
@@ -168,22 +200,28 @@ export function Sidebar({ items, open, onClose }: Props) {
             );
           })}
 
-          <p className="mb-2 mt-5 px-3 text-2xs font-semibold uppercase tracking-widest text-sand/50">
-            Administracao
-          </p>
+          {!colapsado && (
+            <p className="mb-2 mt-5 px-3 text-2xs font-semibold uppercase tracking-widest text-sand/50">
+              Administracao
+            </p>
+          )}
           <div className="flex cursor-not-allowed items-center gap-3 rounded-xl px-3 py-2.5 text-cream/30">
-            <Shield className="h-4 w-4" strokeWidth={2.3} />
-            <div className="min-w-0">
-              <p className="text-sm font-medium">Governanca</p>
-              <p className="text-2xs text-cream/40">Permissoes e auditoria</p>
-            </div>
+            <Shield className="h-4 w-4 flex-shrink-0" strokeWidth={2.3} />
+            {!colapsado && (
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Governanca</p>
+                <p className="text-2xs text-cream/40">Permissoes e auditoria</p>
+              </div>
+            )}
           </div>
           <div className="flex cursor-not-allowed items-center gap-3 rounded-xl px-3 py-2.5 text-cream/30">
-            <Settings className="h-4 w-4" strokeWidth={2.3} />
-            <div className="min-w-0">
-              <p className="text-sm font-medium">Configuracoes</p>
-              <p className="text-2xs text-cream/40">Preferencias do sistema</p>
-            </div>
+            <Settings className="h-4 w-4 flex-shrink-0" strokeWidth={2.3} />
+            {!colapsado && (
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Configuracoes</p>
+                <p className="text-2xs text-cream/40">Preferencias do sistema</p>
+              </div>
+            )}
           </div>
         </nav>
 
