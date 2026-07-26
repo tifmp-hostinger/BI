@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, HelpCircle, Minus } from 'lucide-react';
 
 type Trend = { value: number; direction: 'up' | 'down' | 'flat' };
 type ColorKey = 'fmp' | 'success' | 'warning' | 'danger' | 'info' | 'gray';
@@ -13,6 +13,10 @@ type StatCardProps = {
   color?: ColorKey;
   highlight?: boolean;
   index?: number;
+  /** Explicação da métrica: vira um "?" discreto ao lado do rótulo. */
+  hint?: string;
+  /** Valor por extenso no hover, quando `value` está abreviado (ex. "R$ 872 mil"). */
+  exactValue?: string;
 };
 
 const COLOR_STYLES: Record<
@@ -36,6 +40,8 @@ export function StatCard({
   color = 'fmp',
   highlight = false,
   index = 0,
+  hint,
+  exactValue,
 }: StatCardProps) {
   const styles = COLOR_STYLES[color];
   const TrendIcon =
@@ -53,10 +59,24 @@ export function StatCard({
       <div className={`absolute inset-x-0 top-0 h-1 ${styles.bar}`} />
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-2xs font-semibold uppercase tracking-widest text-ink-3">{label}</p>
+          <p className="flex items-center gap-1 text-2xs font-semibold uppercase tracking-widest text-ink-3">
+            {label}
+            {hint && (
+              <span
+                tabIndex={0}
+                role="note"
+                aria-label={hint}
+                title={hint}
+                className="cursor-help rounded-full text-ink-3/70 transition hover:text-fmp focus:text-fmp focus:outline-none"
+              >
+                <HelpCircle className="h-3 w-3" strokeWidth={2.4} />
+              </span>
+            )}
+          </p>
           <p
             className="mt-2 text-3xl text-ink"
             style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic', fontWeight: 600, lineHeight: 1 }}
+            title={exactValue}
           >
             {value}
           </p>

@@ -20,6 +20,7 @@ import {
   TrendingUp,
   Users,
   Wallet,
+  X,
 } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { SectionCard } from '@/components/ui/SectionCard';
@@ -76,6 +77,29 @@ function fmtOrDash(v: number | null, fmt: (n: number) => string): string {
   return v === null ? '--' : fmt(v);
 }
 
+/** Valor por extenso para o tooltip dos cards, que exibem número abreviado. */
+function exatoBRL(v: number | null): string | undefined {
+  if (v === null) return undefined;
+  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function exatoNum(v: number | null, casas = 2): string | undefined {
+  if (v === null) return undefined;
+  return v.toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas });
+}
+
+/** Explicações das métricas — termos técnicos que não são óbvios na tela. */
+const HINTS = {
+  investimento: 'Total gasto em mídia paga no período, somando as plataformas selecionadas.',
+  ticketMedio: 'Faturamento dividido pelo número de matrículas.',
+  roas: 'Retorno sobre o investimento: faturamento dividido pelo investimento em mídia. 2,50 = R$ 2,50 de receita para cada R$ 1 investido.',
+  cpl: 'Custo por lead: investimento dividido pelo número de leads.',
+  cac: 'Custo de aquisição por cliente: investimento dividido pelo número de matrículas.',
+  faturamento: 'Receita das matrículas do período, pelas regras herdadas do Power BI.',
+  roasMidia: 'ROAS restrito a quem teve origem no período (data de inscrição ou de contrato), não só baixa no período.',
+  conversao: 'Matrículas divididas por leads no período.',
+} as const;
+
 export function GrowthEPerformancePage() {
   const [produto, setProduto] = useState<Produto>('Graduação');
   // BI original abre com o padrão em "Matrículas" (bookmark default).
@@ -109,6 +133,36 @@ export function GrowthEPerformancePage() {
     loading, error, progress, atualizadoEm, pletivo,
     media, negocio, campanhas, mapa, horarios, origem, serieLeads, serieMatriculas, refetch,
   } = useGrowthData(filters, viewAtiva);
+
+  /**
+   * Chips do que está filtrado agora, cada um removível. Antes o usuário
+   * precisava abrir o painel lateral para descobrir por que os números
+   * mudaram — principalmente com o painel recolhido.
+   */
+  const chipsAtivos: { label: string; remover: () => void }[] = [];
+  if (googleOn) chipsAtivos.push({ label: 'Fonte: Google', remover: () => setGoogleOn(false) });
+  if (metaOn) chipsAtivos.push({ label: 'Fonte: Meta', remover: () => setMetaOn(false) });
+  if (dataInicio && dataInicio !== DATA_INICIO_DEFAULT) {
+    chipsAtivos.push({
+      label: `A partir de ${dataInicio.split('-').reverse().join('/')}`,
+      remover: () => setDataInicio(DATA_INICIO_DEFAULT),
+    });
+  }
+  if (dataFim && dataFim !== hojeISO()) {
+    chipsAtivos.push({
+      label: `Até ${dataFim.split('-').reverse().join('/')}`,
+      remover: () => setDataFim(hojeISO()),
+    });
+  }
+  for (const p of periodoLetivo) {
+    chipsAtivos.push({
+      label: `Período ${p}`,
+      remover: () => setPeriodoLetivo((atual) => atual.filter((x) => x !== p)),
+    });
+  }
+  if (fimDeSemana) {
+    chipsAtivos.push({ label: fimDeSemana, remover: () => setFimDeSemana(null) });
+  }
 
   const limparFiltros = () => {
     setGoogleOn(false);
@@ -144,10 +198,17 @@ export function GrowthEPerformancePage() {
           </div>
           <div className="flex items-center gap-2">
             <span className="hidden text-xs text-ink-3 sm:inline">Olá, Equipe FMP</span>
-            {/* Seleção de Fonte: botões de plataforma (Google / Meta) */}
+            {/* Seleção de Fonte: botões de plataforma (Google / Meta).
+                O rótulo mostra o estado atual — sem ele, "nenhum botão ligado"
+                parecia "nada selecionado" quando na verdade soma as duas. */}
+            <span className="hidden items-center gap-1 text-2xs font-semibold uppercase tracking-widest text-ink-3 sm:inline-flex">
+              Fonte:
+              <span className="text-ink-2">{fonteFromToggles(googleOn, metaOn) ?? 'Todas'}</span>
+            </span>
             <button
               type="button"
               aria-pressed={googleOn}
+              title={googleOn ? 'Remover filtro do Google' : 'Ver somente Google'}
               onClick={() => setGoogleOn((v) => !v)}
               className={`inline-flex items-center gap-1.5 rounded-pill px-3 py-1.5 text-2xs font-semibold transition ${
                 googleOn ? 'bg-fmp text-white shadow-glow' : 'border border-line bg-white text-ink-2 hover:bg-paper'
@@ -159,6 +220,7 @@ export function GrowthEPerformancePage() {
             <button
               type="button"
               aria-pressed={metaOn}
+              title={metaOn ? 'Remover filtro do Meta' : 'Ver somente Meta'}
               onClick={() => setMetaOn((v) => !v)}
               className={`inline-flex items-center gap-1.5 rounded-pill px-3 py-1.5 text-2xs font-semibold transition ${
                 metaOn ? 'bg-fmp text-white shadow-glow' : 'border border-line bg-white text-ink-2 hover:bg-paper'
@@ -178,10 +240,14 @@ export function GrowthEPerformancePage() {
           </div>
         </div>
 
-        <div className="flex gap-4">
-          {/* Painel de filtros (abre/fecha) */}
-          <aside className={painelAberto ? 'w-56 flex-shrink-0' : 'w-10 flex-shrink-0'}>
-            <div className="sticky top-4 rounded-md border border-line bg-white p-3 shadow-card">
+        {/* No mobile o painel vira um bloco acima do conteúdo; a partir de lg
+            volta a ser coluna lateral fixa. Antes ele disputava largura com os
+            gráficos em telas estreitas. */}
+        <div className="flex flex-col gap-4 lg:flex-row">
+          <aside
+            className={`flex-shrink-0 ${painelAberto ? 'w-full lg:w-56' : 'w-full lg:w-10'}`}
+          >
+            <div className="rounded-md border border-line bg-white p-3 shadow-card lg:sticky lg:top-4">
               <div className="flex items-center justify-between">
                 {painelAberto && (
                   <span className="inline-flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-widest text-ink-3">
@@ -317,6 +383,38 @@ export function GrowthEPerformancePage() {
                       API Meta / API Google pelos relacionamentos. O cálculo
                       está certo; o aviso existe porque a leitura engana.
                     */}
+                    {chipsAtivos.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5 animate-fade-in">
+                        <span className="text-2xs font-semibold uppercase tracking-widest text-ink-3">
+                          Filtros ativos
+                        </span>
+                        {chipsAtivos.map((c) => (
+                          <span
+                            key={c.label}
+                            className="inline-flex items-center gap-1 rounded-full bg-fmp-muted px-2.5 py-1 text-2xs font-semibold text-fmp"
+                          >
+                            {c.label}
+                            <button
+                              type="button"
+                              aria-label={`Remover filtro ${c.label}`}
+                              title="Remover este filtro"
+                              onClick={c.remover}
+                              className="ml-0.5 rounded-full p-0.5 transition hover:bg-fmp/20"
+                            >
+                              <X className="h-2.5 w-2.5" />
+                            </button>
+                          </span>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={limparFiltros}
+                          className="rounded-full bg-paper px-2.5 py-1 text-2xs font-semibold text-ink-3 transition hover:bg-line"
+                        >
+                          Limpar tudo
+                        </button>
+                      </div>
+                    )}
+
                     {(periodoLetivo.length > 0 || fimDeSemana) && (
                       <div className="rounded-md border border-line bg-paper px-4 py-2.5 text-2xs text-ink-2 animate-fade-in">
                         <strong className="font-semibold">Atenção:</strong> Período Letivo e Fim de Semana
@@ -326,15 +424,15 @@ export function GrowthEPerformancePage() {
                     )}
 
                     {/* Faixa de KPIs — 2 linhas de 4 */}
-                    <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                      <StatCard index={0} label="Investimento" value={fmtBRLCompact(media.investimento)} icon={DollarSign} color="fmp" highlight />
-                      <StatCard index={1} label="Ticket Médio" value={fmtOrDash(negocio.ticketMedio, fmtBRLCompact)} icon={Wallet} color="fmp" />
-                      <StatCard index={2} label="ROAS" value={fmtOrDash(negocio.roas, (n) => n.toFixed(2))} icon={TrendingUp} color="fmp" />
-                      <StatCard index={3} label="CPL" value={fmtOrDash(media.cpl, fmtBRLCompact)} icon={Target} color="gray" />
-                      <StatCard index={4} label="CAC" value={fmtOrDash(negocio.cac, fmtBRLCompact)} icon={Target} color="gray" />
-                      <StatCard index={5} label="Faturamento" value={fmtBRLCompact(negocio.faturamento)} icon={DollarSign} color="fmp" />
-                      <StatCard index={6} label="ROAS Mídia" value={fmtOrDash(negocio.roasMidia, (n) => n.toFixed(2))} icon={TrendingUp} color="gray" />
-                      <StatCard index={7} label="Conversão" value={fmtOrDash(negocio.taxaConv, fmtPct)} icon={Percent} color="gray" />
+                    <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+                      <StatCard index={0} label="Investimento" value={fmtBRLCompact(media.investimento)} exactValue={exatoBRL(media.investimento)} hint={HINTS.investimento} icon={DollarSign} color="fmp" highlight />
+                      <StatCard index={1} label="Ticket Médio" value={fmtOrDash(negocio.ticketMedio, fmtBRLCompact)} exactValue={exatoBRL(negocio.ticketMedio)} hint={HINTS.ticketMedio} icon={Wallet} color="fmp" />
+                      <StatCard index={2} label="ROAS" value={fmtOrDash(negocio.roas, (n) => n.toFixed(2))} exactValue={exatoNum(negocio.roas)} hint={HINTS.roas} icon={TrendingUp} color="fmp" />
+                      <StatCard index={3} label="CPL" value={fmtOrDash(media.cpl, fmtBRLCompact)} exactValue={exatoBRL(media.cpl)} hint={HINTS.cpl} icon={Target} color="gray" />
+                      <StatCard index={4} label="CAC" value={fmtOrDash(negocio.cac, fmtBRLCompact)} exactValue={exatoBRL(negocio.cac)} hint={HINTS.cac} icon={Target} color="gray" />
+                      <StatCard index={5} label="Faturamento" value={fmtBRLCompact(negocio.faturamento)} exactValue={exatoBRL(negocio.faturamento)} hint={HINTS.faturamento} icon={DollarSign} color="fmp" />
+                      <StatCard index={6} label="ROAS Mídia" value={fmtOrDash(negocio.roasMidia, (n) => n.toFixed(2))} exactValue={exatoNum(negocio.roasMidia)} hint={HINTS.roasMidia} icon={TrendingUp} color="gray" />
+                      <StatCard index={7} label="Conversão" value={fmtOrDash(negocio.taxaConv, fmtPct)} hint={HINTS.conversao} icon={Percent} color="gray" />
                     </section>
 
                     {/* Faixa de visões */}

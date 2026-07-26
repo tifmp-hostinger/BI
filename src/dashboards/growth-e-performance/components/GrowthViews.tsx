@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Bar,
   CartesianGrid,
@@ -10,6 +10,7 @@ import {
   YAxis,
   Legend,
 } from 'recharts';
+import { ArrowUpDown } from 'lucide-react';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BrazilStateMap } from '@/components/maps/BrazilStateMap';
 import type { StateAgg } from '@/services/matriculasService';
@@ -40,23 +41,75 @@ const TT = {
   itemStyle: { color: '#3A3838', fontSize: 12 } as const,
 };
 
+type ColunaCampanha = 'campanha' | 'plataforma' | 'leads' | 'investimento' | 'impressoes';
+
+const COLUNAS_CAMPANHA: { id: ColunaCampanha; label: string; numerica: boolean }[] = [
+  { id: 'campanha', label: 'Campanha', numerica: false },
+  { id: 'plataforma', label: 'Plataforma', numerica: false },
+  { id: 'leads', label: 'Leads', numerica: true },
+  { id: 'investimento', label: 'Investimento', numerica: true },
+  { id: 'impressoes', label: 'Impressões', numerica: true },
+];
+
 export function CampanhasView({ rows }: { rows: CampanhaRow[] }) {
+  // Ordenação clicável: a tabela chega ordenada por investimento, mas comparar
+  // campanhas por leads ou impressões exigia exportar para outro lugar.
+  const [ordem, setOrdem] = useState<{ col: ColunaCampanha; desc: boolean }>({
+    col: 'investimento',
+    desc: true,
+  });
+
+  const ordenadas = useMemo(() => {
+    const copia = [...rows];
+    const { col, desc } = ordem;
+    copia.sort((a, b) => {
+      const va = a[col];
+      const vb = b[col];
+      const cmp =
+        typeof va === 'number' && typeof vb === 'number'
+          ? va - vb
+          : String(va).localeCompare(String(vb), 'pt-BR');
+      return desc ? -cmp : cmp;
+    });
+    return copia;
+  }, [rows, ordem]);
+
   if (rows.length === 0) return <EmptyState title="Sem campanhas para os filtros selecionados" />;
+
+  const alternar = (col: ColunaCampanha) =>
+    setOrdem((o) => (o.col === col ? { col, desc: !o.desc } : { col, desc: true }));
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-xs">
         <thead>
           <tr className="border-b border-line text-left text-2xs font-semibold uppercase tracking-widest text-ink-3">
-            <th className="px-3 py-2">Campanha</th>
-            <th className="px-3 py-2">Plataforma</th>
-            <th className="px-3 py-2 text-right">Leads</th>
-            <th className="px-3 py-2 text-right">Investimento</th>
-            <th className="px-3 py-2 text-right">Impressões</th>
+            {COLUNAS_CAMPANHA.map((c) => {
+              const ativa = ordem.col === c.id;
+              return (
+                <th key={c.id} className={`px-3 py-2 ${c.numerica ? 'text-right' : ''}`} aria-sort={ativa ? (ordem.desc ? 'descending' : 'ascending') : 'none'}>
+                  <button
+                    type="button"
+                    onClick={() => alternar(c.id)}
+                    title={`Ordenar por ${c.label}`}
+                    className={`inline-flex items-center gap-1 uppercase tracking-widest transition hover:text-fmp ${
+                      ativa ? 'text-fmp' : ''
+                    } ${c.numerica ? 'flex-row-reverse' : ''}`}
+                  >
+                    {c.label}
+                    <ArrowUpDown className={`h-3 w-3 ${ativa ? 'opacity-100' : 'opacity-30'}`} />
+                  </button>
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody>
-          {rows.map((r) => (
-            <tr key={`${r.plataforma}-${r.campanha}`} className="border-b border-line/60 text-ink-2 hover:bg-paper">
+          {ordenadas.map((r) => (
+            <tr
+              key={`${r.plataforma}-${r.campanha}`}
+              className="border-b border-line/60 text-ink-2 transition-colors hover:bg-paper"
+            >
               <td className="max-w-[340px] truncate px-3 py-2" title={r.campanha}>{r.campanha}</td>
               <td className="px-3 py-2">
                 <span
@@ -67,13 +120,23 @@ export function CampanhasView({ rows }: { rows: CampanhaRow[] }) {
                   {r.plataforma}
                 </span>
               </td>
-              <td className="px-3 py-2 text-right font-semibold text-ink">{fmtInt(r.leads)}</td>
-              <td className="px-3 py-2 text-right">{fmtBRLCompact(r.investimento)}</td>
+              <td className="px-3 py-2 text-right font-semibold text-ink" title={fmtInt(r.leads)}>
+                {fmtInt(r.leads)}
+              </td>
+              <td
+                className="px-3 py-2 text-right"
+                title={r.investimento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              >
+                {fmtBRLCompact(r.investimento)}
+              </td>
               <td className="px-3 py-2 text-right">{fmtInt(r.impressoes)}</td>
             </tr>
           ))}
         </tbody>
       </table>
+      <p className="mt-2 text-2xs text-ink-3">
+        {ordenadas.length} campanha{ordenadas.length === 1 ? '' : 's'} · clique num cabeçalho para reordenar
+      </p>
     </div>
   );
 }
