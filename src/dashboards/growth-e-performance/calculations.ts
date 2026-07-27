@@ -1219,13 +1219,15 @@ export function computeOrigem(ds: GrowthDataset, filters: GrowthFilters): Origem
 /**
  * Série mensal de Leads (ou Matrículas) + Investimento, eixo Mês Ano Ext.
  *
- * HERANÇA DO BI (escopo de filtro diferente do dos cards): estes gráficos
- * IGNORAM o filtro de data — no relatório publicado, com o slicer em
- * "01/06/2026 em diante", o gráfico continua exibindo a série completa
- * (out/25 → jun/26) enquanto os cards mostram só o período selecionado.
- * Não é inconsistência do BI: o card responde ao slicer e o visual não.
- * Os demais filtros (produto/página, Fonte, Período Letivo, Fim de Semana)
- * continuam valendo. Não "consertar" recortando pelo período.
+ * No Power BI original este gráfico ficava numa página com slicer próprio e
+ * IGNORAVA o filtro de data global — o card respondia ao slicer, o visual
+ * não. Aqui os dois convivem num painel único, então esse desalinhamento
+ * lia como bug (usuário mudava a data e o gráfico não se mexia). A pedido
+ * do usuário (27/07/2026) o gráfico passou a RESPEITAR dataInicio/dataFim,
+ * saindo da paridade estrita: meses fora do período somem do eixo, e o mês
+ * de borda (quando o filtro corta no meio dele) soma só os dias dentro do
+ * recorte. Os demais filtros (produto/página, Fonte, Período Letivo, Fim de
+ * Semana) já valiam antes e continuam valendo.
  */
 export function computeSerieMensal(
   ds: GrowthDataset,
@@ -1240,8 +1242,14 @@ export function computeSerieMensal(
     const ultimoDia = new Date(c.ano, c.mes, 0).getDate();
     const mFim = `${c.ano}-${String(c.mes).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
 
-    // Janela = o mês inteiro, sem cruzar com filters.dataInicio/dataFim.
-    const fMes: GrowthFilters = { ...filters, dataInicio: mIni, dataFim: mFim };
+    // Interseção do mês com o filtro de data ativo. Sem interseção, o mês
+    // não entra no gráfico — é exatamente o "sumir do eixo" que o usuário
+    // pediu ao filtrar um período menor.
+    const janelaIni = filters.dataInicio && filters.dataInicio > mIni ? filters.dataInicio : mIni;
+    const janelaFim = filters.dataFim && filters.dataFim < mFim ? filters.dataFim : mFim;
+    if (janelaIni > janelaFim) continue;
+
+    const fMes: GrowthFilters = { ...filters, dataInicio: janelaIni, dataFim: janelaFim };
     const media = computeMediaMetrics(ds, fMes);
     let valor = 0;
     if (tipo === 'leads') {

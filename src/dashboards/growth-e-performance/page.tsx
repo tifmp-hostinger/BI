@@ -470,7 +470,7 @@ export function GrowthEPerformancePage() {
                       {viewAtiva === 'leads' && (
                         <SectionCard
                           title="Leads por Mês"
-                          subtitle="Mês Ano × Leads + Investimento — série completa (não segue o filtro de data, como no BI)"
+                          subtitle="Mês Ano × Leads + Investimento — segue o filtro de Data Início/Fim"
                           icon={Calendar}
                         >
                           {serieLeads ? <SerieMensalView data={serieLeads} label="Leads" /> : <ChartSkeleton height={360} />}
@@ -488,7 +488,7 @@ export function GrowthEPerformancePage() {
                       {viewAtiva === 'matriculas' && (
                         <SectionCard
                           title="Matrículas por Mês"
-                          subtitle="Mês Ano × Matrículas + Investimento — série completa (não segue o filtro de data, como no BI)"
+                          subtitle="Mês Ano × Matrículas + Investimento — segue o filtro de Data Início/Fim"
                           icon={Calendar}
                         >
                           {serieMatriculas ? <SerieMensalView data={serieMatriculas} label="Matrículas" /> : <ChartSkeleton height={360} />}
