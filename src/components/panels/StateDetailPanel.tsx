@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import type { StateDetail } from '@/services/matriculasService';
 import { nameOf, regionOf } from '@/lib/brStates';
+import { CORES_CATEGORICAS } from '@/lib/chartColors';
 
 type Props = {
   uf: string | null;
@@ -29,16 +30,7 @@ type Props = {
   onClose: () => void;
 };
 
-const SITU_COLORS = [
-  '#EE2A42',
-  '#BFBAA4',
-  '#3A3838',
-  '#6E6B66',
-  '#D32238',
-  '#CFCCBF',
-  '#9A1B2A',
-  '#DEDCD4',
-];
+const SITU_COLORS = CORES_CATEGORICAS;
 
 function fmtBRL(v: number) {
   return v.toLocaleString('pt-BR', {

@@ -21,11 +21,11 @@ import { ChartSkeleton } from '@/components/ui/Skeletons';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { fmtInt, fmtPct, truncateLabel } from '../formatters';
 import type { MestradoData } from '../types';
+import { CORES_CATEGORICAS } from '@/lib/chartColors';
 
 const FMP_RED = '#EE2A42';
 const FMP_DARK = '#B81E32';
-const NEUTRAL = '#BFBAA4';
-const PIE_COLORS = [FMP_RED, FMP_DARK, '#D46B78', NEUTRAL, '#C79B98', '#A89B8C'];
+const PIE_COLORS = CORES_CATEGORICAS;
 
 function tt() {
   return {

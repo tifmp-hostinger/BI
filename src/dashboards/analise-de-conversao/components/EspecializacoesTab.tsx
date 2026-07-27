@@ -23,11 +23,12 @@ import { ChartSkeleton } from '@/components/ui/Skeletons';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { fmtBRLCompact, fmtInt, fmtPct, truncateLabel } from '../formatters';
 import type { EspecializacoesData } from '../types';
+import { CORES_CATEGORICAS } from '@/lib/chartColors';
 
 const FMP_RED = '#EE2A42';
 const FMP_DARK = '#B81E32';
 const NEUTRAL = '#BFBAA4';
-const PIE_COLORS = [FMP_RED, NEUTRAL];
+const PIE_COLORS = CORES_CATEGORICAS;
 
 function tt() {
   return {
@@ -190,8 +191,8 @@ export function EspecializacoesTab({ loading, data }: Props) {
                 <PieChart>
                   <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtInt(v as number), '']} />
                   <Pie data={data.fatPorTcc} dataKey="valor" nameKey="categoria" cx="50%" cy="50%" outerRadius={70} innerRadius={35} paddingAngle={3} stroke="none" label={(entry: unknown) => { const e = entry as { categoria?: string; valor?: number }; const total = data.fatPorTcc.reduce((s, x) => s + x.valor, 0); const pct = total > 0 ? Math.round((e.valor ?? 0 / total) * 100) : 0; return `${e.categoria ?? ''}: ${pct}%`; }} labelLine={false}>
-                    <Cell fill={FMP_RED} />
-                    <Cell fill={NEUTRAL} />
+                    <Cell fill={CORES_CATEGORICAS[0]} />
+                    <Cell fill={CORES_CATEGORICAS[1]} />
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>

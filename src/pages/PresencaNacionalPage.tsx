@@ -39,13 +39,14 @@ import { StateDetailPanel } from '@/components/panels/StateDetailPanel';
 import { useMatriculas } from '@/hooks/useMatriculas';
 import { nameOf } from '@/lib/brStates';
 import type { MatriculaSource } from '@/services/matriculasService';
+import { CORES_CATEGORICAS } from '@/lib/chartColors';
 
 const REGION_COLORS: Record<string, string> = {
-  Sul: '#EE2A42',
-  Sudeste: '#EE2A42',
-  Nordeste: '#EE2A42',
-  'Centro-Oeste': '#EE2A42',
-  Norte: '#EE2A42',
+  Sul: CORES_CATEGORICAS[0],
+  Sudeste: CORES_CATEGORICAS[1],
+  Nordeste: CORES_CATEGORICAS[2],
+  'Centro-Oeste': CORES_CATEGORICAS[3],
+  Norte: CORES_CATEGORICAS[4],
   Outros: '#BFBAA4',
 };
 

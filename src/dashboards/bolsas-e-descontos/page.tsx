@@ -36,6 +36,7 @@ import { ErrorState } from '@/components/ui/ErrorState';
 import { DataFreshness } from '@/components/ui/DataFreshness';
 import { FONTES_POR_DASHBOARD } from '@/lib/dataFreshness';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { CORES_CATEGORICAS } from '@/lib/chartColors';
 import { useBolsasDescontosData } from './hooks/useBolsasDescontosData';
 import { BolsasFilterBar } from './components/BolsasFilterBar';
 import { fmtBRLCompact, fmtInt, truncateLabel } from './formatters';
@@ -64,7 +65,7 @@ function chartTooltipStyle() {
 const FMP_RED = '#EE2A42';
 const FMP_DARK = '#B81E32';
 const NEUTRAL = '#BFBAA4';
-const COLORS = [FMP_RED, '#D46B78', '#C79B98', NEUTRAL];
+const COLORS = CORES_CATEGORICAS;
 
 type Tab = 'panorama' | 'evasao';
 
@@ -347,8 +348,8 @@ export function BolsasEDescontosPage() {
                         }}
                         labelLine={false}
                       >
-                        <Cell fill={FMP_RED} />
-                        <Cell fill={NEUTRAL} />
+                        <Cell fill={CORES_CATEGORICAS[0]} />
+                        <Cell fill={CORES_CATEGORICAS[1]} />
                       </Pie>
                       <Legend
                         verticalAlign="bottom"

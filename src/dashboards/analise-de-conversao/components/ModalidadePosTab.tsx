@@ -22,11 +22,11 @@ import { BrazilStateMap } from '@/components/maps/BrazilStateMap';
 import { fmtBRLCompact, fmtInt, fmtPct, truncateLabel } from '../formatters';
 import type { ModalidadePosData } from '../types';
 import type { StateAgg } from '@/services/matriculasService';
+import { CORES_CATEGORICAS } from '@/lib/chartColors';
 
 const FMP_RED = '#EE2A42';
 const FMP_DARK = '#B81E32';
-const NEUTRAL = '#BFBAA4';
-const PIE_COLORS = [FMP_RED, FMP_DARK, '#D46B78', NEUTRAL, '#C79B98'];
+const PIE_COLORS = CORES_CATEGORICAS;
 
 function tt() {
   return {

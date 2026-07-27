@@ -417,7 +417,11 @@ export function GrowthEPerformancePage() {
                     )}
 
                     {/* Faixa de KPIs — 2 linhas de 4 */}
-                    <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+                    {/* xl (não lg): esta coluna divide espaço com o painel de
+                        filtros (224px) e, a partir de xl, com o painel do
+                        funil (300px) — em lg isolado 4 colunas ficavam
+                        espremidas e o valor quebrava em 3 linhas. */}
+                    <section className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
                       <StatCard index={0} label="Investimento" value={fmtBRLCompact(media.investimento)} exactValue={exatoBRL(media.investimento)} hint={HINTS.investimento} icon={DollarSign} color="fmp" highlight />
                       <StatCard index={1} label="Ticket Médio" value={fmtOrDash(negocio.ticketMedio, fmtBRLCompact)} exactValue={exatoBRL(negocio.ticketMedio)} hint={HINTS.ticketMedio} icon={Wallet} color="fmp" />
                       <StatCard index={2} label="ROAS" value={fmtOrDash(negocio.roas, (n) => n.toFixed(2))} exactValue={exatoNum(negocio.roas)} hint={HINTS.roas} icon={TrendingUp} color="fmp" />

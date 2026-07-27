@@ -74,8 +74,8 @@ export function StatCard({
             )}
           </p>
           <p
-            className="mt-2 text-3xl text-ink"
-            style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic', fontWeight: 600, lineHeight: 1 }}
+            className="mt-2 truncate text-2xl text-ink sm:text-3xl"
+            style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic', fontWeight: 600, lineHeight: 1.15 }}
             title={exactValue}
           >
             {value}
