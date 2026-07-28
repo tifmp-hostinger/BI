@@ -15,6 +15,7 @@ import {
 } from './formatters';
 import {
   MATRICULA_SITUACAO_ATIVA,
+  MATRICULA_SITUACAO_CANCELADA,
   MATRICULA_TIPO_NOVA,
   MESTRADO_SITUACOES_QUALIFICADAS,
   POS_EAD_CANCEL_EXCECOES_RA,
@@ -81,6 +82,18 @@ export function computeGraduacaoKpis(
   }
   const inscricoesLead = inscritosNoLead.size;
 
+  // O RM não atualiza a linha "Matriculado" ao cancelar — grava uma segunda
+  // linha para o mesmo RA com situacao=Cancelado. Sem descontar por RA (não
+  // só por linha), a linha antiga ainda contava quem já cancelou.
+  const rasCanceladosNoPeriodo = new Set<string>();
+  for (const m of matriculas) {
+    if ((m.situacao ?? '').trim() !== MATRICULA_SITUACAO_CANCELADA) continue;
+    if ((m.tipomatricula ?? '').trim() !== MATRICULA_TIPO_NOVA) continue;
+    if (normalizeCodperlet(m.codperlet) !== periodo) continue;
+    const ra = (m.ra ?? '').trim();
+    if (ra) rasCanceladosNoPeriodo.add(ra);
+  }
+
   // Matriculas: situacao=Matriculado + tipomatricula=Nova Matricula + codperlet=periodo, distinct RA.
   const rasDistintos = new Set<string>();
   for (const m of matriculas) {
@@ -88,7 +101,7 @@ export function computeGraduacaoKpis(
     if ((m.tipomatricula ?? '').trim() !== MATRICULA_TIPO_NOVA) continue;
     if (normalizeCodperlet(m.codperlet) !== periodo) continue;
     const ra = (m.ra ?? '').trim();
-    if (ra) rasDistintos.add(ra);
+    if (ra && !rasCanceladosNoPeriodo.has(ra)) rasDistintos.add(ra);
   }
   const matriculasCount = rasDistintos.size;
 
@@ -144,16 +157,28 @@ export function computeMestradoKpis(
 
   // Matriculas: Nova Matricula + Matriculado + codperlet do ano; distinct RA.
   // Qualificadas: RA distintos cuja situacao pertence a MESTRADO_SITUACOES_QUALIFICADAS.
+  // Desconto de cancelamento (ver MATRICULA_SITUACAO_CANCELADA): o RM grava
+  // uma segunda linha ao cancelar, a linha "Matriculado" antiga fica — sem
+  // descontar por RA, ela contaria (e "qualificaria") quem já cancelou.
+  const rasCanceladosNoAno = new Set<string>();
+  for (const m of matriculas) {
+    const cod = normalizeCodperlet(m.codperlet);
+    if (!cod.startsWith(yyAlvo)) continue;
+    if ((m.tipomatricula ?? '').trim() !== MATRICULA_TIPO_NOVA) continue;
+    if ((m.situacao ?? '').trim() !== MATRICULA_SITUACAO_CANCELADA) continue;
+    const ra = (m.ra ?? '').trim();
+    if (ra) rasCanceladosNoAno.add(ra);
+  }
+
   const rasNovas = new Set<string>();
   const rasQualificados = new Set<string>();
-
   for (const m of matriculas) {
     const cod = normalizeCodperlet(m.codperlet);
     if (!cod.startsWith(yyAlvo)) continue;
     const situacao = (m.situacao ?? '').trim();
     const tipo = (m.tipomatricula ?? '').trim();
     const ra = (m.ra ?? '').trim();
-    if (!ra) continue;
+    if (!ra || rasCanceladosNoAno.has(ra)) continue;
 
     if (tipo === MATRICULA_TIPO_NOVA && situacao === MATRICULA_SITUACAO_ATIVA) {
       rasNovas.add(ra);

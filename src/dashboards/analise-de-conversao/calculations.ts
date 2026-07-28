@@ -631,7 +631,7 @@ export function modalidadePos(processoseletivo: string | null): string {
     : 'Pós EAD';
 }
 
-const SITUACAO_CANCELADO_CURSO = 'Cancelado \u2013 Curso';
+export const SITUACAO_CANCELADO_CURSO = 'Cancelado \u2013 Curso';
 
 const EV_TIPO_CANCELADO = new Set([
   'Reingresso',
@@ -724,9 +724,21 @@ export function computeGraduacaoData(
   ).size;
   const inscxLeads = computeConvLeadsInsc(rubeusFiltered, 'Graduação', buildInscLeadSet(ds));
 
+  // O RM não atualiza a linha "Matriculado" ao cancelar — grava uma segunda
+  // linha para o mesmo RA com SITUACAO_CANCELADO_CURSO, a linha antiga fica.
+  // Por isso o desconto abaixo roda ANTES de montar Mat. Efetivas/Bolsistas:
+  // sem ele, um RA já cancelado ainda contava (e "qualificava" bolsa).
+  const matCancRas = new Set<string>();
+  for (const r of matRows) {
+    if (r.situacao === SITUACAO_CANCELADO_CURSO && r.tipomatricula === 'Nova Matricula' && r.ra) {
+      matCancRas.add(r.ra);
+    }
+  }
+  const matCanc = matCancRas.size;
+
   const matEfetRas = new Set<string>();
   for (const r of matRows) {
-    if (r.situacao === 'Matriculado' && r.tipomatricula === 'Nova Matricula' && r.ra) {
+    if (r.situacao === 'Matriculado' && r.tipomatricula === 'Nova Matricula' && r.ra && !matCancRas.has(r.ra)) {
       matEfetRas.add(r.ra);
     }
   }
@@ -740,14 +752,6 @@ export function computeGraduacaoData(
   }
   const matPre = matPreRas.size;
 
-  const matCancRas = new Set<string>();
-  for (const r of matRows) {
-    if (r.situacao === SITUACAO_CANCELADO_CURSO && r.tipomatricula === 'Nova Matricula' && r.ra) {
-      matCancRas.add(r.ra);
-    }
-  }
-  const matCanc = matCancRas.size;
-
   const bolsistaRas = getSharedSets(ds).bolsistaRas;
   const matBolsas = matRows.filter(
     (r) =>
@@ -755,7 +759,8 @@ export function computeGraduacaoData(
       r.situacao === 'Matriculado' &&
       r.aluno &&
       r.ra &&
-      bolsistaRas.has(r.ra),
+      bolsistaRas.has(r.ra) &&
+      !matCancRas.has(r.ra),
   ).length;
 
   const matPgt = matEfet - matBolsas;
@@ -935,19 +940,37 @@ export function computeMestradoData(
   const leads = rubeusMest.length;
   const insc = inscRows.length;
 
-  const matRows = ds.matriculasMestrado.filter((r) => {
-    if (r.tipomatricula !== 'Nova Matricula' || r.situacao !== 'Matriculado') return false;
+  const pertenceAoRecorte = (codperlet: string | null) => {
     if (filters.codperlet.length > 0) {
       const cpSet = new Set(filters.codperlet.map(normalizeCodperlet));
-      if (!cpSet.has(normalizeCodperlet(r.codperlet))) return false;
+      if (!cpSet.has(normalizeCodperlet(codperlet))) return false;
     }
     if (filters.ano.length > 0) {
-      const a = anoFromCodperletStr(normalizeCodperlet(r.codperlet));
+      const a = anoFromCodperletStr(normalizeCodperlet(codperlet));
       if (a === null || !filters.ano.includes(a)) return false;
     }
     return true;
+  };
+
+  // O RM não atualiza a linha "Matriculado" ao cancelar — grava uma segunda
+  // linha para o mesmo RA com SITUACAO_CANCELADO_CURSO (mesmo padrão da
+  // Graduação, ver comentário acima). O filtro de matRows já exclui essa
+  // linha por situacao, então o RA cancelado precisa ser buscado à parte.
+  const matCanceladosRas = new Set<string>();
+  for (const r of ds.matriculasMestrado) {
+    if (r.tipomatricula !== 'Nova Matricula' || r.situacao !== SITUACAO_CANCELADO_CURSO) continue;
+    if (!pertenceAoRecorte(r.codperlet)) continue;
+    if (r.ra) matCanceladosRas.add(r.ra);
+  }
+
+  const matRows = ds.matriculasMestrado.filter((r) => {
+    if (r.tipomatricula !== 'Nova Matricula' || r.situacao !== 'Matriculado') return false;
+    if (!pertenceAoRecorte(r.codperlet)) return false;
+    return true;
   });
-  const mat = new Set(matRows.map((r) => r.ra).filter(Boolean)).size;
+  const mat = new Set(
+    matRows.map((r) => r.ra).filter((ra): ra is string => !!ra && !matCanceladosRas.has(ra)),
+  ).size;
 
   const rubeusDataAnoMes = filterRubeusByAnoMes(filterRubeusByDate(ds.rubeus, filters), filters);
   const taxaPaga = rubeusDataAnoMes.filter((r) => r.etapa_nome === 'Taxa de Inscrição (Paga)').length;

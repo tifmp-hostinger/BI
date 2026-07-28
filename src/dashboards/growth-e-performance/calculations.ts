@@ -807,17 +807,24 @@ function contagemGradMest(
   fim: string | null,
 ): { matriculas: number; cancelamentos: number } {
   const alunosMat = new Set<string>();
+  // O RM não atualiza a linha "Matriculado" ao cancelar — grava uma segunda
+  // linha para o mesmo aluno com a data de cancelamento preenchida. A linha
+  // antiga (sem cancelamento) segue existindo e, sem este desconto por
+  // ALUNO (não por linha), continuava contando quem já cancelou dentro da
+  // própria janela — o `if` abaixo nunca "retirava" o que a linha antiga
+  // já tinha somado.
+  const alunosCanceladosNoPeriodo = new Set<string>();
   let cancelamentos = 0;
   for (const r of base) {
     const mat = toISODate(r.datamatricula);
     if (!mat || !inRange(mat, ini, fim)) continue;
     const cancel = toISODate(r.datacancelamentocontrato);
-    if (!(cancel && inRange(cancel, ini, fim))) {
-      const aluno = (r.aluno ?? '').trim();
-      if (aluno) alunosMat.add(aluno);
-    }
+    const aluno = (r.aluno ?? '').trim();
+    if (aluno) alunosMat.add(aluno);
+    if (cancel && inRange(cancel, ini, fim) && aluno) alunosCanceladosNoPeriodo.add(aluno);
     if (cancel && eomLt(mat, cancel)) cancelamentos++;
   }
+  for (const aluno of alunosCanceladosNoPeriodo) alunosMat.delete(aluno);
   return { matriculas: alunosMat.size, cancelamentos };
 }
 

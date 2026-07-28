@@ -18,6 +18,15 @@ export const MATRICULA_SITUACAO_ATIVA = 'Matriculado';
 export const MATRICULA_TIPO_NOVA = 'Nova Matricula';
 
 /**
+ * O RM não atualiza a linha "Matriculado" quando o aluno cancela — grava uma
+ * SEGUNDA linha para o mesmo RA com esta situação. Sem checar isso, contar
+ * por "existe linha com situacao=Matriculado" conta quem já cancelou (a
+ * linha antiga continua lá). Confirmado no banco: todo RA com esta situação
+ * também tem uma linha "Matriculado" para o mesmo período.
+ */
+export const MATRICULA_SITUACAO_CANCELADA = 'Cancelado – Curso';
+
+/**
  * Situacoes consideradas "qualificacao" no Mestrado (para conversao).
  */
 export const MESTRADO_SITUACOES_QUALIFICADAS = [
