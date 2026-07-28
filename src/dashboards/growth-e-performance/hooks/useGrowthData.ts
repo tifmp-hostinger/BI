@@ -10,6 +10,7 @@ import {
   computeOrigem,
   computeSerieMensal,
 } from '../calculations';
+import { maiorDataDoDataset } from '@/lib/dataFreshness';
 import type { GrowthDataset, GrowthFilters, GrowthView } from '../types';
 
 type State = {
@@ -103,6 +104,30 @@ export function useGrowthData(filters: GrowthFilters, view: GrowthView) {
     return computeSerieMensal(state.dataset, filters, 'matriculas');
   }, [state.dataset, filters, view]);
 
+  /**
+   * Proxy de frescor por tabela, calculado sobre o dataset SEM filtro de
+   * usuário (state.dataset é o download completo) — nunca dispara consulta
+   * nova. Ver dataFreshness.ts.
+   */
+  const freshnessProxies = useMemo((): Record<string, Date | null> => {
+    const ds = state.dataset;
+    if (!ds) return {};
+    return {
+      stg_google_ads: maiorDataDoDataset(ds.google, 'date'),
+      stg_rm_matriculas_grad: maiorDataDoDataset(ds.matGrad, 'datamatricula'),
+      stg_rm_matriculas_mestrado: maiorDataDoDataset(ds.matMestrado, 'datamatricula'),
+      stg_rm_matriculas_pos: maiorDataDoDataset(ds.matPos, 'datadematricula'),
+      stg_rm_matriculas_cursoslivres: maiorDataDoDataset(ds.matCL, 'data_contrato'),
+      stg_rm_inscricoes_graduacao: maiorDataDoDataset(ds.inscGrad, 'data'),
+      stg_rm_inscricoes_mestrado: maiorDataDoDataset(ds.inscMestrado, 'data'),
+      stg_rm_inscricoes_pos: [
+        maiorDataDoDataset(ds.inscPosEad, 'data'),
+        maiorDataDoDataset(ds.inscPosPresencial, 'data'),
+      ].reduce<Date | null>((max, d) => (d && (!max || d > max) ? d : max), null),
+      stg_rm_inscricoes_cursoslivres: maiorDataDoDataset(ds.inscCL, 'data'),
+    };
+  }, [state.dataset]);
+
   return {
     loading: state.loading,
     error: state.error,
@@ -116,6 +141,7 @@ export function useGrowthData(filters: GrowthFilters, view: GrowthView) {
     origem,
     serieLeads,
     serieMatriculas,
+    freshnessProxies,
     refetch,
   };
 }

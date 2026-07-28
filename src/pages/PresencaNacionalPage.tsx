@@ -32,7 +32,7 @@ import { SectionCard } from '@/components/ui/SectionCard';
 import { ChartSkeleton } from '@/components/ui/Skeletons';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { DataFreshness } from '@/components/ui/DataFreshness';
-import { FONTES_POR_DASHBOARD } from '@/lib/dataFreshness';
+import { FONTES_POR_DASHBOARD, maiorDataDoDataset } from '@/lib/dataFreshness';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BrazilStateMap } from '@/components/maps/BrazilStateMap';
 import { StateDetailPanel } from '@/components/panels/StateDetailPanel';
@@ -100,13 +100,33 @@ export function PresencaNacionalPage() {
   const [onlyMatriculados, setOnlyMatriculados] = useState(false);
   const [selectedUf, setSelectedUf] = useState<string | null>(null);
 
-  const { stats, detailFor, loading, error, refetch } = useMatriculas({
+  const { raw, stats, detailFor, loading, error, refetch } = useMatriculas({
     source,
     region: region || undefined,
     onlyMatriculados,
   });
 
   const tt = useMemo(chartTooltipStyle, []);
+
+  /**
+   * Proxy de frescor por tabela, sobre `raw` (download completo, sem
+   * filtro de usuário) — nunca dispara consulta nova. `raw` mistura as
+   * duas fontes (Pós + Cursos Livres) num só array com `source`, então
+   * separa por essa flag antes do max.
+   */
+  const freshnessProxies = useMemo(
+    () => ({
+      stg_rm_matriculas_pos: maiorDataDoDataset(
+        raw.filter((m) => m.source === 'pos'),
+        'data',
+      ),
+      stg_rm_matriculas_cursoslivres: maiorDataDoDataset(
+        raw.filter((m) => m.source === 'cursoslivres'),
+        'data',
+      ),
+    }),
+    [raw],
+  );
 
   const detail = useMemo(
     () => (selectedUf ? detailFor(selectedUf) : null),
@@ -139,7 +159,7 @@ export function PresencaNacionalPage() {
                 Central de Dashboards
               </Link>
               <div className="mt-2">
-                <DataFreshness tabelas={FONTES_POR_DASHBOARD['presenca-nacional']} />
+                <DataFreshness tabelas={FONTES_POR_DASHBOARD['presenca-nacional']} proxies={freshnessProxies} />
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium uppercase tracking-widest text-cream/85 ring-1 ring-inset ring-cream/15">

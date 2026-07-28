@@ -138,7 +138,7 @@ export async function fetchMatriculasGraduacao(): Promise<MatriculaGradRow[]> {
   return paginate<MatriculaGradRow>((from, to) =>
     supabase
       .from('stg_rm_matriculas_grad')
-      .select('ra, aluno, codperlet, situacao, tipomatricula')
+      .select('ra, aluno, codperlet, situacao, tipomatricula, datamatricula')
       .range(from, to)
   );
 }
@@ -147,7 +147,7 @@ export async function fetchMatriculasMestrado(): Promise<MatriculaMestradoRow[]>
   return paginate<MatriculaMestradoRow>((from, to) =>
     supabase
       .from('stg_rm_matriculas_mestrado')
-      .select('ra, aluno, codperlet, situacao, tipomatricula')
+      .select('ra, aluno, codperlet, situacao, tipomatricula, datamatricula')
       .range(from, to)
   );
 }
@@ -157,7 +157,7 @@ export async function fetchMatriculasPos(): Promise<MatriculaPosRow[]> {
     supabase
       .from('stg_rm_matriculas_pos')
       .select(
-        'aluno, ra, curso, processoseletivo, descontoaluno, situacao, bolsas, bolsa3, databaixa, datacancelamentomatricula, faturadoliq'
+        'aluno, ra, curso, processoseletivo, descontoaluno, situacao, bolsas, bolsa3, databaixa, datacancelamentomatricula, faturadoliq, datadematricula'
       )
       .range(from, to)
   );

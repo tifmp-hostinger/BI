@@ -49,6 +49,8 @@ export type RawBolsaRow = {
   codplanopgto: string | null;
   valororiginal: string | number | null;
   valordoliq: string | number | null;
+  /** Só para o proxy de frescor (dataFreshness.ts) — não usado nos cálculos. */
+  data_matricula: string | null;
 };
 
 export type RawDimBeneficio = {
@@ -82,6 +84,8 @@ export type EnrichedBolsaRow = {
 export type MatriculadoRow = {
   ra: string;
   codperletNorm: string;
+  /** Só para o proxy de frescor (dataFreshness.ts) — não usado nos cálculos. */
+  data: string | null;
 };
 
 export type MatriculadosData = {

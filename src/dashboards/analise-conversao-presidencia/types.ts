@@ -69,6 +69,8 @@ export type MatriculaGradRow = {
   codperlet: string | null;
   situacao: string | null;
   tipomatricula: string | null;
+  /** Só para o proxy de frescor (dataFreshness.ts) — não usado nos cálculos. */
+  datamatricula: string | null;
 };
 
 export type MatriculaMestradoRow = MatriculaGradRow;
@@ -86,4 +88,6 @@ export type MatriculaPosRow = {
   databaixa: string | null;
   datacancelamentomatricula: string | null;
   faturadoliq: string | null;
+  /** Só para o proxy de frescor (dataFreshness.ts) — não usado nos cálculos. */
+  datadematricula: string | null;
 };

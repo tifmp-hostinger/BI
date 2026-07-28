@@ -57,6 +57,7 @@ export function AnaliseConversaoPresidenciaPage() {
     graduacaoAnterior,
     mestrado,
     especializacoes,
+    freshnessProxies,
   } = useAnaliseConversaoData({
     periodoGradAtual,
     periodoGradAnterior,
@@ -110,7 +111,7 @@ export function AnaliseConversaoPresidenciaPage() {
                 Central de Dashboards
               </Link>
               <div className="mt-2">
-                <DataFreshness tabelas={FONTES_POR_DASHBOARD['analise-conversao-presidencia']} />
+                <DataFreshness tabelas={FONTES_POR_DASHBOARD['analise-conversao-presidencia']} proxies={freshnessProxies} />
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium uppercase tracking-widest text-cream/85 ring-1 ring-inset ring-cream/15">

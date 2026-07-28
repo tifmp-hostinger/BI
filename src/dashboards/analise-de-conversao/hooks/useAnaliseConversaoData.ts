@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { clearDashboardCache, fetchDashboardData } from '../queries';
+import { maiorDataDoDataset } from '@/lib/dataFreshness';
 import {
   buildFilterOptions,
   computeCursosLivresData,
@@ -135,6 +136,25 @@ export function useAnaliseConversaoData(filters: ConversaoFilters, tab: Conversa
     return computeCursosLivresData(state.dataset, filters);
   }, [state.dataset, filters, tab]);
 
+  /**
+   * Proxy de frescor por tabela, sobre o dataset SEM filtro de usuário
+   * (state.dataset é o download completo) — nunca dispara consulta nova.
+   */
+  const freshnessProxies = useMemo((): Record<string, Date | null> => {
+    const ds = state.dataset;
+    if (!ds) return {};
+    return {
+      stg_rm_matriculas_grad: maiorDataDoDataset(ds.matriculasGrad, 'datamatricula'),
+      stg_rm_matriculas_mestrado: maiorDataDoDataset(ds.matriculasMestrado, 'datamatricula'),
+      stg_rm_matriculas_pos: maiorDataDoDataset(ds.matriculasPos, 'datadematricula'),
+      stg_rm_matriculas_cursoslivres: maiorDataDoDataset(ds.matriculasCursosLives, 'data_contrato'),
+      stg_rm_inscricoes_graduacao: maiorDataDoDataset(ds.inscricoesGrad, 'datainscricao'),
+      stg_rm_inscricoes_mestrado: maiorDataDoDataset(ds.inscricoesMestrado, 'datainscricao'),
+      stg_rm_inscricoes_pos: maiorDataDoDataset(ds.inscricoesPos, 'datainscricao'),
+      stg_rm_inscricoes_cursoslivres: maiorDataDoDataset(ds.clInscPorDia, 'data'),
+    };
+  }, [state.dataset]);
+
   return {
     loading: state.loading,
     error: state.error,
@@ -149,6 +169,7 @@ export function useAnaliseConversaoData(filters: ConversaoFilters, tab: Conversa
     presencialData,
     eadData,
     cursosLivresData,
+    freshnessProxies,
     refetch,
   };
 }

@@ -29,6 +29,7 @@ import {
   fetchMatriculadosMestrado,
   fetchMatriculadosPos,
 } from '../queries';
+import { maiorDataDoDataset } from '@/lib/dataFreshness';
 
 type PanoramaData = {
   kpis: PanoramaKpis;
@@ -49,6 +50,7 @@ type Dataset = {
   enrichedRows: EnrichedBolsaRow[];
   matriculados: MatriculadosData;
   filterOptions: FilterOptions;
+  freshnessProxies: Record<string, Date | null>;
 };
 
 export function useBolsasDescontosData(filters: BolsasFilters) {
@@ -71,7 +73,15 @@ export function useBolsasDescontosData(filters: BolsasFilters) {
       const enrichedRows = enrichBolsaRows(raw, dimMap);
       const matriculados: MatriculadosData = { grad, pos, mestrado };
       const filterOptions = computeFilterOptions(enrichedRows);
-      setDataset({ enrichedRows, matriculados, filterOptions });
+      // Proxy de frescor: sobre o dataset bruto, antes do enriquecimento
+      // descartar a coluna de data — nunca dispara consulta nova.
+      const freshnessProxies: Record<string, Date | null> = {
+        stg_rm_matriculas_bolsas: maiorDataDoDataset(raw, 'data_matricula'),
+        stg_rm_matriculas_grad: maiorDataDoDataset(grad, 'data'),
+        stg_rm_matriculas_pos: maiorDataDoDataset(pos, 'data'),
+        stg_rm_matriculas_mestrado: maiorDataDoDataset(mestrado, 'data'),
+      };
+      setDataset({ enrichedRows, matriculados, filterOptions, freshnessProxies });
     } catch (err) {
       setDataset(null);
       setError(err instanceof Error ? err.message : 'Erro ao carregar dados');
@@ -125,6 +135,7 @@ export function useBolsasDescontosData(filters: BolsasFilters) {
     evasao,
     evasaoLoading: loading,
     evasaoError: error,
+    freshnessProxies: dataset?.freshnessProxies ?? {},
     refetch: loadAll,
   };
 }

@@ -3,15 +3,18 @@ import { AlertTriangle, Clock, HelpCircle } from 'lucide-react';
 import {
   diasAtras,
   fetchFreshness,
+  formataDataCurta,
   formataDataHora,
+  type Freshness,
   type FreshnessResumo,
 } from '@/lib/dataFreshness';
 
 const AJUDA =
-  'A data indica quando os dados entraram no banco, não quando você abriu a tela. ' +
-  'Quando um dashboard lê mais de uma tabela, mostramos a mais atrasada — se uma fonte ' +
-  'parou de atualizar, é isso que você precisa saber. As cargas são executadas por um ' +
-  'processo agendado, fora da aplicação.';
+  'Duas fontes de data: "Carga em" é quando o dado entrou no banco (carimbo real). ' +
+  '"Dados até" é uma estimativa — a data do registro mais recente na tabela, usada quando ' +
+  'a fonte não registra o momento da carga. Um fim de semana sem movimento deixa esse ' +
+  'segundo tipo desatualizado mesmo com a carga funcionando normalmente. As cargas rodam ' +
+  'por um processo agendado, fora da aplicação.';
 
 const ESTILO: Record<string, string> = {
   ok: 'text-ink-3',
@@ -21,46 +24,106 @@ const ESTILO: Record<string, string> = {
   erro: 'text-warning-dark',
 };
 
+function rotuloFonte(f: Freshness): string {
+  if (f.tipoSinal === 'sem-sinal' || !f.data) return 'Sem sinal de frescor';
+  if (f.tipoSinal === 'carga') return `Carga em ${formataDataHora(f.data)}`;
+  return `Dados até ${formataDataCurta(f.data)}`;
+}
+
 function rotulo(resumo: FreshnessResumo): string {
   const f = resumo.maisAntiga;
+  if (!f || !f.data) {
+    return resumo.status === 'erro' ? 'Não foi possível verificar a data da carga' : 'Sem sinal de frescor';
+  }
+  const dias = diasAtras(f.horasAtras ?? 0);
+  const base = rotuloFonte(f);
+
   switch (resumo.status) {
     case 'ok':
-      return `Dados de ${formataDataHora(f!.ultimaCarga!)}`;
+      return base;
     case 'atencao':
-      return `Dados de ${formataDataHora(f!.ultimaCarga!)} — última carga há ${diasAtras(
-        f!.horasAtras!,
-      )} dia${diasAtras(f!.horasAtras!) === 1 ? '' : 's'}`;
+      return f.tipoSinal === 'carga'
+        ? `${base} — última carga há ${dias} dia${dias === 1 ? '' : 's'}`
+        : `${base} — pode haver carga parada`;
     case 'atrasado':
-      return `Dado desatualizado — última carga em ${formataDataHora(
-        f!.ultimaCarga!,
-      )}, há ${diasAtras(f!.horasAtras!)} dias`;
-    case 'erro':
-      return 'Não foi possível verificar a data da carga';
+      return f.tipoSinal === 'carga'
+        ? `Dado desatualizado — ${base}, há ${dias} dias`
+        : `${base} (${dias} dias) — pode haver carga parada`;
     default:
-      return 'Data da última carga não disponível';
+      return base;
   }
+}
+
+function linhaDetalhe(f: Freshness): string {
+  if (f.tipoSinal === 'sem-sinal') return `${f.tabela}: sem coluna de data de carga nem proxy de conteúdo`;
+  if (!f.data) return `${f.tabela}: não foi possível verificar`;
+  if (f.tipoSinal === 'carga') return `${f.tabela}: carga em ${formataDataHora(f.data)}`;
+  return `${f.tabela}: dados até ${formataDataCurta(f.data)} (proxy — não confirma quando a carga rodou)`;
+}
+
+/**
+ * Detalhamento completo, em 3 blocos, exibido no tooltip: permite dizer
+ * "o RM está em dia, o Rubeus parou" sem abrir o banco.
+ */
+function montaDetalhe(resumo: FreshnessResumo): string {
+  const comCarga = resumo.fontesFato.filter((f) => f.tipoSinal === 'carga');
+  const semCarga = resumo.fontesFato.filter((f) => f.tipoSinal === 'proxy' || f.tipoSinal === 'sem-sinal');
+  const blocos: string[] = [];
+
+  if (comCarga.length > 0) {
+    blocos.push(['Fontes com carimbo de carga:', ...comCarga.map((f) => `  ${linhaDetalhe(f)}`)].join('\n'));
+  }
+  if (semCarga.length > 0) {
+    blocos.push(['Fontes sem carimbo:', ...semCarga.map((f) => `  ${linhaDetalhe(f)}`)].join('\n'));
+  }
+  if (resumo.fontesDominio.length > 0) {
+    blocos.push(
+      [
+        'Tabelas de referência (editadas à mão, sem alerta):',
+        ...resumo.fontesDominio.map((f) => `  ${linhaDetalhe(f)}`),
+      ].join('\n'),
+    );
+  }
+  return blocos.join('\n\n');
 }
 
 /**
  * Carimbo de frescor do dado, compartilhado pelos dashboards.
  * NUNCA cai em "agora" silenciosamente: quando a data não pode ser
  * determinada, o texto diz exatamente isso.
+ *
+ * `proxies`: mapa tabela → maior data de conteúdo já calculada pelo
+ * dashboard sobre o dataset que ele já tem em memória (ver
+ * `maiorDataDoDataset` em lib/dataFreshness.ts). Sem isso as tabelas
+ * "sem carimbo" desta lista aparecem como "sem sinal" — não disparamos
+ * consulta nova para descobrir o proxy.
  */
-export function DataFreshness({ tabelas }: { tabelas: string[] }) {
+export function DataFreshness({
+  tabelas,
+  proxies = {},
+}: {
+  tabelas: string[];
+  proxies?: Record<string, Date | null>;
+}) {
   const [resumo, setResumo] = useState<FreshnessResumo | null>(null);
   const chave = tabelas.join('|');
+  const chaveProxies = Object.entries(proxies)
+    .map(([k, v]) => `${k}=${v ? v.getTime() : ''}`)
+    .sort()
+    .join('|');
 
   useEffect(() => {
     let vivo = true;
-    fetchFreshness(chave.split('|'))
+    fetchFreshness(chave.split('|'), proxies)
       .then((r) => vivo && setResumo(r))
       .catch(() => {
-        if (vivo) setResumo({ maisAntiga: null, porTabela: [], status: 'erro' });
+        if (vivo) setResumo({ maisAntiga: null, fontesFato: [], fontesDominio: [], status: 'erro' });
       });
     return () => {
       vivo = false;
     };
-  }, [chave]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chave, chaveProxies]);
 
   if (!resumo) {
     return (
@@ -72,20 +135,12 @@ export function DataFreshness({ tabelas }: { tabelas: string[] }) {
   }
 
   const alerta = resumo.status === 'atrasado' || resumo.status === 'atencao';
-  // Detalhamento por fonte: permite dizer "o Meta está atualizado, o RM parou"
-  // sem precisar abrir o banco.
-  const detalhe = resumo.porTabela
-    .map((f) => {
-      if (f.semCarimbo) return `${f.tabela}: sem coluna de data de carga`;
-      if (!f.ultimaCarga) return `${f.tabela}: não foi possível verificar`;
-      return `${f.tabela}: ${formataDataHora(f.ultimaCarga)}`;
-    })
-    .join('\n');
+  const detalhe = montaDetalhe(resumo);
 
   return (
     <span
       className={`inline-flex items-center gap-1 text-2xs ${ESTILO[resumo.status]}`}
-      title={detalhe ? `Última carga por fonte:\n${detalhe}` : undefined}
+      title={detalhe || undefined}
     >
       {alerta ? (
         <AlertTriangle className="h-3 w-3 flex-shrink-0" />

@@ -69,12 +69,16 @@ export type RawMatPosGrowthRow = {
   datacancelamentomatricula: string | null;
   inscricaodata: string | null;
   faturadoliq: string | null;
+  /** Só para o proxy de frescor (dataFreshness.ts) — não usado nos cálculos. */
+  datadematricula: string | null;
 };
 
 export type RawMatCLGrowthRow = {
   aluno: string | null;
   databaixa: string | null;
   valor_curso_com_desconto: string | null;
+  /** Só para o proxy de frescor (dataFreshness.ts) — não usado nos cálculos. */
+  data_contrato: string | null;
 };
 
 /** Inscrições agregadas por dia logo após o fetch (memória). */

@@ -5,6 +5,7 @@ import {
   computeMestradoKpis,
   graduacaoDateRangeFromPletivos,
 } from '../calculations';
+import { maiorDataDoDataset } from '@/lib/dataFreshness';
 import {
   fetchInscricoesGraduacao,
   fetchInscricoesMestrado,
@@ -217,6 +218,21 @@ export function useAnaliseConversaoData(options: {
     );
   }, [base, anoPos, mesesPos]);
 
+  /**
+   * Proxy de frescor por tabela, sobre o dataset SEM filtro de usuário
+   * (base é o download completo) — nunca dispara consulta nova.
+   */
+  const freshnessProxies = useMemo((): Record<string, Date | null> => {
+    if (!base) return {};
+    return {
+      stg_rm_matriculas_grad: maiorDataDoDataset(base.matriculasGrad, 'datamatricula'),
+      stg_rm_matriculas_mestrado: maiorDataDoDataset(base.matriculasMest, 'datamatricula'),
+      stg_rm_matriculas_pos: maiorDataDoDataset(base.matriculasPos, 'datadematricula'),
+      stg_rm_inscricoes_graduacao: maiorDataDoDataset(base.inscricoesGrad, 'datainscricao'),
+      stg_rm_inscricoes_mestrado: maiorDataDoDataset(base.inscricoesMest, 'datainscricao'),
+    };
+  }, [base]);
+
   return {
     base,
     loading: baseLoading,
@@ -228,6 +244,7 @@ export function useAnaliseConversaoData(options: {
     graduacaoAnterior,
     mestrado,
     especializacoes,
+    freshnessProxies,
     // exposto para debug/telemetria
     rubeusCounts: {
       gradAtual: rubeusGradAtual,
