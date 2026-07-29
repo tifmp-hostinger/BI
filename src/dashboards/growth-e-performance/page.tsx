@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { SectionCard } from '@/components/ui/SectionCard';
-import { StatCard, StatCardSkeleton } from '@/components/ui/StatCard';
+import { StatCard, StatCardSkeleton, STAT_GRID_CLASSES, STAT_GRID_CONTAINER } from '@/components/ui/StatCard';
 import { ChartSkeleton, LoadingSteps } from '@/components/ui/Skeletons';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
@@ -361,10 +361,12 @@ export function GrowthEPerformancePage() {
             <ErrorBoundary key={produto} title="Não foi possível exibir este produto">
               {loading ? (
                 <>
-                  <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    {Array.from({ length: 8 }).map((_, i) => (
-                      <StatCardSkeleton key={i} index={i} />
-                    ))}
+                  <section className={STAT_GRID_CONTAINER}>
+                    <div className={STAT_GRID_CLASSES}>
+                      {Array.from({ length: 8 }).map((_, i) => (
+                        <StatCardSkeleton key={i} index={i} />
+                      ))}
+                    </div>
                   </section>
                   <ChartSkeleton height={360} />
                 </>
@@ -417,20 +419,25 @@ export function GrowthEPerformancePage() {
                       </div>
                     )}
 
-                    {/* Faixa de KPIs — 2 linhas de 4 */}
-                    {/* xl (não lg): esta coluna divide espaço com o painel de
-                        filtros (224px) e, a partir de xl, com o painel do
-                        funil (300px) — em lg isolado 4 colunas ficavam
-                        espremidas e o valor quebrava em 3 linhas. */}
-                    <section className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-                      <StatCard index={0} label="Investimento" value={fmtBRLCompact(media.investimento)} exactValue={exatoBRL(media.investimento)} hint={HINTS.investimento} icon={DollarSign} color="fmp" highlight />
-                      <StatCard index={1} label="Ticket Médio" value={fmtOrDash(negocio.ticketMedio, fmtBRLCompact)} exactValue={exatoBRL(negocio.ticketMedio)} hint={HINTS.ticketMedio} icon={Wallet} color="fmp" />
-                      <StatCard index={2} label="ROAS" value={fmtOrDash(negocio.roas, (n) => n.toFixed(2))} exactValue={exatoNum(negocio.roas)} hint={HINTS.roas} icon={TrendingUp} color="fmp" />
-                      <StatCard index={3} label="CPL" value={fmtOrDash(media.cpl, fmtBRLCompact)} exactValue={exatoBRL(media.cpl)} hint={HINTS.cpl} icon={Target} color="gray" />
-                      <StatCard index={4} label="CAC" value={fmtOrDash(negocio.cac, fmtBRLCompact)} exactValue={exatoBRL(negocio.cac)} hint={HINTS.cac} icon={Target} color="gray" />
-                      <StatCard index={5} label="Faturamento" value={fmtBRLCompact(negocio.faturamento)} exactValue={exatoBRL(negocio.faturamento)} hint={HINTS.faturamento} icon={DollarSign} color="fmp" />
-                      <StatCard index={6} label="ROAS Mídia" value={fmtOrDash(negocio.roasMidia, (n) => n.toFixed(2))} exactValue={exatoNum(negocio.roasMidia)} hint={HINTS.roasMidia} icon={TrendingUp} color="gray" />
-                      <StatCard index={7} label="Conversão" value={fmtOrDash(negocio.taxaConv, fmtPct)} hint={HINTS.conversao} icon={Percent} color="gray" />
+                    {/* Faixa de KPIs — colunas reagem ao espaço REAL do
+                        container (@container), não à viewport: esta coluna
+                        divide espaço com o painel de filtros (224px) e, a
+                        partir de xl, com o painel do funil (300px) — uma
+                        media query de viewport não sabe disso, um container
+                        query mede o espaço disponível de verdade. Também
+                        reage ao colapsar/expandir o menu lateral, que muda a
+                        largura do container sem mudar a viewport. */}
+                    <section className={STAT_GRID_CONTAINER}>
+                      <div className={STAT_GRID_CLASSES}>
+                        <StatCard index={0} label="Investimento" value={fmtBRLCompact(media.investimento)} exactValue={exatoBRL(media.investimento)} hint={HINTS.investimento} icon={DollarSign} color="fmp" highlight />
+                        <StatCard index={1} label="Ticket Médio" value={fmtOrDash(negocio.ticketMedio, fmtBRLCompact)} exactValue={exatoBRL(negocio.ticketMedio)} hint={HINTS.ticketMedio} icon={Wallet} color="fmp" />
+                        <StatCard index={2} label="ROAS" value={fmtOrDash(negocio.roas, (n) => n.toFixed(2))} exactValue={exatoNum(negocio.roas)} hint={HINTS.roas} icon={TrendingUp} color="fmp" />
+                        <StatCard index={3} label="CPL" value={fmtOrDash(media.cpl, fmtBRLCompact)} exactValue={exatoBRL(media.cpl)} hint={HINTS.cpl} icon={Target} color="gray" />
+                        <StatCard index={4} label="CAC" value={fmtOrDash(negocio.cac, fmtBRLCompact)} exactValue={exatoBRL(negocio.cac)} hint={HINTS.cac} icon={Target} color="gray" />
+                        <StatCard index={5} label="Faturamento" value={fmtBRLCompact(negocio.faturamento)} exactValue={exatoBRL(negocio.faturamento)} hint={HINTS.faturamento} icon={DollarSign} color="fmp" />
+                        <StatCard index={6} label="ROAS Mídia" value={fmtOrDash(negocio.roasMidia, (n) => n.toFixed(2))} exactValue={exatoNum(negocio.roasMidia)} hint={HINTS.roasMidia} icon={TrendingUp} color="gray" />
+                        <StatCard index={7} label="Conversão" value={fmtOrDash(negocio.taxaConv, fmtPct)} hint={HINTS.conversao} icon={Percent} color="gray" />
+                      </div>
                     </section>
 
                     {/* Faixa de visões */}

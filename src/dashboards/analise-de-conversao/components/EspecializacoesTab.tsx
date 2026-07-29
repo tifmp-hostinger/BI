@@ -17,7 +17,7 @@ import {
 import { TrendingUp, GraduationCap, DollarSign, Users } from 'lucide-react';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { ReorderableGrid, RItem } from '@/components/ui/ReorderableGrid';
-import { StatCard, StatCardSkeleton } from '@/components/ui/StatCard';
+import { StatCard, StatCardSkeleton, STAT_GRID_CLASSES, STAT_GRID_CONTAINER } from '@/components/ui/StatCard';
 import { GaugeSemicircle } from '@/components/ui/GaugeSemicircle';
 import { ChartSkeleton } from '@/components/ui/Skeletons';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -56,8 +56,10 @@ export function EspecializacoesTab({ loading, data }: Props) {
   if (loading) {
     return (
       <>
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} index={i} />)}
+        <section className={STAT_GRID_CONTAINER}>
+          <div className={STAT_GRID_CLASSES}>
+            {Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} index={i} />)}
+          </div>
         </section>
         <div className="h-56 animate-pulse rounded-md border border-line bg-white shadow-card" />
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -71,11 +73,13 @@ export function EspecializacoesTab({ loading, data }: Props) {
 
   return (
     <>
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard index={0} label="Leads" value={fmtInt(data.leads)} icon={Users} color="fmp" highlight />
-        <StatCard index={1} label="Faturamento" value={fmtBRLCompact(data.fat)} icon={DollarSign} color="fmp" />
-        <StatCard index={2} label="Meta Faturamento" value={fmtBRLCompact(data.metaFat)} icon={TrendingUp} color="gray" />
-        <StatCard index={3} label="Matriculas" value={fmtInt(data.mat)} icon={GraduationCap} color="gray" />
+      <section className={STAT_GRID_CONTAINER}>
+        <div className={STAT_GRID_CLASSES}>
+          <StatCard index={0} label="Leads" value={fmtInt(data.leads)} icon={Users} color="fmp" highlight />
+          <StatCard index={1} label="Faturamento" value={fmtBRLCompact(data.fat)} icon={DollarSign} color="fmp" />
+          <StatCard index={2} label="Meta Faturamento" value={fmtBRLCompact(data.metaFat)} icon={TrendingUp} color="gray" />
+          <StatCard index={3} label="Matriculas" value={fmtInt(data.mat)} icon={GraduationCap} color="gray" />
+        </div>
       </section>
 
       <div className="flex flex-col items-center rounded-md border border-line bg-white p-6 shadow-card animate-fade-in">

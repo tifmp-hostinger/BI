@@ -29,6 +29,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { ReorderableGrid, RItem } from '@/components/ui/ReorderableGrid';
 import { GaugeSemicircle } from '@/components/ui/GaugeSemicircle';
+import { STAT_GRID_CLASSES, STAT_GRID_CONTAINER } from '@/components/ui/StatCard';
 import { ChartSkeleton, LoadingSteps } from '@/components/ui/Skeletons';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { DataFreshness } from '@/components/ui/DataFreshness';
@@ -214,36 +215,40 @@ export function AnaliseDeConversaoPage() {
         {tab === 'geral' && (
           <>
             {loading ? (
-              <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="h-56 animate-pulse rounded-md border border-line bg-white shadow-card" />
-                ))}
+              <section className={STAT_GRID_CONTAINER}>
+                <div className={STAT_GRID_CLASSES}>
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="h-56 animate-pulse rounded-md border border-line bg-white shadow-card" />
+                  ))}
+                </div>
               </section>
             ) : geralKpis ? (
               <>
-                <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  <GaugeCard
-                    label={`Graduacao | ${geralKpis.gradPeriodoAtual}`}
-                    value={geralKpis.gradPctMetaAtual}
-                    caption={`${fmtInt(geralKpis.gradMatEfetAtual)} / ${fmtInt(geralKpis.gradVagasAtual)} vagas`}
-                    obsFinalizado
-                  />
-                  <GaugeCard
-                    label={`Graduacao | ${geralKpis.gradPeriodoAnterior}`}
-                    value={geralKpis.gradPctMetaAnterior}
-                    caption={`${fmtInt(geralKpis.gradMatEfetAnterior)} / ${fmtInt(geralKpis.gradVagasAnterior)} vagas`}
-                    obsFinalizado
-                  />
-                  <GaugeCard
-                    label="Especializacoes | Meta"
-                    value={geralKpis.especPctMeta}
-                    caption={`${fmtBRLCompact(geralKpis.especFat)} / ${fmtBRLCompact(geralKpis.especMetaFat)} meta`}
-                  />
-                  <GaugeCard
-                    label={`Mestrado ${geralKpis.mestAno} | Meta`}
-                    value={geralKpis.mestPctMeta}
-                    caption={`${fmtInt(geralKpis.mestMat)} / ${fmtInt(geralKpis.mestMeta)} meta`}
-                  />
+                <section className={STAT_GRID_CONTAINER}>
+                  <div className={STAT_GRID_CLASSES}>
+                    <GaugeCard
+                      label={`Graduacao | ${geralKpis.gradPeriodoAtual}`}
+                      value={geralKpis.gradPctMetaAtual}
+                      caption={`${fmtInt(geralKpis.gradMatEfetAtual)} / ${fmtInt(geralKpis.gradVagasAtual)} vagas`}
+                      obsFinalizado
+                    />
+                    <GaugeCard
+                      label={`Graduacao | ${geralKpis.gradPeriodoAnterior}`}
+                      value={geralKpis.gradPctMetaAnterior}
+                      caption={`${fmtInt(geralKpis.gradMatEfetAnterior)} / ${fmtInt(geralKpis.gradVagasAnterior)} vagas`}
+                      obsFinalizado
+                    />
+                    <GaugeCard
+                      label="Especializacoes | Meta"
+                      value={geralKpis.especPctMeta}
+                      caption={`${fmtBRLCompact(geralKpis.especFat)} / ${fmtBRLCompact(geralKpis.especMetaFat)} meta`}
+                    />
+                    <GaugeCard
+                      label={`Mestrado ${geralKpis.mestAno} | Meta`}
+                      value={geralKpis.mestPctMeta}
+                      caption={`${fmtInt(geralKpis.mestMat)} / ${fmtInt(geralKpis.mestMeta)} meta`}
+                    />
+                  </div>
                 </section>
 
                 <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">

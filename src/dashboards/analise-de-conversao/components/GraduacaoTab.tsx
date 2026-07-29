@@ -12,7 +12,7 @@ import {
 import { GraduationCap, Users, TrendingUp } from 'lucide-react';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { ReorderableGrid, RItem } from '@/components/ui/ReorderableGrid';
-import { StatCard, StatCardSkeleton } from '@/components/ui/StatCard';
+import { StatCard, StatCardSkeleton, STAT_GRID_CLASSES, STAT_GRID_CONTAINER } from '@/components/ui/StatCard';
 import { GaugeSemicircle } from '@/components/ui/GaugeSemicircle';
 import { ChartSkeleton } from '@/components/ui/Skeletons';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -50,8 +50,10 @@ export function GraduacaoTab({ loading, data }: Props) {
   if (loading) {
     return (
       <>
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-          {Array.from({ length: 7 }).map((_, i) => <StatCardSkeleton key={i} index={i} />)}
+        <section className={STAT_GRID_CONTAINER}>
+          <div className={STAT_GRID_CLASSES}>
+            {Array.from({ length: 7 }).map((_, i) => <StatCardSkeleton key={i} index={i} />)}
+          </div>
         </section>
         <div className="h-56 animate-pulse rounded-md border border-line bg-white shadow-card" />
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -65,14 +67,16 @@ export function GraduacaoTab({ loading, data }: Props) {
 
   return (
     <>
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-        <StatCard index={0} label="Leads" value={fmtInt(data.leads)} icon={Users} color="fmp" highlight />
-        <StatCard index={1} label="Inscricoes" value={fmtInt(data.insc)} icon={Users} color="fmp" />
-        <StatCard index={2} label="Mat. Efetivas" value={fmtInt(data.matEfet)} icon={GraduationCap} color="fmp" />
-        <StatCard index={3} label="Vagas" value={fmtInt(data.vagas)} icon={TrendingUp} color="gray" />
-        <StatCard index={4} label="Mat. Canceladas" value={fmtInt(data.matCanc)} icon={TrendingUp} color="gray" />
-        <StatCard index={5} label="%Conv Insc/Leads" value={fmtPct(data.pctConvIxL)} icon={TrendingUp} color="gray" />
-        <StatCard index={6} label="%Conv Mat/Insc" value={fmtPct(data.pctConvMxI)} icon={TrendingUp} color="gray" />
+      <section className={STAT_GRID_CONTAINER}>
+        <div className={STAT_GRID_CLASSES}>
+          <StatCard index={0} label="Leads" value={fmtInt(data.leads)} icon={Users} color="fmp" highlight />
+          <StatCard index={1} label="Inscricoes" value={fmtInt(data.insc)} icon={Users} color="fmp" />
+          <StatCard index={2} label="Mat. Efetivas" value={fmtInt(data.matEfet)} icon={GraduationCap} color="fmp" />
+          <StatCard index={3} label="Vagas" value={fmtInt(data.vagas)} icon={TrendingUp} color="gray" />
+          <StatCard index={4} label="Mat. Canceladas" value={fmtInt(data.matCanc)} icon={TrendingUp} color="gray" />
+          <StatCard index={5} label="%Conv Insc/Leads" value={fmtPct(data.pctConvIxL)} icon={TrendingUp} color="gray" />
+          <StatCard index={6} label="%Conv Mat/Insc" value={fmtPct(data.pctConvMxI)} icon={TrendingUp} color="gray" />
+        </div>
       </section>
 
       <div className="flex flex-col items-center rounded-md border border-line bg-white p-6 shadow-card animate-fade-in">

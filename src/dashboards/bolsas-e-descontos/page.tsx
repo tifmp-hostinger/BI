@@ -29,7 +29,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
-import { StatCard, StatCardSkeleton } from '@/components/ui/StatCard';
+import { StatCard, StatCardSkeleton, STAT_GRID_CLASSES, STAT_GRID_CONTAINER } from '@/components/ui/StatCard';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { ChartSkeleton } from '@/components/ui/Skeletons';
 import { ErrorState } from '@/components/ui/ErrorState';
@@ -204,18 +204,20 @@ export function BolsasEDescontosPage() {
         {tab === 'panorama' && (
           <>
             {/* KPI cards */}
-            <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-              {loading && Array.from({ length: 6 }).map((_, i) => <StatCardSkeleton key={i} index={i} />)}
-              {!loading && panorama && (
-                <>
-                  <StatCard index={0} label="Matrículas" value={fmtInt(panorama.kpis.matriculas)} icon={Users} color="fmp" highlight />
-                  <StatCard index={1} label="Bolsas" value={fmtInt(panorama.kpis.bolsas)} icon={Award} color="fmp" />
-                  <StatCard index={2} label="Descontos" value={fmtInt(panorama.kpis.descontos)} icon={Percent} color="gray" />
-                  <StatCard index={3} label="Formados" value={fmtInt(panorama.kpis.formados)} icon={GraduationCap} color="gray" />
-                  <StatCard index={4} label="Fat. Original Previsto" value={fmtBRLCompact(panorama.kpis.fatOriginalPrevisto)} icon={Wallet} color="fmp" />
-                  <StatCard index={5} label="Fat. Desconto Previsto" value={fmtBRLCompact(panorama.kpis.fatDescontoPrevisto)} icon={Wallet} color="gray" />
-                </>
-              )}
+            <section className={STAT_GRID_CONTAINER}>
+              <div className={STAT_GRID_CLASSES}>
+                {loading && Array.from({ length: 6 }).map((_, i) => <StatCardSkeleton key={i} index={i} />)}
+                {!loading && panorama && (
+                  <>
+                    <StatCard index={0} label="Matrículas" value={fmtInt(panorama.kpis.matriculas)} icon={Users} color="fmp" highlight />
+                    <StatCard index={1} label="Bolsas" value={fmtInt(panorama.kpis.bolsas)} icon={Award} color="fmp" />
+                    <StatCard index={2} label="Descontos" value={fmtInt(panorama.kpis.descontos)} icon={Percent} color="gray" />
+                    <StatCard index={3} label="Formados" value={fmtInt(panorama.kpis.formados)} icon={GraduationCap} color="gray" />
+                    <StatCard index={4} label="Fat. Original Previsto" value={fmtBRLCompact(panorama.kpis.fatOriginalPrevisto)} icon={Wallet} color="fmp" />
+                    <StatCard index={5} label="Fat. Desconto Previsto" value={fmtBRLCompact(panorama.kpis.fatDescontoPrevisto)} icon={Wallet} color="gray" />
+                  </>
+                )}
+              </div>
             </section>
 
             {/* Charts 2x2 */}
@@ -421,19 +423,21 @@ export function BolsasEDescontosPage() {
         {tab === 'evasao' && (
           <>
             {/* Renúncia card */}
-            <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {loading && <StatCardSkeleton index={0} />}
-              {!loading && evasao && (
-                <StatCard
-                  index={0}
-                  label="Renúncia de Valor - Evasão"
-                  value={fmtBRLCompact(evasao.renunciaValorEvasao)}
-                  subtitle="Soma do valor original das matrículas evadidas"
-                  icon={TrendingDown}
-                  color="danger"
-                  highlight
-                />
-              )}
+            <section className={STAT_GRID_CONTAINER}>
+              <div className={STAT_GRID_CLASSES}>
+                {loading && <StatCardSkeleton index={0} />}
+                {!loading && evasao && (
+                  <StatCard
+                    index={0}
+                    label="Renúncia de Valor - Evasão"
+                    value={fmtBRLCompact(evasao.renunciaValorEvasao)}
+                    subtitle="Soma do valor original das matrículas evadidas"
+                    icon={TrendingDown}
+                    color="danger"
+                    highlight
+                  />
+                )}
+              </div>
             </section>
 
             {/* Charts */}

@@ -15,7 +15,7 @@ import {
 import { TrendingUp, Users, GraduationCap, DollarSign, BookOpen, Wallet, Percent } from 'lucide-react';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { ReorderableGrid, RItem } from '@/components/ui/ReorderableGrid';
-import { StatCard, StatCardSkeleton } from '@/components/ui/StatCard';
+import { StatCard, StatCardSkeleton, STAT_GRID_CLASSES, STAT_GRID_CONTAINER } from '@/components/ui/StatCard';
 import { ChartSkeleton } from '@/components/ui/Skeletons';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BrazilStateMap } from '@/components/maps/BrazilStateMap';
@@ -55,8 +55,10 @@ export function ModalidadePosTab({ loading, data }: Props) {
   if (loading) {
     return (
       <>
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
-          {Array.from({ length: 8 }).map((_, i) => <StatCardSkeleton key={i} index={i} />)}
+        <section className={STAT_GRID_CONTAINER}>
+          <div className={STAT_GRID_CLASSES}>
+            {Array.from({ length: 8 }).map((_, i) => <StatCardSkeleton key={i} index={i} />)}
+          </div>
         </section>
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {Array.from({ length: 4 }).map((_, i) => <ChartSkeleton key={i} height={320} />)}
@@ -80,15 +82,17 @@ export function ModalidadePosTab({ loading, data }: Props) {
 
   return (
     <>
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
-        <StatCard index={0} label="Leads" value={fmtInt(data.leads)} icon={Users} color="fmp" highlight />
-        <StatCard index={1} label="Inscricoes" value={fmtInt(data.insc)} icon={Users} color="fmp" />
-        <StatCard index={2} label="Matriculas" value={fmtInt(data.mat)} icon={GraduationCap} color="fmp" />
-        <StatCard index={3} label="Com TCC" value={fmtInt(data.comTcc)} icon={BookOpen} color="gray" />
-        <StatCard index={4} label="Sem TCC" value={fmtInt(data.semTcc)} icon={BookOpen} color="gray" />
-        <StatCard index={5} label="Faturamento" value={fmtBRLCompact(data.fat)} icon={DollarSign} color="fmp" />
-        <StatCard index={6} label="Ticket Medio" value={fmtBRLCompact(data.tktMedio)} icon={Wallet} color="gray" />
-        <StatCard index={7} label="Desc. Medio" value={fmtPct(data.descontoMedio)} icon={Percent} color="gray" />
+      <section className={STAT_GRID_CONTAINER}>
+        <div className={STAT_GRID_CLASSES}>
+          <StatCard index={0} label="Leads" value={fmtInt(data.leads)} icon={Users} color="fmp" highlight />
+          <StatCard index={1} label="Inscricoes" value={fmtInt(data.insc)} icon={Users} color="fmp" />
+          <StatCard index={2} label="Matriculas" value={fmtInt(data.mat)} icon={GraduationCap} color="fmp" />
+          <StatCard index={3} label="Com TCC" value={fmtInt(data.comTcc)} icon={BookOpen} color="gray" />
+          <StatCard index={4} label="Sem TCC" value={fmtInt(data.semTcc)} icon={BookOpen} color="gray" />
+          <StatCard index={5} label="Faturamento" value={fmtBRLCompact(data.fat)} icon={DollarSign} color="fmp" />
+          <StatCard index={6} label="Ticket Medio" value={fmtBRLCompact(data.tktMedio)} icon={Wallet} color="gray" />
+          <StatCard index={7} label="Desc. Medio" value={fmtPct(data.descontoMedio)} icon={Percent} color="gray" />
+        </div>
       </section>
 
       <ReorderableGrid storageKey={`conv-reorder-pos-${data.modalidade === 'Pós EAD' ? 'ead' : 'presencial'}`} className="grid grid-cols-1 gap-4 lg:grid-cols-2">

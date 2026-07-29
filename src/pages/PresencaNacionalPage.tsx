@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
-import { StatCard, StatCardSkeleton } from '@/components/ui/StatCard';
+import { StatCard, StatCardSkeleton, STAT_GRID_CLASSES, STAT_GRID_CONTAINER } from '@/components/ui/StatCard';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { ChartSkeleton } from '@/components/ui/Skeletons';
 import { ErrorState } from '@/components/ui/ErrorState';
@@ -294,52 +294,54 @@ export function PresencaNacionalPage() {
         )}
 
         {/* KPI row */}
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {loading &&
-            Array.from({ length: 4 }).map((_, i) => (
-              <StatCardSkeleton key={i} index={i} />
-            ))}
-          {!loading && (
-            <>
-              <StatCard
-                index={0}
-                label="Total de matriculas"
-                value={fmtInt(stats.total)}
-                subtitle={`${fmtInt(stats.totalPos)} Pos + ${fmtInt(stats.totalLivres)} Livres`}
-                icon={Users}
-                color="fmp"
-                highlight
-              />
-              <StatCard
-                index={1}
-                label="UF lider"
-                value={topState ? nameOf(topState.uf) : '—'}
-                subtitle={
-                  topState
-                    ? `${fmtInt(topState.total)} matriculas em ${topState.uf}`
-                    : ''
-                }
-                icon={MapPin}
-                color="gray"
-              />
-              <StatCard
-                index={2}
-                label="Faturamento total"
-                value={fmtBRL(stats.faturado)}
-                subtitle={`Ticket medio ${fmtBRL(stats.ticketMedio)}`}
-                icon={Wallet}
-                color="fmp"
-              />
-              <StatCard
-                index={3}
-                label="Taxa de matriculados"
-                value={`${conversion}%`}
-                subtitle={`${fmtInt(stats.matriculados)} matriculas ativas`}
-                icon={TrendingUp}
-                color="gray"
-              />
-            </>
-          )}
+        <section className={STAT_GRID_CONTAINER}>
+          <div className={STAT_GRID_CLASSES}>
+            {loading &&
+              Array.from({ length: 4 }).map((_, i) => (
+                <StatCardSkeleton key={i} index={i} />
+              ))}
+            {!loading && (
+              <>
+                <StatCard
+                  index={0}
+                  label="Total de matriculas"
+                  value={fmtInt(stats.total)}
+                  subtitle={`${fmtInt(stats.totalPos)} Pos + ${fmtInt(stats.totalLivres)} Livres`}
+                  icon={Users}
+                  color="fmp"
+                  highlight
+                />
+                <StatCard
+                  index={1}
+                  label="UF lider"
+                  value={topState ? nameOf(topState.uf) : '—'}
+                  subtitle={
+                    topState
+                      ? `${fmtInt(topState.total)} matriculas em ${topState.uf}`
+                      : ''
+                  }
+                  icon={MapPin}
+                  color="gray"
+                />
+                <StatCard
+                  index={2}
+                  label="Faturamento total"
+                  value={fmtBRL(stats.faturado)}
+                  subtitle={`Ticket medio ${fmtBRL(stats.ticketMedio)}`}
+                  icon={Wallet}
+                  color="fmp"
+                />
+                <StatCard
+                  index={3}
+                  label="Taxa de matriculados"
+                  value={`${conversion}%`}
+                  subtitle={`${fmtInt(stats.matriculados)} matriculas ativas`}
+                  icon={TrendingUp}
+                  color="gray"
+                />
+              </>
+            )}
+          </div>
         </section>
 
         {/* Map + drill-down */}
