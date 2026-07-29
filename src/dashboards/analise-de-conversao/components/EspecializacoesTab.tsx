@@ -179,7 +179,7 @@ export function EspecializacoesTab({ loading, data }: Props) {
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
                   <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtInt(v as number), '']} />
-                  <Pie data={data.fatPorModalidade} dataKey="valor" nameKey="categoria" cx="50%" cy="50%" outerRadius={70} innerRadius={35} paddingAngle={3} stroke="none" label={(entry: unknown) => { const e = entry as { categoria?: string; valor?: number }; const total = data.fatPorModalidade.reduce((s, x) => s + x.valor, 0); const pct = total > 0 ? Math.round((e.valor ?? 0 / total) * 100) : 0; return `${e.categoria ?? ''}: ${pct}%`; }} labelLine={false}>
+                  <Pie data={data.fatPorModalidade} dataKey="valor" nameKey="categoria" cx="50%" cy="50%" outerRadius={70} innerRadius={35} paddingAngle={3} stroke="none" label={(entry: unknown) => { const e = entry as { categoria?: string; valor?: number }; const total = data.fatPorModalidade.reduce((s, x) => s + x.valor, 0); const pct = total > 0 ? Math.round(((e.valor ?? 0) / total) * 100) : 0; return `${e.categoria ?? ''}: ${pct}%`; }} labelLine={false}>
                     {data.fatPorModalidade.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                   </Pie>
                 </PieChart>
@@ -194,7 +194,7 @@ export function EspecializacoesTab({ loading, data }: Props) {
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
                   <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtInt(v as number), '']} />
-                  <Pie data={data.fatPorTcc} dataKey="valor" nameKey="categoria" cx="50%" cy="50%" outerRadius={70} innerRadius={35} paddingAngle={3} stroke="none" label={(entry: unknown) => { const e = entry as { categoria?: string; valor?: number }; const total = data.fatPorTcc.reduce((s, x) => s + x.valor, 0); const pct = total > 0 ? Math.round((e.valor ?? 0 / total) * 100) : 0; return `${e.categoria ?? ''}: ${pct}%`; }} labelLine={false}>
+                  <Pie data={data.fatPorTcc} dataKey="valor" nameKey="categoria" cx="50%" cy="50%" outerRadius={70} innerRadius={35} paddingAngle={3} stroke="none" label={(entry: unknown) => { const e = entry as { categoria?: string; valor?: number }; const total = data.fatPorTcc.reduce((s, x) => s + x.valor, 0); const pct = total > 0 ? Math.round(((e.valor ?? 0) / total) * 100) : 0; return `${e.categoria ?? ''}: ${pct}%`; }} labelLine={false}>
                     <Cell fill={CORES_CATEGORICAS[0]} />
                     <Cell fill={CORES_CATEGORICAS[1]} />
                   </Pie>
