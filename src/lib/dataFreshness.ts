@@ -39,6 +39,15 @@ export type FonteConfig = {
   colunaConteudo?: string;
   /** Documentação do formato de `colunaConteudo` — o parser (`parseFlexibleDate`) já detecta os dois sozinho. */
   formatoConteudo?: 'iso' | 'br';
+  /**
+   * Fonte de negócio genuinamente sazonal (ex. inscrição de Mestrado —
+   * confirmado com o time: é ~1 janela de admissão por ano, não uma
+   * esteira contínua). Fica de fora da disputa pelo rótulo principal
+   * (`maisAntiga`) — um proxy "atrasado" aqui é o normal do calendário, não
+   * sinal de carga parada — mas continua aparecendo no detalhamento, com
+   * nota explicando o motivo, nunca escondida.
+   */
+  sazonal?: boolean;
 };
 
 /**
@@ -106,11 +115,18 @@ export const REGISTRO_FONTES: Record<string, FonteConfig> = {
     colunaConteudo: 'datainscricao',
     formatoConteudo: 'iso',
   },
+  // Sazonal: confirmado com o time em 29/07/2026 — Mestrado tem ~1 janela de
+  // admissão por ano; a próxima abre nos próximos meses (fim de ano). Um
+  // proxy de meses sem inscrição nova aqui é esperado, não indício de carga
+  // parada — por isso não disputa o rótulo principal (ver `sazonal` em
+  // fetchFreshness). Antes desta tabela ter proxy, o badge nem a via (não
+  // tinha atualizado_em) e por isso nunca tinha aparecido esse aviso.
   stg_rm_inscricoes_mestrado: {
     tabela: 'stg_rm_inscricoes_mestrado',
     papel: 'fato',
     colunaConteudo: 'datainscricao',
     formatoConteudo: 'iso',
+    sazonal: true,
   },
 
   // ---- Fato sem carimbo, com proxy de conteúdo (formato dd/mm/yyyy) ----
@@ -183,6 +199,8 @@ export type Freshness = {
   /** Carimbo real (tipoSinal='carga') ou maior data de conteúdo (tipoSinal='proxy'). */
   data: Date | null;
   horasAtras: number | null;
+  /** Sazonal (ver FonteConfig.sazonal) — fora da disputa por `maisAntiga`. */
+  sazonal: boolean;
 };
 
 export type StatusFrescor = 'ok' | 'atencao' | 'atrasado' | 'desconhecido' | 'erro';
@@ -278,11 +296,12 @@ export async function fetchFreshness(
       const cfg = REGISTRO_FONTES[tabela];
 
       if (!cfg) {
-        fontesFato.push({ tabela, papel: 'fato', tipoSinal: 'sem-sinal', data: null, horasAtras: null });
+        fontesFato.push({ tabela, papel: 'fato', tipoSinal: 'sem-sinal', data: null, horasAtras: null, sazonal: false });
         return;
       }
 
       const destino = cfg.papel === 'dominio' ? fontesDominio : fontesFato;
+      const sazonal = !!cfg.sazonal;
 
       if (cfg.colunaCarga) {
         try {
@@ -293,10 +312,11 @@ export async function fetchFreshness(
             tipoSinal: 'carga',
             data,
             horasAtras: data ? (Date.now() - data.getTime()) / HORA_MS : null,
+            sazonal,
           });
         } catch {
           houveErro = true;
-          destino.push({ tabela, papel: cfg.papel, tipoSinal: 'carga', data: null, horasAtras: null });
+          destino.push({ tabela, papel: cfg.papel, tipoSinal: 'carga', data: null, horasAtras: null, sazonal });
         }
         return;
       }
@@ -309,11 +329,12 @@ export async function fetchFreshness(
           tipoSinal: 'proxy',
           data,
           horasAtras: data ? (Date.now() - data.getTime()) / HORA_MS : null,
+          sazonal,
         });
         return;
       }
 
-      destino.push({ tabela, papel: cfg.papel, tipoSinal: 'sem-sinal', data: null, horasAtras: null });
+      destino.push({ tabela, papel: cfg.papel, tipoSinal: 'sem-sinal', data: null, horasAtras: null, sazonal });
     }),
   );
 
@@ -326,8 +347,9 @@ export async function fetchFreshness(
   fontesFato.sort(ordenaPorData);
   fontesDominio.sort(ordenaPorData);
 
-  // O rótulo principal olha só para fato — domínio nunca entra aqui.
-  const candidatas = fontesFato.filter((f) => f.data !== null);
+  // O rótulo principal olha só para fato, e nunca para uma fonte sazonal —
+  // ela fica só no detalhamento (ver DataFreshness.tsx).
+  const candidatas = fontesFato.filter((f) => f.data !== null && !f.sazonal);
   const maisAntiga = candidatas.sort((a, b) => a.data!.getTime() - b.data!.getTime())[0] ?? null;
 
   let status: StatusFrescor;

@@ -58,7 +58,10 @@ function linhaDetalhe(f: Freshness): string {
   if (f.tipoSinal === 'sem-sinal') return `${f.tabela}: sem coluna de data de carga nem proxy de conteúdo`;
   if (!f.data) return `${f.tabela}: não foi possível verificar`;
   if (f.tipoSinal === 'carga') return `${f.tabela}: carga em ${formataDataHora(f.data)}`;
-  return `${f.tabela}: dados até ${formataDataCurta(f.data)} (proxy — não confirma quando a carga rodou)`;
+  const sazonalNota = f.sazonal
+    ? ' — sazonal, só recebe registros em janelas específicas do ano; não conta para o aviso principal'
+    : '';
+  return `${f.tabela}: dados até ${formataDataCurta(f.data)} (proxy — não confirma quando a carga rodou)${sazonalNota}`;
 }
 
 /**
