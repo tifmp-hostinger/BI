@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { regionOf } from '@/lib/brStates';
+import { parseDecimal } from '@/dashboards/analise-de-conversao/dateUtils';
 
 export type MatriculaSource = 'pos' | 'cursoslivres';
 
@@ -16,14 +17,6 @@ export type Matricula = {
   faturado: number;
   data: string;
 };
-
-function toNumber(v: unknown): number {
-  if (v === null || v === undefined || v === '') return 0;
-  if (typeof v === 'number') return v;
-  const s = String(v).replace(/\./g, '').replace(',', '.');
-  const n = Number(s);
-  return Number.isFinite(n) ? n : 0;
-}
 
 async function fetchAll<T>(
   table: string,
@@ -95,8 +88,8 @@ export async function listMatriculas(): Promise<Matricula[]> {
     modalidade: (r.modalidadepos ?? '').trim() || 'Pos-graduacao',
     aluno: (r.aluno ?? '').trim(),
     ra: (r.ra ?? '').trim(),
-    ticket: toNumber(r.ticketmediocurso),
-    faturado: toNumber(r.faturadoliq),
+    ticket: parseDecimal(r.ticketmediocurso),
+    faturado: parseDecimal(r.faturadoliq),
     data: (r.datadematricula ?? '').trim(),
   }));
 
@@ -109,8 +102,8 @@ export async function listMatriculas(): Promise<Matricula[]> {
     modalidade: (r.nivel_ensino ?? '').trim() || 'Curso Livre',
     aluno: (r.aluno ?? '').trim(),
     ra: (r.ra ?? '').trim(),
-    ticket: toNumber(r.valor_curso_com_desconto),
-    faturado: toNumber(r.valor_baixado),
+    ticket: parseDecimal(r.valor_curso_com_desconto),
+    faturado: parseDecimal(r.valor_baixado),
     data: (r.data_contrato ?? '').trim(),
   }));
 
