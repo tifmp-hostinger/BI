@@ -67,6 +67,7 @@ export type RawMatriculaPosRow = {
   datadematricula: string | null;
   datacancelamentomatricula: string | null;
   faturadobruto: string | null;
+  faturadoliq: string | null;
   codplanopgto: string | null;
   tcc: string | null;
   estado: string | null;

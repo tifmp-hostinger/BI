@@ -286,12 +286,17 @@ export function computeGeralKpis(
     filterBasePosByAnoMes(computeBasePos(ds.matriculasPos, filters), filters),
     filters,
   );
-  const especFatEad = basePos
+  // Faturamento LÍQUIDO (o que de fato é cobrado), deduplicado por
+  // aluno+curso — ver dedupFaturamentoPos. Antes somava faturadobruto sem
+  // dedup: em julho/2026 mostrava R$ 920 mil contra R$ 598 mil reais
+  // (153% da meta de R$ 600 mil, quando o correto era 99,6%).
+  const basePosFat = dedupFaturamentoPos(basePos);
+  const especFatEad = basePosFat
     .filter((r) => (r.distanciapresencial ?? '').trim().toUpperCase() === 'D')
-    .reduce((s, r) => s + parseDecimal(r.faturadobruto), 0);
-  const especFatPres = basePos
+    .reduce((s, r) => s + parseDecimal(r.faturadoliq), 0);
+  const especFatPres = basePosFat
     .filter((r) => (r.distanciapresencial ?? '').trim().toUpperCase() === 'P')
-    .reduce((s, r) => s + parseDecimal(r.faturadobruto), 0);
+    .reduce((s, r) => s + parseDecimal(r.faturadoliq), 0);
   const especFat = especFatEad + especFatPres;
 
   let especMetaFat = 0;
@@ -377,6 +382,37 @@ function computeBasePos(
 
     return true;
   });
+}
+
+/**
+ * Dedup por (aluno, curso) — SÓ para faturamento. Um aluno com 2 linhas de
+ * contrato para o mesmo curso tinha a receita somada 2x; mantém-se a linha
+ * de maior databaixa (desempate por maior codplanopgto, mesmo critério
+ * estável usado no growth-e-performance). A CONTAGEM de matrículas
+ * (mat/matEad/matPres/comTcc/semTcc) continua por linha, sem dedup — são
+ * perguntas diferentes ("quantos contratos" vs "quanto faturei"), mesma
+ * separação que o growth-e-performance já faz (§7.9: contagem de linhas
+ * para matrículas, dedup só para a soma de faturamento).
+ */
+function dedupFaturamentoPos(rows: RawMatriculaPosRow[]): RawMatriculaPosRow[] {
+  const porPar = new Map<string, RawMatriculaPosRow>();
+  for (const r of rows) {
+    const key = `${(r.aluno ?? '').trim()}|${(r.curso ?? '').trim()}`;
+    const atual = porPar.get(key);
+    if (!atual) {
+      porPar.set(key, r);
+      continue;
+    }
+    const baixa = toISODate(r.databaixa) ?? '';
+    const baixaAtual = toISODate(atual.databaixa) ?? '';
+    if (
+      baixa > baixaAtual ||
+      (baixa === baixaAtual && String(r.codplanopgto ?? '') > String(atual.codplanopgto ?? ''))
+    ) {
+      porPar.set(key, r);
+    }
+  }
+  return Array.from(porPar.values());
 }
 
 function buildInscLeadSet(ds: DashboardDataset): Set<string> {
@@ -1092,10 +1128,14 @@ export function computeEspecializacoesData(
     filterBasePosByAnoMes(computeBasePos(ds.matriculasPos, filters), filters),
     filters,
   );
+  // Faturamento LÍQUIDO deduplicado por aluno+curso — ver dedupFaturamentoPos
+  // e o comentário em computeGeralKpis. mat/matEad/matPres continuam por
+  // linha (basePos, sem dedup) — contagem de contrato é outra pergunta.
+  const basePosFat = dedupFaturamentoPos(basePos);
 
-  const fat = basePos.reduce((s, r) => s + parseDecimal(r.faturadobruto), 0);
-  const fatEad = basePos.filter(isEad).reduce((s, r) => s + parseDecimal(r.faturadobruto), 0);
-  const fatPres = basePos.filter(isPresencial).reduce((s, r) => s + parseDecimal(r.faturadobruto), 0);
+  const fat = basePosFat.reduce((s, r) => s + parseDecimal(r.faturadoliq), 0);
+  const fatEad = basePosFat.filter(isEad).reduce((s, r) => s + parseDecimal(r.faturadoliq), 0);
+  const fatPres = basePosFat.filter(isPresencial).reduce((s, r) => s + parseDecimal(r.faturadoliq), 0);
 
   const mat = basePos.length;
   const matEad = basePos.filter(isEad).length;
@@ -1139,7 +1179,18 @@ export function computeEspecializacoesData(
       if (!Number.isFinite(dia)) continue;
       const entry = byDia.get(dia) ?? { fat: 0, mat: 0, fatEad: 0, fatPres: 0 };
       entry.mat++;
-      const v = parseDecimal(r.faturadobruto);
+      byDia.set(dia, entry);
+    }
+    // Faturamento por dia: mesmo dedup por aluno+curso do total (basePosFat).
+    for (const r of basePosFat) {
+      const baixaIso = toISODate(r.databaixa);
+      if (!baixaIso) continue;
+      if (Number(baixaIso.slice(0, 4)) !== diarioFat.ano) continue;
+      if (Number(baixaIso.slice(5, 7)) !== diarioFat.mes) continue;
+      const dia = Number(baixaIso.slice(8, 10));
+      if (!Number.isFinite(dia)) continue;
+      const entry = byDia.get(dia) ?? { fat: 0, mat: 0, fatEad: 0, fatPres: 0 };
+      const v = parseDecimal(r.faturadoliq);
       entry.fat += v;
       if (isEad(r)) entry.fatEad += v;
       if (isPresencial(r)) entry.fatPres += v;
@@ -1166,7 +1217,17 @@ export function computeEspecializacoesData(
       const key = `${ano}-${mes}`;
       const entry = fatMensalMap.get(key) ?? { fat: 0, mat: 0, fatEad: 0, fatPres: 0, ano, mes };
       entry.mat++;
-      const v = parseDecimal(r.faturadobruto);
+      fatMensalMap.set(key, entry);
+    }
+    // Faturamento por mês: mesmo dedup por aluno+curso do total (basePosFat).
+    for (const r of basePosFat) {
+      const baixaIso = toISODate(r.databaixa);
+      if (!baixaIso) continue;
+      const ano = Number(baixaIso.slice(0, 4));
+      const mes = Number(baixaIso.slice(5, 7));
+      const key = `${ano}-${mes}`;
+      const entry = fatMensalMap.get(key) ?? { fat: 0, mat: 0, fatEad: 0, fatPres: 0, ano, mes };
+      const v = parseDecimal(r.faturadoliq);
       entry.fat += v;
       if (isEad(r)) entry.fatEad += v;
       if (isPresencial(r)) entry.fatPres += v;
@@ -1190,9 +1251,9 @@ export function computeEspecializacoesData(
   }
 
   const cursoFatMap = new Map<string, number>();
-  for (const r of basePos) {
+  for (const r of basePosFat) {
     const curso = (r.cursoreduzido ?? 'Nao informado').trim();
-    cursoFatMap.set(curso, (cursoFatMap.get(curso) ?? 0) + parseDecimal(r.faturadobruto));
+    cursoFatMap.set(curso, (cursoFatMap.get(curso) ?? 0) + parseDecimal(r.faturadoliq));
   }
   const top5CursosFat: ChartDatum[] = Array.from(cursoFatMap.entries())
     .map(([categoria, valor]) => ({ categoria, valor }))
@@ -1249,9 +1310,12 @@ export function computeModalidadePosData(
 
   const modalidadeFilter = modalidade === 'Pós EAD' ? isEad : isPresencial;
   const rows = basePos.filter(modalidadeFilter);
+  // Faturamento LÍQUIDO deduplicado por aluno+curso — ver dedupFaturamentoPos
+  // e o comentário em computeGeralKpis. `mat` continua por linha (rows).
+  const rowsFat = dedupFaturamentoPos(rows);
 
   const mat = rows.length;
-  const fat = rows.reduce((s, r) => s + parseDecimal(r.faturadobruto), 0);
+  const fat = rowsFat.reduce((s, r) => s + parseDecimal(r.faturadoliq), 0);
   const tktMedio = mat > 0 ? fat / mat : 0;
 
   // Desconto_Médio: 0,00% — fonte do percentual indisponível nos dados carregados.
@@ -1285,18 +1349,18 @@ export function computeModalidadePosData(
   const insc = inscRows.filter((r) => inscModalidadeFilter(r.processoseletivo)).length;
 
   const cursoFatMap = new Map<string, number>();
-  for (const r of rows) {
+  for (const r of rowsFat) {
     const curso = (r.cursoreduzido ?? 'Nao informado').trim();
-    cursoFatMap.set(curso, (cursoFatMap.get(curso) ?? 0) + parseDecimal(r.faturadobruto));
+    cursoFatMap.set(curso, (cursoFatMap.get(curso) ?? 0) + parseDecimal(r.faturadoliq));
   }
   const fatPorCurso: ChartDatum[] = Array.from(cursoFatMap.entries())
     .map(([categoria, valor]) => ({ categoria, valor }))
     .sort((a, b) => b.valor - a.valor);
 
   const descontoFatMap = new Map<string, number>();
-  for (const r of rows) {
+  for (const r of rowsFat) {
     const bolsa = (r.bolsas ?? 'Nao informado').trim();
-    descontoFatMap.set(bolsa, (descontoFatMap.get(bolsa) ?? 0) + parseDecimal(r.faturadobruto));
+    descontoFatMap.set(bolsa, (descontoFatMap.get(bolsa) ?? 0) + parseDecimal(r.faturadoliq));
   }
   const topDescontosFat: ChartDatum[] = Array.from(descontoFatMap.entries())
     .map(([categoria, valor]) => ({ categoria, valor }))
@@ -1304,9 +1368,9 @@ export function computeModalidadePosData(
     .slice(0, 10);
 
   const planoFatMap = new Map<string, number>();
-  for (const r of rows) {
+  for (const r of rowsFat) {
     const plano = String(r.codplanopgto ?? 'Nao informado').trim();
-    planoFatMap.set(plano, (planoFatMap.get(plano) ?? 0) + parseDecimal(r.faturadobruto));
+    planoFatMap.set(plano, (planoFatMap.get(plano) ?? 0) + parseDecimal(r.faturadoliq));
   }
   const top5PlanosPgto: ChartDatum[] = Array.from(planoFatMap.entries())
     .map(([categoria, valor]) => ({ categoria, valor }))
@@ -1314,10 +1378,10 @@ export function computeModalidadePosData(
     .slice(0, 5);
 
   const estadoFatMap = new Map<string, number>();
-  for (const r of rows) {
+  for (const r of rowsFat) {
     const uf = (r.estado ?? '').trim().toUpperCase();
     if (!uf || uf === '--' || uf.length !== 2) continue;
-    estadoFatMap.set(uf, (estadoFatMap.get(uf) ?? 0) + parseDecimal(r.faturadobruto));
+    estadoFatMap.set(uf, (estadoFatMap.get(uf) ?? 0) + parseDecimal(r.faturadoliq));
   }
   const fatPorEstado = Array.from(estadoFatMap.entries())
     .map(([uf, total]) => ({ uf, total }))

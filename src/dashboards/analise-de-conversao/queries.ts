@@ -134,7 +134,7 @@ async function loadMatriculasMestrado(): Promise<RawMatriculaMestradoRow[]> {
 
 async function loadMatriculasPos(): Promise<RawMatriculaPosRow[]> {
   const cols =
-    'ra,aluno,curso,cursoreduzido,codperlet,situacao,descontoaluno,modalidadepos,distanciapresencial,bolsas,bolsa3,databaixa,datadematricula,datacancelamentomatricula,faturadobruto,codplanopgto,tcc,estado,processoseletivo';
+    'ra,aluno,curso,cursoreduzido,codperlet,situacao,descontoaluno,modalidadepos,distanciapresencial,bolsas,bolsa3,databaixa,datadematricula,datacancelamentomatricula,faturadobruto,faturadoliq,codplanopgto,tcc,estado,processoseletivo';
   const rows = await loadAllFrom('stg_rm_matriculas_pos', cols);
   return rows as RawMatriculaPosRow[];
 }
