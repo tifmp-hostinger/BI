@@ -8,8 +8,11 @@ import { LockKeyhole } from 'lucide-react';
  * build-time, então a senha fica visível a quem inspecionar o bundle — não é
  * proteção contra alguém tecnicamente capaz, só impede acesso casual.
  */
-const AUTH_USER = (import.meta.env.VITE_AUTH_USER ?? '') as string;
-const AUTH_PASSWORD = (import.meta.env.VITE_AUTH_PASSWORD ?? '') as string;
+// .trim(): algumas plataformas de deploy guardam um espaço/quebra de linha
+// sobrando no valor da env var (comum ao colar), o que faria a comparação
+// falhar mesmo com o valor "certo" digitado.
+const AUTH_USER = ((import.meta.env.VITE_AUTH_USER ?? '') as string).trim();
+const AUTH_PASSWORD = ((import.meta.env.VITE_AUTH_PASSWORD ?? '') as string).trim();
 const AUTH_STORAGE_KEY = 'fmp-bi-auth';
 const AUTH_TTL_HORAS = 1;
 
