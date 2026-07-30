@@ -185,7 +185,14 @@ export function ModalidadePosTab({ loading, data }: Props) {
           {mapData.length === 0 ? (
             <EmptyState title="Sem dados de estado para os filtros selecionados" />
           ) : (
-            <BrazilStateMap data={mapData} selectedUf={selectedUf} onSelect={setSelectedUf} height={420} />
+            <BrazilStateMap
+              data={mapData}
+              selectedUf={selectedUf}
+              onSelect={setSelectedUf}
+              height={420}
+              metricFormat="currency"
+              metricLabel="em faturamento"
+            />
           )}
         </SectionCard>
         </RItem>

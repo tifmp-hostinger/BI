@@ -65,9 +65,13 @@ export function ReorderableGrid({
     ]);
   }, [storageKey, idsKey]);
 
-  const sorted = order
-    .map((id) => items.find((i) => i.rid === id))
-    .filter((i): i is ItemProps => !!i);
+  // Memoizado: dragId/overId mudam a cada evento de dragover (vários por
+  // segundo durante o arraste) sem afetar a ordem em si — sem isso, o
+  // O(n) .find() por item rodava de novo a cada evento à toa.
+  const sorted = useMemo(
+    () => order.map((id) => items.find((i) => i.rid === id)).filter((i): i is ItemProps => !!i),
+    [order, items],
+  );
 
   const drop = (targetId: string) => {
     setOverId(null);

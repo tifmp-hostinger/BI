@@ -137,10 +137,20 @@ export const META_LEAD_ACTIONS = new Set([
 ]);
 
 /**
- * Ajuste manual de faturamento (§6/§7.6 do levantamento): nome do aluno fica
- * FORA do repositório, em variável de ambiente. Nunca renderizar nem logar.
+ * Ajuste manual de faturamento (§6/§7.6 do levantamento), identificado por RA
+ * em vez de nome — encontrado em auto revisão (29/07/2026): a versão anterior
+ * usava VITE_GROWTH_AJUSTE_ALUNO com o NOME do aluno. Variável VITE_ é
+ * embutida no bundle JS público em tempo de build (mesmo problema já corrigido
+ * em EXCLUSOES_FATURAMENTO_POS_RA/EXCECAO_TROCA_PL_RA — "fora do Git" não
+ * significa "fora do navegador"). RA não identifica a pessoa a quem lê o
+ * código, então pode ficar na env var com segurança.
+ *
+ * ⚠️ Ação pendente: o operador do deploy precisa configurar
+ * VITE_GROWTH_AJUSTE_ALUNO_RA (o RA, não o nome) no EasyPanel — a variável
+ * antiga não é mais lida. Até lá, o ajuste fica ausente com o aviso abaixo,
+ * nunca aplicado por engano ao aluno errado.
  */
-export const AJUSTE_ALUNO = (import.meta.env.VITE_GROWTH_AJUSTE_ALUNO ?? '') as string;
+export const AJUSTE_ALUNO_RA = (import.meta.env.VITE_GROWTH_AJUSTE_ALUNO_RA ?? '') as string;
 export const AJUSTE_DATA = (import.meta.env.VITE_GROWTH_AJUSTE_DATA ?? '2026-05-28') as string;
 
 let avisoAjusteEmitido = false;
@@ -151,9 +161,9 @@ let avisoAjusteEmitido = false;
  * vez na inicialização. Nunca loga o valor da variável.
  */
 export function avisaAjusteManualAusente(): void {
-  if (avisoAjusteEmitido || AJUSTE_ALUNO) return;
+  if (avisoAjusteEmitido || AJUSTE_ALUNO_RA) return;
   avisoAjusteEmitido = true;
   console.warn(
-    '[growth] VITE_GROWTH_AJUSTE_ALUNO não configurada — ajuste manual de faturamento do Pós não será aplicado',
+    '[growth] VITE_GROWTH_AJUSTE_ALUNO_RA não configurada — ajuste manual de faturamento do Pós não será aplicado',
   );
 }

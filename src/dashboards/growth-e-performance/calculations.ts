@@ -4,7 +4,7 @@ import {
   EXCLUSOES_FATURAMENTO_POS_RA,
 } from '../analise-de-conversao/calculations';
 import {
-  AJUSTE_ALUNO,
+  AJUSTE_ALUNO_RA,
   AJUSTE_DATA,
   CAMPANHAS_META_EXCLUIDAS,
   META_LEAD_ACTIONS,
@@ -734,13 +734,14 @@ function faturamentoPos(
   }
 
   // HERANÇA §7.6: ajuste manual amarrado a 28/05/2026 — soma um valor extra
-  // sempre que o período selecionado contém essa data. Nome do aluno vem de
-  // variável de ambiente (§6); cruzamento só em memória, nunca renderizar.
+  // sempre que o período selecionado contém essa data. RA do aluno vem de
+  // variável de ambiente (§6, identificado por RA, nunca nome — ver
+  // constants.ts); cruzamento só em memória, nunca renderizar.
   // TODO: confirmar se o ajuste manual respeita os filtros de página da aba
   // (aqui varre a tabela completa, como a medida original).
-  if (!w.origemInscricao && AJUSTE_ALUNO && inRange(AJUSTE_DATA, w.ini, w.fim)) {
+  if (!w.origemInscricao && AJUSTE_ALUNO_RA && inRange(AJUSTE_DATA, w.ini, w.fim)) {
     for (const r of ds.matPos) {
-      if ((r.aluno ?? '').trim() !== AJUSTE_ALUNO) continue;
+      if ((r.ra ?? '').trim() !== AJUSTE_ALUNO_RA) continue;
       if (toISODate(r.databaixa) !== AJUSTE_DATA) continue;
       total += num(r.faturadoliq);
     }
