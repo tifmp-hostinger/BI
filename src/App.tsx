@@ -4,6 +4,7 @@ import { HomePage } from '@/pages/HomePage';
 import { AppShell } from '@/components/layout/AppShell';
 import { ModulePlaceholder } from '@/components/ui/ModulePlaceholder';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
+import { AuthGate } from '@/components/auth/AuthGate';
 
 // Code-split por rota: cada dashboard (com recharts/leaflet pesados) vira um
 // chunk próprio, carregado só quando o usuário navega até ele.
@@ -59,22 +60,24 @@ function DashboardRouter() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route
-          path="/dashboards/:slug"
-          element={
-            <ErrorBoundary title="Nao foi possivel exibir este dashboard">
-              <Suspense fallback={<RouteFallback />}>
-                <DashboardRouter />
-              </Suspense>
-            </ErrorBoundary>
-          }
-        />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+    <AuthGate>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route
+            path="/dashboards/:slug"
+            element={
+              <ErrorBoundary title="Nao foi possivel exibir este dashboard">
+                <Suspense fallback={<RouteFallback />}>
+                  <DashboardRouter />
+                </Suspense>
+              </ErrorBoundary>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthGate>
   );
 }
 
