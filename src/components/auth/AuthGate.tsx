@@ -1,18 +1,26 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { LockKeyhole } from 'lucide-react';
+import { leConfig } from '@/lib/runtimeConfig';
 
 /**
- * Login/senha fixos por env var (VITE_AUTH_USER/VITE_AUTH_PASSWORD) — barreira
- * de acesso provisória enquanto não há autenticação por usuário (ex.: Supabase
- * Auth). ATENÇÃO: variável VITE_ é embutida no bundle JS público em
- * build-time, então a senha fica visível a quem inspecionar o bundle — não é
- * proteção contra alguém tecnicamente capaz, só impede acesso casual.
+ * Login/senha fixos, barreira de acesso provisória enquanto não há autenticação
+ * por usuário (ex.: Supabase Auth).
+ *
+ * ATENÇÃO: a credencial fica no lado do cliente — embutida no bundle (build) ou
+ * servida em /config.js (runtime). Quem inspecionar o site consegue lê-la. Isso
+ * impede acesso casual, não é proteção contra alguém tecnicamente capaz.
+ *
+ * A configuração aceita as duas origens (runtime tem precedência) porque num
+ * SPA estático a env var de build só existe se a plataforma passar build arg;
+ * ver src/lib/runtimeConfig.ts.
  */
-// .trim(): algumas plataformas de deploy guardam um espaço/quebra de linha
-// sobrando no valor da env var (comum ao colar), o que faria a comparação
-// falhar mesmo com o valor "certo" digitado.
-const AUTH_USER = ((import.meta.env.VITE_AUTH_USER ?? '') as string).trim();
-const AUTH_PASSWORD = ((import.meta.env.VITE_AUTH_PASSWORD ?? '') as string).trim();
+const cfgUser = leConfig('VITE_AUTH_USER', import.meta.env.VITE_AUTH_USER);
+const cfgPassword = leConfig('VITE_AUTH_PASSWORD', import.meta.env.VITE_AUTH_PASSWORD);
+
+const AUTH_USER = cfgUser.valor;
+const AUTH_PASSWORD = cfgPassword.valor;
+const AUTH_CONFIGURADO = Boolean(AUTH_USER && AUTH_PASSWORD);
+
 const AUTH_STORAGE_KEY = 'fmp-bi-auth';
 const AUTH_TTL_HORAS = 1;
 
@@ -30,7 +38,10 @@ function lerAuthArmazenada(): boolean {
 }
 
 function salvarAuth(): void {
-  const registro: AuthArmazenada = { ok: true, expiraEm: Date.now() + AUTH_TTL_HORAS * 60 * 60 * 1000 };
+  const registro: AuthArmazenada = {
+    ok: true,
+    expiraEm: Date.now() + AUTH_TTL_HORAS * 60 * 60 * 1000,
+  };
   try {
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(registro));
   } catch {
@@ -38,28 +49,61 @@ function salvarAuth(): void {
   }
 }
 
+/**
+ * Diagnóstico no console para quando o login rejeita uma credencial que o
+ * operador jura estar certa. Mostra ORIGEM e TAMANHO, nunca o valor — o
+ * suficiente para distinguir "variável não chegou" de "chegou diferente"
+ * (espaço sobrando, aspas, valor trocado) sem imprimir a senha no console.
+ */
+function logDiagnostico(digitado?: { usuario: string; senha: string }): void {
+  const linhas = [
+    `[auth] usuário  → origem: ${cfgUser.origem}, caracteres: ${AUTH_USER.length}`,
+    `[auth] senha    → origem: ${cfgPassword.origem}, caracteres: ${AUTH_PASSWORD.length}`,
+  ];
+  if (digitado) {
+    linhas.push(
+      `[auth] digitado → usuário: ${digitado.usuario.length} caractere(s), senha: ${digitado.senha.length} caractere(s)`,
+      `[auth] confere  → usuário: ${digitado.usuario === AUTH_USER}, senha: ${digitado.senha === AUTH_PASSWORD}`,
+    );
+  }
+  console.info(linhas.join('\n'));
+}
+
 export function AuthGate({ children }: { children: ReactNode }) {
   const [autenticado, setAutenticado] = useState(lerAuthArmazenada);
-  const [usuario, setUsuario] = useState('');
-  const [senha, setSenha] = useState('');
   const [erro, setErro] = useState(false);
 
-  if (!AUTH_USER || !AUTH_PASSWORD) {
-    console.warn('[auth] VITE_AUTH_USER/VITE_AUTH_PASSWORD não configuradas — acesso liberado sem autenticação');
-    return <>{children}</>;
-  }
+  useEffect(() => {
+    if (!AUTH_CONFIGURADO) {
+      console.warn(
+        '[auth] VITE_AUTH_USER/VITE_AUTH_PASSWORD não configuradas — acesso liberado sem autenticação',
+      );
+    }
+    if (!AUTH_CONFIGURADO || autenticado) return;
+    logDiagnostico();
+  }, [autenticado]);
 
+  if (!AUTH_CONFIGURADO) return <>{children}</>;
   if (autenticado) return <>{children}</>;
 
-  function handleSubmit(e: FormEvent) {
+  function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    // Lê direto do formulário em vez do estado do React: gerenciador de senha e
+    // autopreenchimento do navegador escrevem no campo sem disparar onChange em
+    // alguns casos, e aí o estado ficaria vazio enquanto a tela mostra o campo
+    // preenchido — rejeitando uma credencial visivelmente correta.
+    const form = new FormData(e.currentTarget);
+    const usuario = String(form.get('usuario') ?? '').trim();
+    const senha = String(form.get('senha') ?? '');
+
     if (usuario === AUTH_USER && senha === AUTH_PASSWORD) {
       salvarAuth();
       setAutenticado(true);
       setErro(false);
-    } else {
-      setErro(true);
+      return;
     }
+    setErro(true);
+    logDiagnostico({ usuario, senha });
   }
 
   return (
@@ -81,12 +125,9 @@ export function AuthGate({ children }: { children: ReactNode }) {
         </label>
         <input
           id="auth-usuario"
+          name="usuario"
           className="mb-4 w-full rounded-sm border border-line px-3 py-2 text-sm text-ink outline-none focus:border-fmp"
-          value={usuario}
-          onChange={(e) => {
-            setUsuario(e.target.value);
-            setErro(false);
-          }}
+          onChange={() => setErro(false)}
           autoFocus
           autoComplete="username"
         />
@@ -96,17 +137,19 @@ export function AuthGate({ children }: { children: ReactNode }) {
         </label>
         <input
           id="auth-senha"
+          name="senha"
           type="password"
           className="mb-4 w-full rounded-sm border border-line px-3 py-2 text-sm text-ink outline-none focus:border-fmp"
-          value={senha}
-          onChange={(e) => {
-            setSenha(e.target.value);
-            setErro(false);
-          }}
+          onChange={() => setErro(false)}
           autoComplete="current-password"
         />
 
-        {erro && <p className="mb-4 text-xs text-danger">Usuário ou senha incorretos.</p>}
+        {erro && (
+          <p className="mb-4 text-xs text-danger">
+            Usuário ou senha incorretos. Se acabou de configurar as credenciais, abra o console do
+            navegador (F12) — há um diagnóstico lá.
+          </p>
+        )}
 
         <button
           type="submit"

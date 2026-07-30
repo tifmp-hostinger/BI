@@ -31,16 +31,18 @@ FROM nginx:alpine
 # EasyPanel/CI sem depender de dist/ pre-existente.
 COPY --from=build /app/dist/ /usr/share/nginx/html/
 
-# SPA fallback: any unknown route returns index.html
-RUN printf 'server {\n\
-  listen 80;\n\
-  server_name _;\n\
-  root /usr/share/nginx/html;\n\
-  index index.html;\n\
-  location / {\n\
-    try_files $uri $uri/ /index.html;\n\
-  }\n\
-}\n' > /etc/nginx/conf.d/default.conf
+# SPA fallback + politica de cache (index.html e config.js nunca cacheados).
+COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+
+# Gera /config.js a partir das env vars do container a cada boot. O entrypoint
+# oficial do nginx executa tudo que esta em /docker-entrypoint.d/*.sh antes de
+# subir o servidor -- por isso NAO ha ENTRYPOINT/CMD customizado aqui.
+#
+# Consequencia pratica: as credenciais funcionam mesmo que a plataforma de
+# deploy passe as variaveis apenas como env de RUNTIME (sem build arg), e trocar
+# a senha passa a exigir so um restart do container, nao um rebuild.
+COPY docker/40-app-config.sh /docker-entrypoint.d/40-app-config.sh
+RUN chmod +x /docker-entrypoint.d/40-app-config.sh
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
