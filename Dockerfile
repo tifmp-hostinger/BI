@@ -4,11 +4,20 @@ WORKDIR /app
 
 # Envs do Vite sao injetadas em BUILD-TIME: precisam existir como ARG/ENV
 # neste stage, senao o `npm run build` nao as enxerga (EasyPanel passa como
-# build args).
+# build args). Toda VITE_* nova usada pelo app precisa ganhar uma linha aqui
+# tambem, senao o valor configurado no EasyPanel e descartado em silencio.
 ARG VITE_SUPABASE_URL
 ARG VITE_SUPABASE_ANON_KEY
+ARG VITE_AUTH_USER
+ARG VITE_AUTH_PASSWORD
+ARG VITE_GROWTH_AJUSTE_ALUNO_RA
+ARG VITE_GROWTH_AJUSTE_DATA
 ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
 ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
+ENV VITE_AUTH_USER=$VITE_AUTH_USER
+ENV VITE_AUTH_PASSWORD=$VITE_AUTH_PASSWORD
+ENV VITE_GROWTH_AJUSTE_ALUNO_RA=$VITE_GROWTH_AJUSTE_ALUNO_RA
+ENV VITE_GROWTH_AJUSTE_DATA=$VITE_GROWTH_AJUSTE_DATA
 
 COPY package.json package-lock.json ./
 RUN npm ci
