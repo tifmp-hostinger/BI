@@ -72,7 +72,7 @@ export function HomePage() {
               </h1>
               <p className="mt-3 max-w-xl text-sm leading-relaxed text-cream/70 sm:text-base">
                 Visao consolidada de indicadores academicos, financeiros,
-                comerciais e geograficos, com dados atualizados em tempo real e
+                comerciais e geograficos, alimentada por carga agendada e
                 pronta para novos modulos.
               </p>
 
@@ -108,10 +108,10 @@ export function HomePage() {
                   className="mt-1 text-lg text-cream"
                   style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic', fontWeight: 600 }}
                 >
-                  Tempo real
+                  Carga agendada
                 </p>
                 <p className="mt-1 text-2xs text-cream/50">
-                  Ultima sincronia agora ha pouco
+                  Cada painel mostra ate quando ha dados
                 </p>
               </div>
             </div>

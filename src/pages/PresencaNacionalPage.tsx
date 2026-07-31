@@ -182,9 +182,9 @@ export function PresencaNacionalPage() {
                 Onde a FMP esta presente
               </h1>
               <p className="mt-2 max-w-xl text-sm leading-relaxed text-cream/70">
-                Mapa vivo das matriculas de Pos-graduacao e Cursos Livres pelo
-                Brasil. Clique em um estado para revelar cursos, cidades,
-                situacoes e faturamento em tempo real.
+                Mapa das matriculas de Pos-graduacao e Cursos Livres pelo
+                Brasil. Clique em um estado para ver cursos, cidades,
+                situacoes e faturamento.
               </p>
             </div>
 
