@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { AlertTriangle, Clock, HelpCircle } from 'lucide-react';
 import {
   diasAtras,
+  faltamRitmos,
   fetchFreshness,
   formataDataCurta,
   formataDataHora,
@@ -136,7 +137,13 @@ export function DataFreshness({
     .sort()
     .join('|');
 
+  const aguardandoDataset = faltamRitmos(tabelas, ritmos);
+
   useEffect(() => {
+    // Só calcula com o quadro completo: calcular antes mostraria um rótulo
+    // baseado apenas nas tabelas com carimbo de carga, que depois mudaria
+    // sozinho quando o dataset chegasse.
+    if (aguardandoDataset) return;
     let vivo = true;
     fetchFreshness(chave.split('|'), ritmos)
       .then((r) => vivo && setResumo(r))
@@ -149,9 +156,9 @@ export function DataFreshness({
       vivo = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chave, chaveRitmos]);
+  }, [chave, chaveRitmos, aguardandoDataset]);
 
-  if (!resumo) {
+  if (aguardandoDataset || !resumo) {
     return (
       <span className="inline-flex items-center gap-1 text-2xs text-ink-3">
         <Clock className="h-3 w-3 animate-pulse" />

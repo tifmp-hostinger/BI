@@ -190,6 +190,19 @@ export const FONTES_POR_DASHBOARD: Record<string, string[]> = {
   ],
 };
 
+/**
+ * True enquanto algum dataset esperado ainda não chegou. Sem isso o rótulo
+ * é calculado só com as tabelas que têm carimbo de carga (elas resolvem numa
+ * consulta rápida), aparece um valor e, quando o dashboard termina de baixar
+ * os dados, o rótulo TROCA na frente do usuário — parecendo erro.
+ */
+export function faltamRitmos(
+  tabelas: string[],
+  ritmos: Record<string, RitmoFonte>,
+): boolean {
+  return tabelas.some((t) => REGISTRO_FONTES[t]?.colunaConteudo && !ritmos[t]);
+}
+
 export type TipoSinal = 'carga' | 'proxy' | 'sem-sinal';
 
 /**
@@ -231,7 +244,14 @@ export type Freshness = {
 export type StatusFrescor = 'ok' | 'atencao' | 'atrasado' | 'desconhecido' | 'erro';
 
 export type FreshnessResumo = {
-  /** A fonte de FATO mais atrasada — nunca uma tabela de domínio. */
+  /**
+   * Fonte que dá o rótulo principal. Prioriza carimbo REAL de carga: ele
+   * responde "a esteira rodou?", que é a pergunta do indicador. A data de
+   * conteúdo responde outra coisa ("houve movimento de negócio?") e, sozinha,
+   * faz um painel saudável parecer parado — é o alerta de ritmo, não o
+   * rótulo, que trata disso. Sem nenhuma fonte com carimbo, cai para a data
+   * de conteúdo mais antiga.
+   */
   maisAntiga: Freshness | null;
   /** Todas as tabelas de fato (carga + proxy + sem-sinal), para o detalhamento. */
   fontesFato: Freshness[];
@@ -455,7 +475,11 @@ export async function fetchFreshness(
   // O rótulo principal olha só para fato, e nunca para uma fonte sazonal —
   // ela fica só no detalhamento (ver DataFreshness.tsx).
   const candidatas = fontesFato.filter((f) => f.data !== null && !f.sazonal);
-  const maisAntiga = candidatas.sort((a, b) => a.data!.getTime() - b.data!.getTime())[0] ?? null;
+  const ordenadasPorData = [...candidatas].sort((a, b) => a.data!.getTime() - b.data!.getTime());
+  // Entre as que têm carimbo real, a mais atrasada; só sem nenhuma delas
+  // recorre ao proxy de conteúdo.
+  const maisAntiga =
+    ordenadasPorData.find((f) => f.tipoSinal === 'carga') ?? ordenadasPorData[0] ?? null;
 
   // Fontes efetivamente fora do próprio ritmo — é isto, e não a data absoluta,
   // que caracteriza suspeita de carga parada.
