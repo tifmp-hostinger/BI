@@ -81,9 +81,7 @@ export function Sidebar({ items, open, onClose, colapsado = false, onToggleColap
         {/* Brand */}
         <div className="flex items-center justify-between px-5 py-5">
           <NavLink to="/" onClick={onClose} className="flex items-center gap-3 no-underline">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-fmp">
-              <FmpSimbolo className="h-5 w-5 text-white" titulo="FMP" />
-            </div>
+            <FmpSimbolo className="h-9 w-9 shrink-0" titulo="FMP" />
             {!colapsado && (
               <div>
                 <p

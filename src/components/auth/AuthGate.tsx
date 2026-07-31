@@ -51,7 +51,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen items-center justify-center bg-paper px-4 py-10">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex justify-center">
-          <FmpMarca className="text-4xl" />
+          <FmpMarca className="h-12" />
         </div>
 
         <form

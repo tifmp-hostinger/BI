@@ -117,6 +117,11 @@ body { background: var(--bg); color: var(--fg1); font-family: var(--font-sans); 
 .fmp-nav { background: var(--fmp-dark-2); color: var(--fmp-on-dark); }
 .fmp-nav-item.active { color: var(--fmp-on-dark); border-left: 3px solid var(--fmp-red); }
 
-/* Links */
-a { color: var(--fmp-black); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--fmp-red); }
-a:hover { color: var(--fmp-red); }
+/* Links de CONTEUDO. Links de navegacao (menu, cards, botoes) marcam-se com a
+   classe .no-underline e ficam de fora: eles definem a propria cor por
+   utilitario do Tailwind, e estas regras -- por estarem fora de @layer --
+   venceriam esse utilitario. Era o que apagava o texto do item ATIVO do menu ao
+   passar o mouse: `a:hover` pintava de vermelho sobre o fundo vermelho do
+   proprio item, sumindo com rotulo e icone. */
+a:not(.no-underline) { color: var(--fmp-black); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--fmp-red); }
+a:not(.no-underline):hover { color: var(--fmp-red); }

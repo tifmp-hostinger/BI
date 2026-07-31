@@ -99,14 +99,14 @@
   }
   .fmp-btn-secondary:hover { border-color: var(--fmp-red); color: var(--fmp-red); }
 
-  /* ---- Links ---- */
-  a {
+  /* ---- Links de conteudo (ver nota em fmp-tokens.css) ---- */
+  a:not(.no-underline) {
     color: var(--fmp-black);
     text-decoration: underline;
     text-underline-offset: 3px;
     text-decoration-color: var(--fmp-red);
   }
-  a:hover { color: var(--fmp-red); }
+  a:not(.no-underline):hover { color: var(--fmp-red); }
 
   /* ---- Dark nav surface ---- */
   .fmp-nav {
