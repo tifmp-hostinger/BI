@@ -1,163 +1,115 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
-import { LockKeyhole } from 'lucide-react';
-import { leConfig } from '@/lib/runtimeConfig';
+import { useState, type FormEvent, type ReactNode } from 'react';
+import { LogIn } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { FmpMarca } from '@/components/brand/FmpLogo';
 
 /**
- * Login/senha fixos, barreira de acesso provisória enquanto não há autenticação
- * por usuário (ex.: Supabase Auth).
- *
- * ATENÇÃO: a credencial fica no lado do cliente — embutida no bundle (build) ou
- * servida em /config.js (runtime). Quem inspecionar o site consegue lê-la. Isso
- * impede acesso casual, não é proteção contra alguém tecnicamente capaz.
- *
- * A configuração aceita as duas origens (runtime tem precedência) porque num
- * SPA estático a env var de build só existe se a plataforma passar build arg;
- * ver src/lib/runtimeConfig.ts.
+ * Porta de entrada da plataforma: sem sessão válida, nada além desta tela é
+ * montado. A checagem real de acesso está nas políticas de RLS do banco — esta
+ * tela é a interface daquela regra, não a regra em si.
  */
-const cfgUser = leConfig('VITE_AUTH_USER', import.meta.env.VITE_AUTH_USER);
-const cfgPassword = leConfig('VITE_AUTH_PASSWORD', import.meta.env.VITE_AUTH_PASSWORD);
+export function AuthGate({ children }: { children: ReactNode }) {
+  const { perfil, carregando, entrarComo } = useAuth();
+  const [erro, setErro] = useState<string | null>(null);
+  const [enviando, setEnviando] = useState(false);
 
-const AUTH_USER = cfgUser.valor;
-const AUTH_PASSWORD = cfgPassword.valor;
-const AUTH_CONFIGURADO = Boolean(AUTH_USER && AUTH_PASSWORD);
-
-const AUTH_STORAGE_KEY = 'fmp-bi-auth';
-const AUTH_TTL_HORAS = 1;
-
-type AuthArmazenada = { ok: true; expiraEm: number };
-
-function lerAuthArmazenada(): boolean {
-  try {
-    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (!raw) return false;
-    const parsed = JSON.parse(raw) as AuthArmazenada;
-    return parsed.ok === true && parsed.expiraEm > Date.now();
-  } catch {
-    return false;
-  }
-}
-
-function salvarAuth(): void {
-  const registro: AuthArmazenada = {
-    ok: true,
-    expiraEm: Date.now() + AUTH_TTL_HORAS * 60 * 60 * 1000,
-  };
-  try {
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(registro));
-  } catch {
-    // localStorage indisponível (modo privado) — login vale só para esta aba.
-  }
-}
-
-/**
- * Diagnóstico no console para quando o login rejeita uma credencial que o
- * operador jura estar certa. Mostra ORIGEM e TAMANHO, nunca o valor — o
- * suficiente para distinguir "variável não chegou" de "chegou diferente"
- * (espaço sobrando, aspas, valor trocado) sem imprimir a senha no console.
- */
-function logDiagnostico(digitado?: { usuario: string; senha: string }): void {
-  const linhas = [
-    `[auth] usuário  → origem: ${cfgUser.origem}, caracteres: ${AUTH_USER.length}`,
-    `[auth] senha    → origem: ${cfgPassword.origem}, caracteres: ${AUTH_PASSWORD.length}`,
-  ];
-  if (digitado) {
-    linhas.push(
-      `[auth] digitado → usuário: ${digitado.usuario.length} caractere(s), senha: ${digitado.senha.length} caractere(s)`,
-      `[auth] confere  → usuário: ${digitado.usuario === AUTH_USER}, senha: ${digitado.senha === AUTH_PASSWORD}`,
+  if (carregando) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-paper">
+        <p className="text-xs font-medium uppercase tracking-widest text-ink-3">Carregando…</p>
+      </div>
     );
   }
-  console.info(linhas.join('\n'));
-}
 
-export function AuthGate({ children }: { children: ReactNode }) {
-  const [autenticado, setAutenticado] = useState(lerAuthArmazenada);
-  const [erro, setErro] = useState(false);
+  if (perfil) return <>{children}</>;
 
-  useEffect(() => {
-    if (!AUTH_CONFIGURADO) {
-      console.warn(
-        '[auth] VITE_AUTH_USER/VITE_AUTH_PASSWORD não configuradas — acesso liberado sem autenticação',
-      );
-    }
-    if (!AUTH_CONFIGURADO || autenticado) return;
-    logDiagnostico();
-  }, [autenticado]);
-
-  if (!AUTH_CONFIGURADO) return <>{children}</>;
-  if (autenticado) return <>{children}</>;
-
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    // Lê direto do formulário em vez do estado do React: gerenciador de senha e
-    // autopreenchimento do navegador escrevem no campo sem disparar onChange em
-    // alguns casos, e aí o estado ficaria vazio enquanto a tela mostra o campo
-    // preenchido — rejeitando uma credencial visivelmente correta.
+    // Lê do formulário, não do estado: gerenciadores de senha preenchem o campo
+    // sem disparar onChange em alguns navegadores.
     const form = new FormData(e.currentTarget);
-    const usuario = String(form.get('usuario') ?? '').trim();
+    const codusuario = String(form.get('codusuario') ?? '').trim();
     const senha = String(form.get('senha') ?? '');
 
-    if (usuario === AUTH_USER && senha === AUTH_PASSWORD) {
-      salvarAuth();
-      setAutenticado(true);
-      setErro(false);
+    if (!codusuario || !senha) {
+      setErro('Informe usuário e senha.');
       return;
     }
-    setErro(true);
-    logDiagnostico({ usuario, senha });
+
+    setEnviando(true);
+    setErro(null);
+    try {
+      await entrarComo(codusuario, senha);
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : 'Não foi possível entrar.');
+    } finally {
+      setEnviando(false);
+    }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-paper px-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm rounded-md border border-line bg-white p-8 shadow-card"
-      >
-        <div className="mb-6 flex flex-col items-center text-center">
-          <span className="mb-3 flex h-11 w-11 items-center justify-center rounded-pill bg-fmp-muted text-fmp">
-            <LockKeyhole className="h-5 w-5" />
-          </span>
-          <h1 className="text-lg font-semibold text-ink">Dashboards FMP</h1>
-          <p className="mt-1 text-xs text-ink-3">Acesso restrito — informe usuário e senha.</p>
+    <div className="flex min-h-screen items-center justify-center bg-paper px-4 py-10">
+      <div className="w-full max-w-sm">
+        <div className="mb-8 flex justify-center">
+          <FmpMarca className="text-4xl" />
         </div>
 
-        <label htmlFor="auth-usuario" className="mb-1 block text-xs font-medium text-ink-2">
-          Usuário
-        </label>
-        <input
-          id="auth-usuario"
-          name="usuario"
-          className="mb-4 w-full rounded-sm border border-line px-3 py-2 text-sm text-ink outline-none focus:border-fmp"
-          onChange={() => setErro(false)}
-          autoFocus
-          autoComplete="username"
-        />
-
-        <label htmlFor="auth-senha" className="mb-1 block text-xs font-medium text-ink-2">
-          Senha
-        </label>
-        <input
-          id="auth-senha"
-          name="senha"
-          type="password"
-          className="mb-4 w-full rounded-sm border border-line px-3 py-2 text-sm text-ink outline-none focus:border-fmp"
-          onChange={() => setErro(false)}
-          autoComplete="current-password"
-        />
-
-        {erro && (
-          <p className="mb-4 text-xs text-danger">
-            Usuário ou senha incorretos. Se acabou de configurar as credenciais, abra o console do
-            navegador (F12) — há um diagnóstico lá.
-          </p>
-        )}
-
-        <button
-          type="submit"
-          className="w-full rounded-pill bg-fmp py-2 text-sm font-medium text-white transition-all hover:bg-fmp-dark"
+        <form
+          onSubmit={handleSubmit}
+          className="rounded-md border border-line bg-white p-8 shadow-card"
         >
-          Entrar
-        </button>
-      </form>
+          <h1 className="text-base font-semibold text-ink">Central de Dashboards</h1>
+          <p className="mt-1 text-xs text-ink-3">
+            Acesso restrito. Entre com seu usuário institucional.
+          </p>
+
+          <label htmlFor="codusuario" className="mb-1 mt-6 block text-xs font-medium text-ink-2">
+            Usuário
+          </label>
+          <input
+            id="codusuario"
+            name="codusuario"
+            placeholder="nome.sobrenome"
+            className="w-full rounded-sm border border-line px-3 py-2 text-sm text-ink outline-none transition focus:border-fmp"
+            onChange={() => setErro(null)}
+            autoFocus
+            autoComplete="username"
+            autoCapitalize="none"
+            spellCheck={false}
+          />
+
+          <label htmlFor="senha" className="mb-1 mt-4 block text-xs font-medium text-ink-2">
+            Senha
+          </label>
+          <input
+            id="senha"
+            name="senha"
+            type="password"
+            className="w-full rounded-sm border border-line px-3 py-2 text-sm text-ink outline-none transition focus:border-fmp"
+            onChange={() => setErro(null)}
+            autoComplete="current-password"
+          />
+
+          {erro && (
+            <p role="alert" className="mt-4 rounded-sm bg-fmp-muted px-3 py-2 text-xs text-fmp">
+              {erro}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={enviando}
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-pill bg-fmp py-2.5 text-sm font-medium text-white transition-all hover:bg-fmp-dark disabled:opacity-60"
+          >
+            <LogIn className="h-4 w-4" />
+            {enviando ? 'Entrando…' : 'Entrar'}
+          </button>
+
+          <p className="mt-5 text-center text-2xs text-ink-3">
+            Esqueceu a senha? Procure o administrador da plataforma.
+          </p>
+        </form>
+      </div>
     </div>
   );
 }

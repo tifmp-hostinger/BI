@@ -17,6 +17,16 @@ import {
   Users,
   X,
 } from 'lucide-react';
+import { FmpSimbolo } from '@/components/brand/FmpLogo';
+import { useAuth } from '@/contexts/AuthContext';
+
+/** Iniciais para o avatar: primeiro e último nome ("Rosangela Berg" → RB). */
+function iniciais(nome: string): string {
+  const partes = nome.trim().split(/\s+/).filter(Boolean);
+  if (partes.length === 0) return '?';
+  if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();
+  return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
+}
 
 const ICONS: Record<string, LucideIcon> = {
   LayoutDashboard,
@@ -51,6 +61,8 @@ type Props = {
 };
 
 export function Sidebar({ items, open, onClose, colapsado = false, onToggleColapso }: Props) {
+  const { perfil } = useAuth();
+
   return (
     <>
       {open && (
@@ -70,7 +82,7 @@ export function Sidebar({ items, open, onClose, colapsado = false, onToggleColap
         <div className="flex items-center justify-between px-5 py-5">
           <NavLink to="/" onClick={onClose} className="flex items-center gap-3 no-underline">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-fmp">
-              <LayoutDashboard className="h-5 w-5 text-white" strokeWidth={2.4} />
+              <FmpSimbolo className="h-5 w-5 text-white" titulo="FMP" />
             </div>
             {!colapsado && (
               <div>
@@ -205,15 +217,29 @@ export function Sidebar({ items, open, onClose, colapsado = false, onToggleColap
               Administracao
             </p>
           )}
-          <div className="flex cursor-not-allowed items-center gap-3 rounded-xl px-3 py-2.5 text-cream/30">
-            <Shield className="h-4 w-4 flex-shrink-0" strokeWidth={2.3} />
-            {!colapsado && (
-              <div className="min-w-0">
-                <p className="text-sm font-medium">Governanca</p>
-                <p className="text-2xs text-cream/40">Permissoes e auditoria</p>
-              </div>
-            )}
-          </div>
+          {/* Gestão de usuários: item real, só para quem tem papel admin. */}
+          {perfil?.papel === 'admin' && (
+            <NavLink
+              to="/usuarios"
+              onClick={onClose}
+              title={colapsado ? 'Usuarios — Acessos da plataforma' : undefined}
+              className={({ isActive }) =>
+                `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all no-underline ${
+                  isActive
+                    ? 'bg-fmp text-white'
+                    : 'text-cream/70 hover:bg-white/10 hover:text-cream'
+                }`
+              }
+            >
+              <Shield className="h-4 w-4 flex-shrink-0" strokeWidth={2.3} />
+              {!colapsado && (
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">Usuarios</p>
+                  <p className="truncate text-2xs text-cream/40">Acessos da plataforma</p>
+                </div>
+              )}
+            </NavLink>
+          )}
           <div className="flex cursor-not-allowed items-center gap-3 rounded-xl px-3 py-2.5 text-cream/30">
             <Settings className="h-4 w-4 flex-shrink-0" strokeWidth={2.3} />
             {!colapsado && (
@@ -227,19 +253,26 @@ export function Sidebar({ items, open, onClose, colapsado = false, onToggleColap
 
         {/* User badge */}
         <div className="border-t border-white/10 px-4 py-4">
-          <div className="flex items-center gap-3 rounded-xl bg-white/5 p-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-fmp text-sm font-semibold text-white">
-              FM
+          <NavLink
+            to="/minha-conta"
+            onClick={onClose}
+            title={perfil?.nome_completo ?? undefined}
+            className="flex items-center gap-3 rounded-xl bg-white/5 p-3 no-underline transition hover:bg-white/10"
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-fmp text-sm font-semibold text-white">
+              {iniciais(perfil?.nome_completo ?? '')}
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-cream">
-                Equipe FMP
-              </p>
-              <p className="truncate text-2xs text-cream/40">
-                analytics@fmp.edu.br
-              </p>
-            </div>
-          </div>
+            {!colapsado && (
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-cream">
+                  {perfil?.nome_completo ?? '—'}
+                </p>
+                <p className="truncate text-2xs text-cream/40">
+                  {perfil?.cargo ?? perfil?.codusuario ?? ''}
+                </p>
+              </div>
+            )}
+          </NavLink>
         </div>
       </aside>
     </>

@@ -5,6 +5,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import { ModulePlaceholder } from '@/components/ui/ModulePlaceholder';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { AuthGate } from '@/components/auth/AuthGate';
+import { AuthProvider } from '@/contexts/AuthContext';
 
 // Code-split por rota: cada dashboard (com recharts/leaflet pesados) vira um
 // chunk próprio, carregado só quando o usuário navega até ele.
@@ -28,6 +29,12 @@ const GrowthEPerformancePage = lazy(() =>
   import('@/dashboards/growth-e-performance/page').then((m) => ({
     default: m.GrowthEPerformancePage,
   })),
+);
+const MinhaContaPage = lazy(() =>
+  import('@/pages/MinhaContaPage').then((m) => ({ default: m.MinhaContaPage })),
+);
+const UsuariosPage = lazy(() =>
+  import('@/pages/UsuariosPage').then((m) => ({ default: m.UsuariosPage })),
 );
 
 function RouteFallback() {
@@ -60,24 +67,46 @@ function DashboardRouter() {
 
 function App() {
   return (
-    <AuthGate>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route
-            path="/dashboards/:slug"
-            element={
-              <ErrorBoundary title="Nao foi possivel exibir este dashboard">
-                <Suspense fallback={<RouteFallback />}>
-                  <DashboardRouter />
-                </Suspense>
-              </ErrorBoundary>
-            }
-          />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthGate>
+    <AuthProvider>
+      <AuthGate>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route
+              path="/minha-conta"
+              element={
+                <ErrorBoundary title="Nao foi possivel exibir esta pagina">
+                  <Suspense fallback={<RouteFallback />}>
+                    <MinhaContaPage />
+                  </Suspense>
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/usuarios"
+              element={
+                <ErrorBoundary title="Nao foi possivel exibir esta pagina">
+                  <Suspense fallback={<RouteFallback />}>
+                    <UsuariosPage />
+                  </Suspense>
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path="/dashboards/:slug"
+              element={
+                <ErrorBoundary title="Nao foi possivel exibir este dashboard">
+                  <Suspense fallback={<RouteFallback />}>
+                    <DashboardRouter />
+                  </Suspense>
+                </ErrorBoundary>
+              }
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthGate>
+    </AuthProvider>
   );
 }
 

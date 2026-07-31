@@ -23,52 +23,68 @@ seja passada como **build arg** e que exista uma linha `ARG` correspondente no
 |-------------------------------|----------------------------------------------|
 | VITE_SUPABASE_URL             | URL do projeto Supabase                      |
 | VITE_SUPABASE_ANON_KEY        | Chave anon (publica) do Supabase             |
-| VITE_AUTH_USER                | Usuario da tela de login                     |
-| VITE_AUTH_PASSWORD            | Senha da tela de login                       |
 | VITE_GROWTH_AJUSTE_ALUNO_RA   | RA do ajuste manual de faturamento (Pos)     |
 | VITE_GROWTH_AJUSTE_DATA       | Data do ajuste manual (padrao 2026-05-28)    |
 
 **Toda variavel `VITE_*` nova precisa ganhar um `ARG` + `ENV` no `Dockerfile`.**
 Troca de valor exige **rebuild** da imagem.
 
-### Caminho 2 — runtime (`/config.js`) — recomendado para as credenciais
+### Caminho 2 — runtime (`/config.js`)
 
 Quando o container sobe, `docker/40-app-config.sh` (executado automaticamente
 pelo entrypoint do nginx) gera `/usr/share/nginx/html/config.js` a partir das
 variaveis de ambiente **do container**, e o `index.html` carrega esse arquivo
-antes do bundle.
+antes do bundle. O runtime tem **precedencia** sobre o build-time.
 
-Vantagens:
-
-- funciona mesmo que o painel de deploy passe as variaveis apenas como env de
-  runtime, sem build arg — que e o modo de falha silenciosa mais comum;
-- trocar usuario/senha exige apenas **reiniciar o container**, sem rebuild.
-
-Hoje o `config.js` cobre `VITE_AUTH_USER` e `VITE_AUTH_PASSWORD`. O runtime tem
-**precedencia** sobre o build-time; se ambos estiverem vazios, o app libera o
-acesso sem tela de login (e avisa no console).
+Serve para `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`: assim a aplicacao
+sobe mesmo que o painel de deploy nao passe build args, e trocar de projeto
+Supabase exige apenas reiniciar o container.
 
 ## Autenticacao
 
-A tela de login (`src/components/auth/AuthGate.tsx`) e uma barreira provisoria
-com usuario e senha fixos, valida por 1 hora apos o login.
+O login **nao usa variavel de ambiente**. A plataforma autentica contra o banco:
 
-> **Limite de seguranca:** a credencial fica no lado do cliente — no bundle ou
-> em `/config.js`. Quem inspecionar o site consegue le-la. Isso impede acesso
-> casual, **nao** e protecao contra alguem tecnicamente capaz. Para seguranca
-> real por usuario, migrar para Supabase Auth.
+- **Supabase Auth** guarda a senha (hash bcrypt), emite e renova o token.
+- **`public.perfis`** guarda os dados de negocio do usuario, 1:1 com `auth.users`.
+- O login e o **`codusuario`** no padrao `nome.sobrenome`. O e-mail interno
+  (`<codusuario>@bi.fmp.local`) e um detalhe do Supabase Auth e nunca aparece na
+  interface; o dominio `.local` nao e roteavel de proposito.
 
-### Diagnostico
+### Papeis
 
-Se o login rejeitar uma credencial que parece correta, abra o console do
-navegador (F12). O app registra **origem** (`runtime` / `build` / `ausente`) e
-**quantidade de caracteres** de cada valor — nunca o valor em si — e, apos uma
-tentativa falha, qual dos dois campos nao conferiu. Isso distingue
-"a variavel nao chegou" de "chegou diferente" (espaco sobrando, aspas, valor
-trocado).
+| Papel    | Pode                                                                 |
+|----------|----------------------------------------------------------------------|
+| `gestor` | Acessar os dashboards; editar os proprios dados e a propria senha     |
+| `admin`  | Tudo do gestor, mais criar/editar/desativar/remover usuarios e resetar senhas |
 
-O log do container tambem mostra, no boot:
-`[app-config] VITE_AUTH_USER: N caractere(s) | VITE_AUTH_PASSWORD: N caractere(s)`
+`codusuario` e imutavel para todos (trigger no banco). Para corrigir um login
+errado, o admin remove e recria a conta.
+
+### Rotas de API (Supabase Edge Functions)
+
+| Rota                            | JWT | O que faz                                        |
+|---------------------------------|-----|--------------------------------------------------|
+| `POST /functions/v1/auth-login` | nao | `{ codusuario, senha }` -> sessao + perfil        |
+| `POST /functions/v1/minha-senha`| sim | `{ senha_atual, nova_senha }` -> troca a propria senha |
+| `POST /functions/v1/usuarios-admin` | sim | `{ acao: listar\|criar\|atualizar\|definir_senha\|remover }` (so admin) |
+
+`auth-login` roda sem JWT por definicao -- e o endpoint que **emite** o token.
+As outras exigem token valido e reconferem o papel no banco: `verify_jwt`
+garante que o token e valido, nao que quem chama e admin.
+
+Codigo-fonte em `supabase/functions/`. As operacoes que escrevem em
+`auth.users` passam por funcoes SQL `SECURITY DEFINER` liberadas apenas para
+`service_role` -- inalcancaveis a partir do navegador.
+
+### Protecao dos dados (RLS)
+
+Todas as tabelas do schema `public` tem RLS habilitada e so permitem **leitura
+a usuarios autenticados**. A role `anon` nao tem nenhum privilegio.
+
+Isso importa porque a chave anon fica embutida no bundle JS publico: sem RLS, a
+tela de login seria decorativa -- qualquer pessoa leria (e poderia apagar) os
+dados direto pela API REST. A carga de dados nao e afetada: ela usa
+`service_role`, que ignora RLS.
 
 ## Cache
 
@@ -89,8 +105,8 @@ docker build -t fmp-analytics \
 
 # runtime (injetado no boot, sem rebuild)
 docker run -p 80:80 \
-  -e VITE_AUTH_USER=admin \
-  -e VITE_AUTH_PASSWORD=troque-esta-senha \
+  -e VITE_SUPABASE_URL=... \
+  -e VITE_SUPABASE_ANON_KEY=... \
   fmp-analytics
 ```
 
@@ -99,7 +115,5 @@ docker run -p 80:80 \
 1. Crie um novo app tipo Dockerfile
 2. Defina `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` como **build args**
    (elas so funcionam em build-time)
-3. Defina `VITE_AUTH_USER` e `VITE_AUTH_PASSWORD` no **Environment** do servico
-   (funcionam em runtime; se o painel tambem as passar como build arg, tudo bem —
-   o runtime tem precedencia)
-4. Deploy
+3. Deploy
+4. Entre com o usuario `admin` e gerencie as contas em **/usuarios**
