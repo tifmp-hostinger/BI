@@ -78,8 +78,16 @@ export function Sidebar({ items, open, onClose, colapsado = false, onToggleColap
           open ? 'translate-x-0' : '-translate-x-full'
         } ${colapsado ? 'lg:w-20' : ''}`}
       >
-        {/* Brand */}
-        <div className="flex items-center justify-between px-5 py-5">
+        {/* Brand. Recolhido a barra tem 80px: com o padding de 20px de cada
+            lado sobrariam 40px para o simbolo E o botao de recolher lado a
+            lado, e os dois vazavam. Recolhido, empilha e reduz o padding. */}
+        <div
+          className={
+            colapsado
+              ? 'flex flex-col items-center gap-2 px-2 py-4'
+              : 'flex items-center justify-between px-5 py-5'
+          }
+        >
           <NavLink to="/" onClick={onClose} className="flex items-center gap-3 no-underline">
             <FmpSimbolo className="h-9 w-9 shrink-0" titulo="FMP" />
             {!colapsado && (
@@ -250,12 +258,16 @@ export function Sidebar({ items, open, onClose, colapsado = false, onToggleColap
         </nav>
 
         {/* User badge */}
-        <div className="border-t border-white/10 px-4 py-4">
+        {/* Recolhido, o avatar (40px) nao cabia: dos 80px da barra sobravam
+            24px depois de px-4 + p-3, e o circulo vazava para fora. */}
+        <div className={colapsado ? 'border-t border-white/10 px-2 py-4' : 'border-t border-white/10 px-4 py-4'}>
           <NavLink
             to="/minha-conta"
             onClick={onClose}
             title={perfil?.nome_completo ?? undefined}
-            className="flex items-center gap-3 rounded-xl bg-white/5 p-3 no-underline transition hover:bg-white/10"
+            className={`rounded-xl bg-white/5 no-underline transition hover:bg-white/10 ${
+              colapsado ? 'flex items-center justify-center p-2' : 'flex items-center gap-3 p-3'
+            }`}
           >
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-fmp text-sm font-semibold text-white">
               {iniciais(perfil?.nome_completo ?? '')}
