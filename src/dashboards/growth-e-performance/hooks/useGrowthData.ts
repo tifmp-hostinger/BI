@@ -10,7 +10,7 @@ import {
   computeOrigem,
   computeSerieMensal,
 } from '../calculations';
-import { maiorDataDoDataset } from '@/lib/dataFreshness';
+import { ritmoDeDatasets, ritmoDoDataset, type RitmoFonte } from '@/lib/dataFreshness';
 import type { GrowthDataset, GrowthFilters, GrowthView } from '../types';
 
 type State = {
@@ -109,22 +109,24 @@ export function useGrowthData(filters: GrowthFilters, view: GrowthView) {
    * usuário (state.dataset é o download completo) — nunca dispara consulta
    * nova. Ver dataFreshness.ts.
    */
-  const freshnessProxies = useMemo((): Record<string, Date | null> => {
+  const freshnessRitmos = useMemo((): Record<string, RitmoFonte> => {
     const ds = state.dataset;
     if (!ds) return {};
     return {
-      stg_google_ads: maiorDataDoDataset(ds.google, 'date'),
-      stg_rm_matriculas_grad: maiorDataDoDataset(ds.matGrad, 'datamatricula'),
-      stg_rm_matriculas_mestrado: maiorDataDoDataset(ds.matMestrado, 'datamatricula'),
-      stg_rm_matriculas_pos: maiorDataDoDataset(ds.matPos, 'datadematricula'),
-      stg_rm_matriculas_cursoslivres: maiorDataDoDataset(ds.matCL, 'data_contrato'),
-      stg_rm_inscricoes_graduacao: maiorDataDoDataset(ds.inscGrad, 'data'),
-      stg_rm_inscricoes_mestrado: maiorDataDoDataset(ds.inscMestrado, 'data'),
-      stg_rm_inscricoes_pos: [
-        maiorDataDoDataset(ds.inscPosEad, 'data'),
-        maiorDataDoDataset(ds.inscPosPresencial, 'data'),
-      ].reduce<Date | null>((max, d) => (d && (!max || d > max) ? d : max), null),
-      stg_rm_inscricoes_cursoslivres: maiorDataDoDataset(ds.inscCL, 'data'),
+      stg_google_ads: ritmoDoDataset(ds.google, 'date'),
+      stg_rm_matriculas_grad: ritmoDoDataset(ds.matGrad, 'datamatricula'),
+      stg_rm_matriculas_mestrado: ritmoDoDataset(ds.matMestrado, 'datamatricula'),
+      stg_rm_matriculas_pos: ritmoDoDataset(ds.matPos, 'datadematricula'),
+      stg_rm_matriculas_cursoslivres: ritmoDoDataset(ds.matCL, 'data_contrato'),
+      stg_rm_inscricoes_graduacao: ritmoDoDataset(ds.inscGrad, 'data'),
+      stg_rm_inscricoes_mestrado: ritmoDoDataset(ds.inscMestrado, 'data'),
+      // A tabela de inscrições do Pós chega partida em EAD e Presencial:
+      // o ritmo precisa ser medido sobre a união dos dois.
+      stg_rm_inscricoes_pos: ritmoDeDatasets([
+        { rows: ds.inscPosEad, coluna: 'data' },
+        { rows: ds.inscPosPresencial, coluna: 'data' },
+      ]),
+      stg_rm_inscricoes_cursoslivres: ritmoDoDataset(ds.inscCL, 'data'),
     };
   }, [state.dataset]);
 
@@ -141,7 +143,7 @@ export function useGrowthData(filters: GrowthFilters, view: GrowthView) {
     origem,
     serieLeads,
     serieMatriculas,
-    freshnessProxies,
+    freshnessRitmos,
     refetch,
   };
 }

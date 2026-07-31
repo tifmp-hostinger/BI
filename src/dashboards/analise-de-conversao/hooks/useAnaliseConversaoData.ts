@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { clearDashboardCache, fetchDashboardData } from '../queries';
-import { maiorDataDoDataset } from '@/lib/dataFreshness';
+import { ritmoDoDataset, type RitmoFonte } from '@/lib/dataFreshness';
 import {
   buildFilterOptions,
   computeCursosLivresData,
@@ -140,18 +140,18 @@ export function useAnaliseConversaoData(filters: ConversaoFilters, tab: Conversa
    * Proxy de frescor por tabela, sobre o dataset SEM filtro de usuário
    * (state.dataset é o download completo) — nunca dispara consulta nova.
    */
-  const freshnessProxies = useMemo((): Record<string, Date | null> => {
+  const freshnessRitmos = useMemo((): Record<string, RitmoFonte> => {
     const ds = state.dataset;
     if (!ds) return {};
     return {
-      stg_rm_matriculas_grad: maiorDataDoDataset(ds.matriculasGrad, 'datamatricula'),
-      stg_rm_matriculas_mestrado: maiorDataDoDataset(ds.matriculasMestrado, 'datamatricula'),
-      stg_rm_matriculas_pos: maiorDataDoDataset(ds.matriculasPos, 'datadematricula'),
-      stg_rm_matriculas_cursoslivres: maiorDataDoDataset(ds.matriculasCursosLives, 'data_contrato'),
-      stg_rm_inscricoes_graduacao: maiorDataDoDataset(ds.inscricoesGrad, 'datainscricao'),
-      stg_rm_inscricoes_mestrado: maiorDataDoDataset(ds.inscricoesMestrado, 'datainscricao'),
-      stg_rm_inscricoes_pos: maiorDataDoDataset(ds.inscricoesPos, 'datainscricao'),
-      stg_rm_inscricoes_cursoslivres: maiorDataDoDataset(ds.clInscPorDia, 'data'),
+      stg_rm_matriculas_grad: ritmoDoDataset(ds.matriculasGrad, 'datamatricula'),
+      stg_rm_matriculas_mestrado: ritmoDoDataset(ds.matriculasMestrado, 'datamatricula'),
+      stg_rm_matriculas_pos: ritmoDoDataset(ds.matriculasPos, 'datadematricula'),
+      stg_rm_matriculas_cursoslivres: ritmoDoDataset(ds.matriculasCursosLives, 'data_contrato'),
+      stg_rm_inscricoes_graduacao: ritmoDoDataset(ds.inscricoesGrad, 'datainscricao'),
+      stg_rm_inscricoes_mestrado: ritmoDoDataset(ds.inscricoesMestrado, 'datainscricao'),
+      stg_rm_inscricoes_pos: ritmoDoDataset(ds.inscricoesPos, 'datainscricao'),
+      stg_rm_inscricoes_cursoslivres: ritmoDoDataset(ds.clInscPorDia, 'data'),
     };
   }, [state.dataset]);
 
@@ -169,7 +169,7 @@ export function useAnaliseConversaoData(filters: ConversaoFilters, tab: Conversa
     presencialData,
     eadData,
     cursosLivresData,
-    freshnessProxies,
+    freshnessRitmos,
     refetch,
   };
 }

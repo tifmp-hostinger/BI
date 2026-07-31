@@ -29,7 +29,7 @@ import {
   fetchMatriculadosMestrado,
   fetchMatriculadosPos,
 } from '../queries';
-import { maiorDataDoDataset } from '@/lib/dataFreshness';
+import { ritmoDoDataset, type RitmoFonte } from '@/lib/dataFreshness';
 
 type PanoramaData = {
   kpis: PanoramaKpis;
@@ -50,7 +50,7 @@ type Dataset = {
   enrichedRows: EnrichedBolsaRow[];
   matriculados: MatriculadosData;
   filterOptions: FilterOptions;
-  freshnessProxies: Record<string, Date | null>;
+  freshnessRitmos: Record<string, RitmoFonte>;
 };
 
 export function useBolsasDescontosData(filters: BolsasFilters) {
@@ -75,13 +75,13 @@ export function useBolsasDescontosData(filters: BolsasFilters) {
       const filterOptions = computeFilterOptions(enrichedRows);
       // Proxy de frescor: sobre o dataset bruto, antes do enriquecimento
       // descartar a coluna de data — nunca dispara consulta nova.
-      const freshnessProxies: Record<string, Date | null> = {
-        stg_rm_matriculas_bolsas: maiorDataDoDataset(raw, 'data_matricula'),
-        stg_rm_matriculas_grad: maiorDataDoDataset(grad, 'data'),
-        stg_rm_matriculas_pos: maiorDataDoDataset(pos, 'data'),
-        stg_rm_matriculas_mestrado: maiorDataDoDataset(mestrado, 'data'),
+      const freshnessRitmos: Record<string, RitmoFonte> = {
+        stg_rm_matriculas_bolsas: ritmoDoDataset(raw, 'data_matricula'),
+        stg_rm_matriculas_grad: ritmoDoDataset(grad, 'data'),
+        stg_rm_matriculas_pos: ritmoDoDataset(pos, 'data'),
+        stg_rm_matriculas_mestrado: ritmoDoDataset(mestrado, 'data'),
       };
-      setDataset({ enrichedRows, matriculados, filterOptions, freshnessProxies });
+      setDataset({ enrichedRows, matriculados, filterOptions, freshnessRitmos });
     } catch (err) {
       setDataset(null);
       setError(err instanceof Error ? err.message : 'Erro ao carregar dados');
@@ -135,7 +135,7 @@ export function useBolsasDescontosData(filters: BolsasFilters) {
     evasao,
     evasaoLoading: loading,
     evasaoError: error,
-    freshnessProxies: dataset?.freshnessProxies ?? {},
+    freshnessRitmos: dataset?.freshnessRitmos ?? {},
     refetch: loadAll,
   };
 }

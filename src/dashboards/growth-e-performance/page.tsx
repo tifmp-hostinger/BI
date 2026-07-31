@@ -134,7 +134,7 @@ export function GrowthEPerformancePage() {
   const {
     loading, error, progress, pletivo,
     media, negocio, campanhas, mapa, horarios, origem, serieLeads, serieMatriculas,
-    freshnessProxies, refetch,
+    freshnessRitmos, refetch,
   } = useGrowthData(filters, viewAtiva);
 
   /**
@@ -192,7 +192,7 @@ export function GrowthEPerformancePage() {
               <ArrowLeft className="h-3 w-3" />
               Central de Dashboards
             </Link>
-            <DataFreshness tabelas={FONTES_POR_DASHBOARD['growth-e-performance']} proxies={freshnessProxies} />
+            <DataFreshness tabelas={FONTES_POR_DASHBOARD['growth-e-performance']} ritmos={freshnessRitmos} />
           </div>
           <div className="flex items-center gap-2">
             <span className="hidden text-xs text-ink-3 sm:inline">Olá, Equipe FMP</span>

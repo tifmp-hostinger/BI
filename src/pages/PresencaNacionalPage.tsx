@@ -32,7 +32,7 @@ import { SectionCard } from '@/components/ui/SectionCard';
 import { ChartSkeleton } from '@/components/ui/Skeletons';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { DataFreshness } from '@/components/ui/DataFreshness';
-import { FONTES_POR_DASHBOARD, maiorDataDoDataset } from '@/lib/dataFreshness';
+import { FONTES_POR_DASHBOARD, ritmoDoDataset } from '@/lib/dataFreshness';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BrazilStateMap } from '@/components/maps/BrazilStateMap';
 import { StateDetailPanel } from '@/components/panels/StateDetailPanel';
@@ -114,13 +114,13 @@ export function PresencaNacionalPage() {
    * duas fontes (Pós + Cursos Livres) num só array com `source`, então
    * separa por essa flag antes do max.
    */
-  const freshnessProxies = useMemo(
+  const freshnessRitmos = useMemo(
     () => ({
-      stg_rm_matriculas_pos: maiorDataDoDataset(
+      stg_rm_matriculas_pos: ritmoDoDataset(
         raw.filter((m) => m.source === 'pos'),
         'data',
       ),
-      stg_rm_matriculas_cursoslivres: maiorDataDoDataset(
+      stg_rm_matriculas_cursoslivres: ritmoDoDataset(
         raw.filter((m) => m.source === 'cursoslivres'),
         'data',
       ),
@@ -159,7 +159,7 @@ export function PresencaNacionalPage() {
                 Central de Dashboards
               </Link>
               <div className="mt-2">
-                <DataFreshness tabelas={FONTES_POR_DASHBOARD['presenca-nacional']} proxies={freshnessProxies} />
+                <DataFreshness tabelas={FONTES_POR_DASHBOARD['presenca-nacional']} ritmos={freshnessRitmos} />
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium uppercase tracking-widest text-cream/85 ring-1 ring-inset ring-cream/15">

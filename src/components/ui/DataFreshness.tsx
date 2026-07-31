@@ -7,14 +7,17 @@ import {
   formataDataHora,
   type Freshness,
   type FreshnessResumo,
+  type RitmoFonte,
 } from '@/lib/dataFreshness';
 
 const AJUDA =
   'Duas fontes de data: "Carga em" é quando o dado entrou no banco (carimbo real). ' +
-  '"Dados até" é uma estimativa — a data do registro mais recente na tabela, usada quando ' +
-  'a fonte não registra o momento da carga. Um fim de semana sem movimento deixa esse ' +
-  'segundo tipo desatualizado mesmo com a carga funcionando normalmente. As cargas rodam ' +
-  'por um processo agendado, fora da aplicação.';
+  '"Dados até" é a data do registro mais recente na tabela — só as tabelas do RM não ' +
+  'registram o momento da carga, então ali essa é a melhor referência disponível. ' +
+  'O aviso de possível carga parada NÃO usa prazo fixo: compara o silêncio atual com o ' +
+  'maior silêncio que aquela mesma fonte já teve no último ano. Fontes de ritmo irregular ' +
+  '(Cursos Livres passa semanas sem inscrição; Graduação segue o ciclo do vestibular) ' +
+  'não disparam alerta à toa. As cargas rodam por um processo agendado, fora da aplicação.';
 
 const ESTILO: Record<string, string> = {
   ok: 'text-ink-3',
@@ -30,38 +33,57 @@ function rotuloFonte(f: Freshness): string {
   return `Dados até ${formataDataCurta(f.data)}`;
 }
 
+/** Nome curto da tabela para caber no rótulo. */
+function nomeCurto(tabela: string): string {
+  return tabela.replace(/^stg_(rm_)?/, '').replace(/_/g, ' ');
+}
+
 function rotulo(resumo: FreshnessResumo): string {
   const f = resumo.maisAntiga;
   if (!f || !f.data) {
     return resumo.status === 'erro' ? 'Não foi possível verificar a data da carga' : 'Sem sinal de frescor';
   }
-  const dias = diasAtras(f.horasAtras ?? 0);
   const base = rotuloFonte(f);
 
-  switch (resumo.status) {
-    case 'ok':
-      return base;
-    case 'atencao':
-      return f.tipoSinal === 'carga'
-        ? `${base} — última carga há ${dias} dia${dias === 1 ? '' : 's'}`
-        : `${base} — pode haver carga parada`;
-    case 'atrasado':
-      return f.tipoSinal === 'carga'
-        ? `Dado desatualizado — ${base}, há ${dias} dias`
-        : `${base} (${dias} dias) — pode haver carga parada`;
-    default:
-      return base;
+  // Só acusa carga parada quando alguma fonte saiu do PRÓPRIO ritmo. Uma data
+  // antiga por si só não é sintoma: Cursos Livres passa semanas sem inscrição
+  // e Graduação segue o ciclo do vestibular, ambos com a carga em dia.
+  if (resumo.foraDoRitmo.length > 0) {
+    const pior = resumo.foraDoRitmo[0];
+    const dias = diasAtras(pior.horasAtras ?? 0);
+    const extras = resumo.foraDoRitmo.length - 1;
+    const sufixo = extras > 0 ? ` (+${extras} fonte${extras === 1 ? '' : 's'})` : '';
+    return `${base} — ${nomeCurto(pior.tabela)} sem registro há ${dias} dias${sufixo}`;
   }
+
+  if (f.tipoSinal === 'carga' && (resumo.status === 'atencao' || resumo.status === 'atrasado')) {
+    const dias = diasAtras(f.horasAtras ?? 0);
+    return `${base} — última carga há ${dias} dia${dias === 1 ? '' : 's'}`;
+  }
+
+  return base;
 }
 
 function linhaDetalhe(f: Freshness): string {
   if (f.tipoSinal === 'sem-sinal') return `${f.tabela}: sem coluna de data de carga nem proxy de conteúdo`;
   if (!f.data) return `${f.tabela}: não foi possível verificar`;
   if (f.tipoSinal === 'carga') return `${f.tabela}: carga em ${formataDataHora(f.data)}`;
-  const sazonalNota = f.sazonal
-    ? ' — sazonal, só recebe registros em janelas específicas do ano; não conta para o aviso principal'
-    : '';
-  return `${f.tabela}: dados até ${formataDataCurta(f.data)} (proxy — não confirma quando a carga rodou)${sazonalNota}`;
+
+  const dias = diasAtras(f.horasAtras ?? 0);
+  const partes = [`${f.tabela}: dados até ${formataDataCurta(f.data)}`];
+
+  if (f.sazonal) {
+    partes.push('sazonal (janelas específicas do ano) — fora do aviso principal');
+  } else if (f.maiorIntervaloDias != null) {
+    // Mostrar a régua junto do número evita a leitura "21 dias parado = problema"
+    // quando 21 dias é rotina para aquela fonte.
+    partes.push(
+      f.foraDoRitmo
+        ? `sem registro há ${dias} dia(s) — acima do maior silêncio já visto nela (${f.maiorIntervaloDias} dia(s))`
+        : `sem registro há ${dias} dia(s) — dentro do normal desta fonte (já teve ${f.maiorIntervaloDias} dia(s) de silêncio)`,
+    );
+  }
+  return partes.join(' — ');
 }
 
 /**
@@ -95,38 +117,39 @@ function montaDetalhe(resumo: FreshnessResumo): string {
  * NUNCA cai em "agora" silenciosamente: quando a data não pode ser
  * determinada, o texto diz exatamente isso.
  *
- * `proxies`: mapa tabela → maior data de conteúdo já calculada pelo
- * dashboard sobre o dataset que ele já tem em memória (ver
- * `maiorDataDoDataset` em lib/dataFreshness.ts). Sem isso as tabelas
- * "sem carimbo" desta lista aparecem como "sem sinal" — não disparamos
- * consulta nova para descobrir o proxy.
+ * `ritmos`: mapa tabela → { última data, maior silêncio já observado }, já
+ * calculado pelo dashboard sobre o dataset que ele tem em memória (ver
+ * `ritmoDoDataset` em lib/dataFreshness.ts). Sem isso as tabelas "sem
+ * carimbo" aparecem como "sem sinal" — não disparamos consulta nova.
  */
 export function DataFreshness({
   tabelas,
-  proxies = {},
+  ritmos = {},
 }: {
   tabelas: string[];
-  proxies?: Record<string, Date | null>;
+  ritmos?: Record<string, RitmoFonte>;
 }) {
   const [resumo, setResumo] = useState<FreshnessResumo | null>(null);
   const chave = tabelas.join('|');
-  const chaveProxies = Object.entries(proxies)
-    .map(([k, v]) => `${k}=${v ? v.getTime() : ''}`)
+  const chaveRitmos = Object.entries(ritmos)
+    .map(([k, v]) => `${k}=${v?.ultima ? v.ultima.getTime() : ''}:${v?.maiorIntervaloDias ?? ''}`)
     .sort()
     .join('|');
 
   useEffect(() => {
     let vivo = true;
-    fetchFreshness(chave.split('|'), proxies)
+    fetchFreshness(chave.split('|'), ritmos)
       .then((r) => vivo && setResumo(r))
       .catch(() => {
-        if (vivo) setResumo({ maisAntiga: null, fontesFato: [], fontesDominio: [], status: 'erro' });
+        if (vivo) {
+          setResumo({ maisAntiga: null, fontesFato: [], fontesDominio: [], status: 'erro', foraDoRitmo: [] });
+        }
       });
     return () => {
       vivo = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chave, chaveProxies]);
+  }, [chave, chaveRitmos]);
 
   if (!resumo) {
     return (

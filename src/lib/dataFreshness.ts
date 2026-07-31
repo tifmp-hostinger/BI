@@ -192,6 +192,25 @@ export const FONTES_POR_DASHBOARD: Record<string, string[]> = {
 
 export type TipoSinal = 'carga' | 'proxy' | 'sem-sinal';
 
+/**
+ * Ritmo observado de uma fonte: até quando ela tem registro e qual o maior
+ * silêncio que ela já teve no último ano.
+ *
+ * Existe porque limiar fixo em dias não funciona aqui. Medido no banco em
+ * 31/07/2026, o maior intervalo sem registro novo varia por fonte:
+ * Google Ads 1 dia, matrículas do Pós 5, bolsas 10, inscrições de Cursos
+ * Livres 35, matrículas de Graduação 84 (ciclo de vestibular). Um limiar
+ * único de 14 dias acusava "carga parada" em Cursos Livres — que passa
+ * semanas sem inscrição por natureza — e ao mesmo tempo seria frouxo demais
+ * para o Google Ads, que carrega todo dia.
+ */
+export type RitmoFonte = {
+  /** Data do registro mais recente. */
+  ultima: Date | null;
+  /** Maior silêncio (em dias) entre registros consecutivos no último ano. */
+  maiorIntervaloDias: number | null;
+};
+
 export type Freshness = {
   tabela: string;
   papel: PapelTabela;
@@ -201,6 +220,12 @@ export type Freshness = {
   horasAtras: number | null;
   /** Sazonal (ver FonteConfig.sazonal) — fora da disputa por `maisAntiga`. */
   sazonal: boolean;
+  /** Maior silêncio já observado nesta fonte (proxy). Null para carga/sem sinal. */
+  maiorIntervaloDias?: number | null;
+  /** Dias de silêncio tolerados antes de acusar atraso, derivado do ritmo da própria fonte. */
+  limiteDias?: number | null;
+  /** True quando o silêncio atual supera o que essa fonte já teve. */
+  foraDoRitmo?: boolean;
 };
 
 export type StatusFrescor = 'ok' | 'atencao' | 'atrasado' | 'desconhecido' | 'erro';
@@ -213,6 +238,8 @@ export type FreshnessResumo = {
   /** Tabelas de domínio, mostradas à parte, sem alerta. */
   fontesDominio: Freshness[];
   status: StatusFrescor;
+  /** Fontes cujo silêncio atual supera o maior silêncio já observado nelas. */
+  foraDoRitmo: Freshness[];
 };
 
 const HORA_MS = 3_600_000;
@@ -265,14 +292,82 @@ export function maiorDataDoDataset<T>(
   rows: readonly T[] | undefined | null,
   coluna: keyof T,
 ): Date | null {
-  if (!rows) return null;
-  let max: Date | null = null;
-  for (const r of rows) {
-    const bruto = r[coluna] as unknown as string | null | undefined;
-    const d = parseFlexibleDate(bruto);
-    if (d && (!max || d.getTime() > max.getTime())) max = d;
+  return ritmoDoDataset(rows, coluna).ultima;
+}
+
+const DIA_MS = 86_400_000;
+/** Janela de história usada para medir o ritmo da fonte. */
+const JANELA_RITMO_DIAS = 365;
+/** Piso: mesmo uma fonte diária ganha alguma folga antes de acusar atraso. */
+const LIMITE_MINIMO_DIAS = 3;
+/** Margem sobre o maior silêncio já visto — não acusar quando apenas empata o recorde. */
+const MARGEM_RITMO = 0.25;
+const MARGEM_MINIMA_DIAS = 2;
+
+/**
+ * Mede até quando a fonte tem registro E qual o maior silêncio que ela já
+ * teve, sobre o dataset que o dashboard já baixou (sem consulta nova e sem
+ * o filtro de data do usuário — senão o ritmo viraria reflexo do filtro).
+ *
+ * Só considera os últimos 365 dias: o ritmo de anos anteriores não diz nada
+ * sobre a operação de hoje.
+ */
+export function ritmoDoDataset<T>(
+  rows: readonly T[] | undefined | null,
+  coluna: keyof T,
+): RitmoFonte {
+  return ritmoDeDatasets([{ rows, coluna }]);
+}
+
+/**
+ * Mesma medida, quando UMA tabela é alimentada por mais de um dataset em
+ * memória (ex.: inscrições do Pós chegam separadas em EAD e Presencial).
+ * Une os dias antes de medir — calcular cada parte e combinar depois daria
+ * um silêncio maior que o real, já que um dia ativo só no EAD também é um
+ * dia ativo da tabela.
+ */
+export function ritmoDeDatasets<T>(
+  entradas: Array<{ rows: readonly T[] | undefined | null; coluna: keyof T }>,
+): RitmoFonte {
+  const hoje = Date.now();
+  const limiteJanela = hoje - JANELA_RITMO_DIAS * DIA_MS;
+
+  // Dias distintos: importa "houve registro neste dia", não quantos — mil
+  // matrículas num dia e uma só contam igual para o ritmo.
+  const dias = new Set<number>();
+  let ultima: Date | null = null;
+
+  for (const { rows, coluna } of entradas) {
+    if (!rows) continue;
+    for (const r of rows) {
+      const d = parseFlexibleDate(r[coluna] as unknown as string | null | undefined);
+      if (!d) continue;
+      const t = d.getTime();
+      if (!ultima || t > ultima.getTime()) ultima = d;
+      if (t >= limiteJanela && t <= hoje) dias.add(Math.floor(t / DIA_MS));
+    }
   }
-  return max;
+
+  if (dias.size < 2) return { ultima, maiorIntervaloDias: null };
+
+  const ordenados = Array.from(dias).sort((a, b) => a - b);
+  let maiorIntervalo = 0;
+  for (let i = 1; i < ordenados.length; i++) {
+    const gap = ordenados[i] - ordenados[i - 1];
+    if (gap > maiorIntervalo) maiorIntervalo = gap;
+  }
+
+  return { ultima, maiorIntervaloDias: maiorIntervalo };
+}
+
+/**
+ * Quantos dias de silêncio essa fonte pode ter sem que isso signifique
+ * problema — derivado do maior silêncio que ela mesma já teve.
+ */
+export function limiteDeSilencio(maiorIntervaloDias: number | null): number | null {
+  if (maiorIntervaloDias === null) return null;
+  const margem = Math.max(MARGEM_MINIMA_DIAS, Math.ceil(maiorIntervaloDias * MARGEM_RITMO));
+  return Math.max(LIMITE_MINIMO_DIAS, maiorIntervaloDias + margem);
 }
 
 /**
@@ -285,7 +380,7 @@ export function maiorDataDoDataset<T>(
  */
 export async function fetchFreshness(
   tabelas: string[],
-  proxiesEmMemoria: Record<string, Date | null> = {},
+  ritmosEmMemoria: Record<string, RitmoFonte> = {},
 ): Promise<FreshnessResumo> {
   const fontesFato: Freshness[] = [];
   const fontesDominio: Freshness[] = [];
@@ -322,14 +417,24 @@ export async function fetchFreshness(
       }
 
       if (cfg.colunaConteudo) {
-        const data = proxiesEmMemoria[tabela] ?? null;
+        const ritmo = ritmosEmMemoria[tabela];
+        const data = ritmo?.ultima ?? null;
+        const horasAtras = data ? (Date.now() - data.getTime()) / HORA_MS : null;
+        const maiorIntervaloDias = ritmo?.maiorIntervaloDias ?? null;
+        const limite = limiteDeSilencio(maiorIntervaloDias);
         destino.push({
           tabela,
           papel: cfg.papel,
           tipoSinal: 'proxy',
           data,
-          horasAtras: data ? (Date.now() - data.getTime()) / HORA_MS : null,
+          horasAtras,
           sazonal,
+          maiorIntervaloDias,
+          limiteDias: limite,
+          // Sem histórico suficiente para medir o ritmo, não acusa nada:
+          // afirmar atraso sem base seria pior que ficar calado.
+          foraDoRitmo:
+            horasAtras !== null && limite !== null ? horasAtras / 24 > limite : false,
         });
         return;
       }
@@ -352,23 +457,38 @@ export async function fetchFreshness(
   const candidatas = fontesFato.filter((f) => f.data !== null && !f.sazonal);
   const maisAntiga = candidatas.sort((a, b) => a.data!.getTime() - b.data!.getTime())[0] ?? null;
 
+  // Fontes efetivamente fora do próprio ritmo — é isto, e não a data absoluta,
+  // que caracteriza suspeita de carga parada.
+  const foraDoRitmo = candidatas.filter((f) => f.foraDoRitmo);
+
   let status: StatusFrescor;
   if (!maisAntiga) {
     status = houveErro ? 'erro' : 'desconhecido';
+  } else if (foraDoRitmo.length > 0) {
+    // Quanto o pior caso ultrapassou o próprio limite decide atenção x atraso.
+    const pior = foraDoRitmo.reduce((a, f) => {
+      const ra = (a.horasAtras ?? 0) / 24 / (a.limiteDias || 1);
+      const rf = (f.horasAtras ?? 0) / 24 / (f.limiteDias || 1);
+      return rf > ra ? f : a;
+    });
+    const razao = (pior.horasAtras ?? 0) / 24 / (pior.limiteDias || 1);
+    status = razao > 2 ? 'atrasado' : 'atencao';
   } else {
-    const h = maisAntiga.horasAtras ?? 0;
-    if (maisAntiga.tipoSinal === 'carga') {
-      // Carimbo real: limiar em horas.
-      status = h < 24 ? 'ok' : h <= 72 ? 'atencao' : 'atrasado';
-    } else {
-      // Proxy de conteúdo: limiar em dias — movimento de negócio é irregular,
-      // um fim de semana sem matrícula não é "carga parada".
-      const dias = h / 24;
-      status = dias < 7 ? 'ok' : dias <= 14 ? 'atencao' : 'atrasado';
-    }
+    // Fontes com carimbo real de carga ainda usam limiar em horas: ali a
+    // ausência de carga recente é literal, não inferida de movimento.
+    const comCarga = candidatas.filter((f) => f.tipoSinal === 'carga');
+    const piorCarga = comCarga.sort((a, b) => (b.horasAtras ?? 0) - (a.horasAtras ?? 0))[0];
+    const h = piorCarga?.horasAtras ?? 0;
+    status = !piorCarga ? 'ok' : h < 24 ? 'ok' : h <= 72 ? 'atencao' : 'atrasado';
   }
 
-  return { maisAntiga, fontesFato, fontesDominio, status };
+  // Pior primeiro: o rótulo mostra só o primeiro e conta os demais.
+  foraDoRitmo.sort(
+    (a, b) =>
+      (b.horasAtras ?? 0) / 24 / (b.limiteDias || 1) - (a.horasAtras ?? 0) / 24 / (a.limiteDias || 1),
+  );
+
+  return { maisAntiga, fontesFato, fontesDominio, status, foraDoRitmo };
 }
 
 export function formataDataHora(d: Date): string {
