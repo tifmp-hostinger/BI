@@ -264,11 +264,28 @@ export type FreshnessResumo = {
 
 const HORA_MS = 3_600_000;
 
-/** Cache por tabela: várias telas compartilham fontes; o banco é free tier. */
-const cache = new Map<string, Promise<Date | null>>();
+/**
+ * Cache por tabela com validade curta: várias telas compartilham fontes e o
+ * banco é free tier, mas a resposta AGORA decide se o cache de dataset vale
+ * (assinaturaCarga) — e dashboard é o tipo de aba que fica aberta o dia
+ * inteiro. Sem expiração, a pergunta "a carga mudou?" seria respondida com a
+ * memória da abertura da aba: carga ao meio-dia passaria despercebida até um
+ * F5. Com 5 minutos, o custo segue ínfimo (consultas de 1 linha) e uma carga
+ * nova é percebida na navegação seguinte.
+ */
+const TTL_SINAL_MS = 5 * 60_000;
+
+type SinalMemo<T> = { p: Promise<T>; em: number };
+
+function vigente<T>(m: SinalMemo<T> | undefined): m is SinalMemo<T> {
+  return !!m && Date.now() - m.em < TTL_SINAL_MS;
+}
+
+const cache = new Map<string, SinalMemo<Date | null>>();
 
 export function limparCacheFrescor(): void {
   cache.clear();
+  cacheConteudo.clear();
 }
 
 /**
@@ -278,7 +295,7 @@ export function limparCacheFrescor(): void {
  */
 function buscaUltimaCarga(tabela: string, coluna: string): Promise<Date | null> {
   const emCache = cache.get(tabela);
-  if (emCache) return emCache;
+  if (vigente(emCache)) return emCache.p;
 
   const p = (async () => {
     const { data, error } = await supabase
@@ -294,7 +311,7 @@ function buscaUltimaCarga(tabela: string, coluna: string): Promise<Date | null> 
     return Number.isNaN(d.getTime()) ? null : d;
   })();
 
-  cache.set(tabela, p);
+  cache.set(tabela, { p, em: Date.now() });
   // Um erro não pode ficar preso no cache: a próxima tentativa deve reconsultar.
   p.catch(() => cache.delete(tabela));
   return p;
@@ -529,7 +546,7 @@ export async function fetchFreshness(
  * cache é considerado inválido e o dado é rebaixado — errar para o lado de
  * mostrar dado atual.
  */
-const cacheConteudo = new Map<string, Promise<string | null>>();
+const cacheConteudo = new Map<string, SinalMemo<string | null>>();
 
 /**
  * Maior valor da coluna de conteúdo, numa consulta de UMA linha — mesmo
@@ -547,7 +564,7 @@ const cacheConteudo = new Map<string, Promise<string | null>>();
  */
 function buscaMaiorConteudo(tabela: string, coluna: string): Promise<string | null> {
   const emCache = cacheConteudo.get(tabela);
-  if (emCache) return emCache;
+  if (vigente(emCache)) return emCache.p;
 
   const p = (async () => {
     const { data, error } = await supabase
@@ -560,7 +577,7 @@ function buscaMaiorConteudo(tabela: string, coluna: string): Promise<string | nu
     return linha?.[coluna] ?? null;
   })();
 
-  cacheConteudo.set(tabela, p);
+  cacheConteudo.set(tabela, { p, em: Date.now() });
   p.catch(() => cacheConteudo.delete(tabela));
   return p;
 }
