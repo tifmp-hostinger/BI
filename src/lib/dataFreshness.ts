@@ -529,42 +529,52 @@ export async function fetchFreshness(
  * cache é considerado inválido e o dado é rebaixado — errar para o lado de
  * mostrar dado atual.
  */
-const cacheContagem = new Map<string, Promise<number | null>>();
+const cacheConteudo = new Map<string, Promise<string | null>>();
 
 /**
- * Número de linhas da tabela, sem trazer nenhuma linha (`head: true`): o
- * PostgREST responde só com o cabeçalho de contagem.
+ * Maior valor da coluna de conteúdo, numa consulta de UMA linha — mesmo
+ * padrão de `buscaUltimaCarga`, que já é usado e verificado.
  *
- * Serve de sinal de carga para as tabelas do RM, que não têm carimbo. Não é
- * perfeito — uma carga que substitua linhas sem mudar o total passaria
- * despercebida —, por isso a validade por dia civil continua valendo como
- * rede de proteção (ver datasetCache.cacheValido).
+ * Serve de sinal de novidade para as tabelas do RM, que não têm carimbo de
+ * carga. Só vale para colunas em formato ISO (`aaaa-mm-dd`), onde a ordenação
+ * textual coincide com a cronológica; em dd/mm/aaaa ela devolveria lixo (o
+ * registro está documentado em REGISTRO_FONTES), então essas ficam de fora e
+ * dependem da validade por dia civil.
+ *
+ * Detecta "chegou registro mais novo", não "a carga rodou" — e para decidir
+ * se vale rebaixar o dataset é justamente o que importa: sem registro novo,
+ * o download traria o mesmo conteúdo.
  */
-function contaLinhas(tabela: string): Promise<number | null> {
-  const emCache = cacheContagem.get(tabela);
+function buscaMaiorConteudo(tabela: string, coluna: string): Promise<string | null> {
+  const emCache = cacheConteudo.get(tabela);
   if (emCache) return emCache;
 
   const p = (async () => {
-    const { count, error } = await supabase
+    const { data, error } = await supabase
       .from(tabela)
-      .select('*', { count: 'exact', head: true });
+      .select(coluna)
+      .order(coluna, { ascending: false, nullsFirst: false })
+      .limit(1);
     if (error) throw error;
-    return count ?? null;
+    const linha = data?.[0] as unknown as Record<string, string> | undefined;
+    return linha?.[coluna] ?? null;
   })();
 
-  cacheContagem.set(tabela, p);
-  p.catch(() => cacheContagem.delete(tabela));
+  cacheConteudo.set(tabela, p);
+  p.catch(() => cacheConteudo.delete(tabela));
   return p;
 }
 
 export async function assinaturaCarga(
   tabelas: string[],
   opcoes: { ignorarCache?: boolean } = {},
-): Promise<string> {
+): Promise<string | null> {
   const fontes = tabelas.map((t) => REGISTRO_FONTES[t]).filter((c): c is FonteConfig => !!c);
   const comCarimbo = fontes.filter((c) => c.colunaCarga);
-  // Sem carimbo, a contagem é o único sinal barato disponível.
-  const semCarimbo = fontes.filter((c) => !c.colunaCarga);
+  // Sem carimbo: usa a maior data de conteúdo, quando a coluna é ISO.
+  const porConteudo = fontes.filter(
+    (c) => !c.colunaCarga && c.colunaConteudo && c.formatoConteudo === 'iso',
+  );
 
   if (fontes.length === 0) return 'sem-fontes';
 
@@ -573,7 +583,7 @@ export async function assinaturaCarga(
   // novo faria a próxima visita achar que mudou e rebaixar tudo à toa.
   if (opcoes.ignorarCache) {
     comCarimbo.forEach((c) => cache.delete(c.tabela));
-    semCarimbo.forEach((c) => cacheContagem.delete(c.tabela));
+    porConteudo.forEach((c) => cacheConteudo.delete(c.tabela));
   }
 
   try {
@@ -582,16 +592,18 @@ export async function assinaturaCarga(
         const d = await buscaUltimaCarga(c.tabela, c.colunaCarga!);
         return `${c.tabela}=${d ? d.getTime() : 'null'}`;
       }),
-      ...semCarimbo.map(async (c) => {
-        const n = await contaLinhas(c.tabela);
-        return `${c.tabela}#${n ?? 'null'}`;
+      ...porConteudo.map(async (c) => {
+        const v = await buscaMaiorConteudo(c.tabela, c.colunaConteudo!);
+        return `${c.tabela}#${v ?? 'null'}`;
       }),
     ]);
     return partes.sort().join('|');
   } catch {
-    // Sem sinal confiável, o cache é tratado como inválido: erra-se para o
-    // lado de mostrar dado atual.
-    return '';
+    // null = "não sei". NUNCA devolver string aqui: uma string de falha seria
+    // gravada no cache e passaria a casar consigo mesma nas visitas
+    // seguintes, deixando o cache eternamente "válido". Quem chama trata
+    // null como cache inválido e não grava assinatura nenhuma.
+    return null;
   }
 }
 

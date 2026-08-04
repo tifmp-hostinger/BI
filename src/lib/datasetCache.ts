@@ -106,9 +106,15 @@ function diaCivil(ms: number): string {
  * elas não há como perguntar "mudou?" de forma barata, então o cache nunca
  * atravessa a virada do dia sem uma reconferência.
  */
-export function cacheValido<T>(entrada: EntradaCache<T> | null, assinaturaAtual: string): boolean {
+export function cacheValido<T>(
+  entrada: EntradaCache<T> | null,
+  assinaturaAtual: string | null,
+): boolean {
   if (!entrada) return false;
   if (entrada.versao !== VERSAO_CACHE) return false;
+  // Assinatura desconhecida (falha ao consultar): não dá para afirmar que o
+  // cache está atual, então rebaixa — erra-se para o lado do dado correto.
+  if (assinaturaAtual === null) return false;
   if (entrada.assinatura !== assinaturaAtual) return false;
   return diaCivil(entrada.gravadoEm) === diaCivil(Date.now());
 }

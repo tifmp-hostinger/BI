@@ -59,6 +59,8 @@ export async function carregaComCache<T>(opcoes: {
   // carga rodou durante o download (ou antes, num "Atualizar" manual), gravar
   // a assinatura antiga faria a próxima visita rebaixar tudo sem necessidade.
   const assinaturaFinal = await assinaturaCarga(tabelas, { ignorarCache: true });
+  if (assinaturaFinal === null) return; // sem assinatura confiável, não grava
+
   await gravaCache(chave, dataset, assinaturaFinal).catch(() => {
     // Sem espaço ou sem permissão: o app segue normalmente, só sem cache.
   });

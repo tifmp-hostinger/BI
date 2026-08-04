@@ -108,10 +108,27 @@ fixa nem todo dia (medido: 27/07 11:47, 29/07 12:25, 31/07 09:14, 03/08 14:50),
 entao qualquer horario fixo estaria errado na maioria dos dias. O gatilho e a
 mudanca da carga, nao o relogio.
 
-**Validade por dia civil**: so `rubeus_registros_personalizada`, `stg_meta_ads`
-e as tabelas de dominio tem carimbo de carga. Para as tabelas do RM nao ha como
-perguntar "mudou?" de forma barata, entao o cache nunca atravessa a virada do
-dia sem reconferir. O botao "Atualizar" de cada painel ignora o cache.
+**Sinal de mudanca, por tabela** (todos custam UMA linha):
+
+| Tabela                                   | Sinal                                  |
+|------------------------------------------|----------------------------------------|
+| Com carimbo (Rubeus, Meta Ads, dominio)  | `atualizado_em` mais recente           |
+| Sem carimbo, coluna de data em ISO       | maior data de conteudo                 |
+| Sem carimbo, coluna em dd/mm/aaaa        | nenhum -- so a validade por dia civil  |
+
+A ultima linha existe porque ordenar dd/mm/aaaa como texto devolve lixo (ver a
+nota em `REGISTRO_FONTES`). Sao 3 tabelas nessa condicao
+(`stg_rm_matriculas_grad`, `_mestrado`, `_bolsas`); nos paineis onde elas
+aparecem ha sempre outra fonte com sinal utilizavel.
+
+**Validade por dia civil**: rede de protecao para o que os sinais acima nao
+pegam -- por exemplo, uma carga que altere linhas existentes sem trazer
+registro com data mais nova. O cache nunca atravessa a virada do dia sem
+reconferir. O botao "Atualizar" de cada painel ignora o cache.
+
+**Assinatura desconhecida**: se a consulta do sinal falhar, o cache e tratado
+como invalido e NADA e gravado. Gravar uma assinatura de falha faria ela casar
+consigo mesma nas visitas seguintes, deixando o cache eternamente "valido".
 
 **Ao mudar as queries** (colunas novas, formato diferente), incremente
 `VERSAO_CACHE` em `src/lib/datasetCache.ts` -- senao um cache antigo alimenta
