@@ -5,7 +5,8 @@ import {
   computeMestradoKpis,
   graduacaoDateRangeFromPletivos,
 } from '../calculations';
-import { ritmoDoDataset, type RitmoFonte } from '@/lib/dataFreshness';
+import { FONTES_POR_DASHBOARD, ritmoDoDataset, type RitmoFonte } from '@/lib/dataFreshness';
+import { carregaComCache } from '@/lib/carregaComCache';
 import {
   fetchInscricoesGraduacao,
   fetchInscricoesMestrado,
@@ -30,6 +31,14 @@ import type {
   MetaPos,
   PeriodoLetivo,
 } from '../types';
+
+const CHAVE_CACHE = 'analise-conversao-presidencia';
+
+type LeadsRubeus = {
+  gradAtual: Awaited<ReturnType<typeof fetchRubeusLeadsGraduacao>>;
+  gradAnterior: Awaited<ReturnType<typeof fetchRubeusLeadsGraduacao>>;
+  mestrado: Awaited<ReturnType<typeof fetchRubeusLeadsMestrado>>;
+};
 
 type BaseData = {
   pletivos: PeriodoLetivo[];
@@ -80,52 +89,73 @@ export function useAnaliseConversaoData(options: {
     Awaited<ReturnType<typeof fetchRubeusLeadsMestrado>>
   >([]);
 
-  const loadBase = useCallback(async () => {
+  const [revalidando, setRevalidando] = useState(false);
+
+  const loadBase = useCallback(async (forcar = false) => {
     setBaseLoading(true);
     setBaseError(null);
     try {
-      const [
-        pletivos,
-        metaMestrado,
-        metaPos,
-        inscricoesGrad,
-        inscricoesMest,
-        matriculasGrad,
-        matriculasMest,
-        matriculasPos,
-      ] = await Promise.all([
-        listPletivos(),
-        listMetasMestrado(),
-        listMetasPos(),
-        fetchInscricoesGraduacao(),
-        fetchInscricoesMestrado(),
-        fetchMatriculasGraduacao(),
-        fetchMatriculasMestrado(),
-        fetchMatriculasPos(),
-      ]);
-      setBase({
-        pletivos,
-        metaMestrado,
-        metaPos,
-        inscricoesGrad,
-        inscricoesMest,
-        matriculasGrad,
-        matriculasMest,
-        matriculasPos,
+      await carregaComCache<BaseData>({
+        chave: CHAVE_CACHE,
+        tabelas: FONTES_POR_DASHBOARD['analise-conversao-presidencia'],
+        forcar,
+        baixar: async () => {
+          const [
+            pletivos,
+            metaMestrado,
+            metaPos,
+            inscricoesGrad,
+            inscricoesMest,
+            matriculasGrad,
+            matriculasMest,
+            matriculasPos,
+          ] = await Promise.all([
+            listPletivos(),
+            listMetasMestrado(),
+            listMetasPos(),
+            fetchInscricoesGraduacao(),
+            fetchInscricoesMestrado(),
+            fetchMatriculasGraduacao(),
+            fetchMatriculasMestrado(),
+            fetchMatriculasPos(),
+          ]);
+          return {
+            pletivos,
+            metaMestrado,
+            metaPos,
+            inscricoesGrad,
+            inscricoesMest,
+            matriculasGrad,
+            matriculasMest,
+            matriculasPos,
+          };
+        },
+        mostrar: (dados) => {
+          setBase(dados);
+          setBaseLoading(false);
+        },
+        aoIniciarDownload: (temDadoNaTela) => {
+          setBaseLoading(!temDadoNaTela);
+          setRevalidando(temDadoNaTela);
+        },
       });
     } catch (err) {
-      setBase(null);
+      // Não zera `base`: se veio do cache, o usuário segue com dado válido.
       setBaseError(err instanceof Error ? err.message : 'Erro ao carregar dados');
     } finally {
       setBaseLoading(false);
+      setRevalidando(false);
     }
   }, []);
 
   useEffect(() => {
-    loadBase();
+    loadBase(false);
   }, [loadBase]);
 
-  // Rubeus depende dos pletivos (para faixa de datas de graduacao) e dos anos.
+  // Rubeus depende dos pletivos (faixa de datas da graduacao) e do ano do
+  // mestrado. Como o resultado muda conforme a SELECAO do usuario, o cache e
+  // por combinacao — sem isso, 3 dos 4 cartoes desta tela continuariam
+  // carregando a cada visita mesmo com a base vinda do cache.
   useEffect(() => {
     if (!base) return;
     let cancelled = false;
@@ -142,23 +172,32 @@ export function useAnaliseConversaoData(options: {
           periodoGradAnterior
         );
 
-        const [gradAtual, gradAnterior, mestrado] = await Promise.all([
-          rangeAtual
-            ? fetchRubeusLeadsGraduacao(rangeAtual.dataInicio, rangeAtual.dataFim)
-            : Promise.resolve([]),
-          rangeAnterior
-            ? fetchRubeusLeadsGraduacao(rangeAnterior.dataInicio, rangeAnterior.dataFim)
-            : Promise.resolve([]),
-          fetchRubeusLeadsMestrado(anoMestrado),
-        ]);
-
-        if (cancelled) return;
-        setRubeusGradAtualRows(gradAtual);
-        setRubeusGradAnteriorRows(gradAnterior);
-        setRubeusMestradoRows(mestrado);
-        setRubeusGradAtual(gradAtual.length);
-        setRubeusGradAnterior(gradAnterior.length);
-        setRubeusMestrado(mestrado.length);
+        await carregaComCache<LeadsRubeus>({
+          chave: `${CHAVE_CACHE}:rubeus:${periodoGradAtual}|${periodoGradAnterior}|${anoMestrado}`,
+          tabelas: ['rubeus_registros_personalizada'],
+          baixar: async () => {
+            const [gradAtual, gradAnterior, mestrado] = await Promise.all([
+              rangeAtual
+                ? fetchRubeusLeadsGraduacao(rangeAtual.dataInicio, rangeAtual.dataFim)
+                : Promise.resolve([]),
+              rangeAnterior
+                ? fetchRubeusLeadsGraduacao(rangeAnterior.dataInicio, rangeAnterior.dataFim)
+                : Promise.resolve([]),
+              fetchRubeusLeadsMestrado(anoMestrado),
+            ]);
+            return { gradAtual, gradAnterior, mestrado };
+          },
+          mostrar: ({ gradAtual, gradAnterior, mestrado }) => {
+            if (cancelled) return;
+            setRubeusGradAtualRows(gradAtual);
+            setRubeusGradAnteriorRows(gradAnterior);
+            setRubeusMestradoRows(mestrado);
+            setRubeusGradAtual(gradAtual.length);
+            setRubeusGradAnterior(gradAnterior.length);
+            setRubeusMestrado(mestrado.length);
+            setRubeusLoading(false);
+          },
+        });
       } catch (err) {
         if (cancelled) return;
         setRubeusError(err instanceof Error ? err.message : 'Erro ao carregar leads');
@@ -239,7 +278,9 @@ export function useAnaliseConversaoData(options: {
     error: baseError,
     rubeusLoading,
     rubeusError,
-    refetch: loadBase,
+    revalidando,
+    // Botão "Atualizar": ignora o cache de propósito.
+    refetch: () => loadBase(true),
     graduacaoAtual,
     graduacaoAnterior,
     mestrado,

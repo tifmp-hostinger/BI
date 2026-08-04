@@ -32,6 +32,7 @@ import { SectionCard } from '@/components/ui/SectionCard';
 import { ChartSkeleton } from '@/components/ui/Skeletons';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { DataFreshness } from '@/components/ui/DataFreshness';
+import { AtualizandoAviso } from '@/components/ui/AtualizandoAviso';
 import { FONTES_POR_DASHBOARD, ritmoDoDataset } from '@/lib/dataFreshness';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BrazilStateMap } from '@/components/maps/BrazilStateMap';
@@ -100,7 +101,7 @@ export function PresencaNacionalPage() {
   const [onlyMatriculados, setOnlyMatriculados] = useState(false);
   const [selectedUf, setSelectedUf] = useState<string | null>(null);
 
-  const { raw, stats, detailFor, loading, error, refetch } = useMatriculas({
+  const { raw, stats, detailFor, loading, revalidando, error, refetch } = useMatriculas({
     source,
     region: region || undefined,
     onlyMatriculados,
@@ -160,6 +161,7 @@ export function PresencaNacionalPage() {
               </Link>
               <div className="mt-2">
                 <DataFreshness tabelas={FONTES_POR_DASHBOARD['presenca-nacional']} ritmos={freshnessRitmos} />
+                <AtualizandoAviso visivel={revalidando} />
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium uppercase tracking-widest text-cream/85 ring-1 ring-inset ring-cream/15">

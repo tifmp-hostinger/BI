@@ -7,6 +7,10 @@ import {
   type MatriculaSource,
 } from '@/services/matriculasService';
 import { regionOf } from '@/lib/brStates';
+import { FONTES_POR_DASHBOARD } from '@/lib/dataFreshness';
+import { carregaComCache } from '@/lib/carregaComCache';
+
+const CHAVE_CACHE = 'presenca-nacional';
 
 export type MatriculaFilters = {
   source?: MatriculaSource | 'all';
@@ -18,6 +22,8 @@ type State = {
   raw: Matricula[];
   loading: boolean;
   error: string | null;
+  /** Há dado do cache na tela e um download rodando por trás. */
+  revalidando: boolean;
 };
 
 export function useMatriculas(filters: MatriculaFilters) {
@@ -25,24 +31,35 @@ export function useMatriculas(filters: MatriculaFilters) {
     raw: [],
     loading: true,
     error: null,
+    revalidando: false,
   });
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (forcar = false) => {
     setState((s) => ({ ...s, loading: true, error: null }));
     try {
-      const raw = await listMatriculas();
-      setState({ raw, loading: false, error: null });
-    } catch (err) {
-      setState({
-        raw: [],
-        loading: false,
-        error: err instanceof Error ? err.message : 'Erro ao carregar matriculas',
+      await carregaComCache<Matricula[]>({
+        chave: CHAVE_CACHE,
+        tabelas: FONTES_POR_DASHBOARD['presenca-nacional'],
+        forcar,
+        baixar: () => listMatriculas(),
+        mostrar: (raw) => setState((s) => ({ ...s, raw, loading: false, error: null })),
+        aoIniciarDownload: (temDadoNaTela) =>
+          setState((s) => ({ ...s, loading: !temDadoNaTela, revalidando: temDadoNaTela })),
       });
+      setState((s) => ({ ...s, loading: false, revalidando: false }));
+    } catch (err) {
+      // Preserva o que veio do cache em vez de esvaziar a tela.
+      setState((s) => ({
+        ...s,
+        loading: false,
+        revalidando: false,
+        error: err instanceof Error ? err.message : 'Erro ao carregar matriculas',
+      }));
     }
   }, []);
 
   useEffect(() => {
-    load();
+    load(false);
   }, [load]);
 
   const filtered = useMemo(() => {
@@ -70,9 +87,11 @@ export function useMatriculas(filters: MatriculaFilters) {
     raw: state.raw,
     filtered,
     loading: state.loading,
+    revalidando: state.revalidando,
     error: state.error,
     stats,
     detailFor,
-    refetch: load,
+    // Botão "Atualizar": ignora o cache de propósito.
+    refetch: () => load(true),
   };
 }

@@ -86,7 +86,41 @@ tela de login seria decorativa -- qualquer pessoa leria (e poderia apagar) os
 dados direto pela API REST. A carga de dados nao e afetada: ela usa
 `service_role`, que ignora RLS.
 
-## Cache
+## Cache dos dados (navegador)
+
+Cada painel baixa as tabelas brutas e calcula no cliente -- Bolsas sozinho sao
+~129 mil linhas / ~38 MB em ~129 requisicoes. Para nao repetir isso a cada
+abertura, os datasets ficam guardados no **IndexedDB** do navegador
+(`src/lib/datasetCache.ts`) e a tela usa o guardado enquanto revalida
+("stale-while-revalidate", em `src/lib/carregaComCache.ts`).
+
+Ao abrir um painel:
+
+1. o dado guardado aparece **na hora**;
+2. em paralelo, uma consulta de **uma linha por tabela com carimbo de carga**
+   pergunta se a carga mudou (nao baixa o dataset);
+3. nao mudou e o cache e do mesmo dia -> termina, **zero download**;
+4. mudou (ou nao havia cache) -> baixa por tras e atualiza a tela, exibindo
+   "Atualizando..." de forma discreta.
+
+**Nao existe horario de atualizacao, de proposito.** A carga nao roda em hora
+fixa nem todo dia (medido: 27/07 11:47, 29/07 12:25, 31/07 09:14, 03/08 14:50),
+entao qualquer horario fixo estaria errado na maioria dos dias. O gatilho e a
+mudanca da carga, nao o relogio.
+
+**Validade por dia civil**: so `rubeus_registros_personalizada`, `stg_meta_ads`
+e as tabelas de dominio tem carimbo de carga. Para as tabelas do RM nao ha como
+perguntar "mudou?" de forma barata, entao o cache nunca atravessa a virada do
+dia sem reconferir. O botao "Atualizar" de cada painel ignora o cache.
+
+**Ao mudar as queries** (colunas novas, formato diferente), incremente
+`VERSAO_CACHE` em `src/lib/datasetCache.ts` -- senao um cache antigo alimenta
+calculos novos com dados incompletos, que e falha silenciosa.
+
+Sem espaco, em navegacao privada ou com IndexedDB bloqueado, o app funciona
+normalmente, apenas sem cache.
+
+## Cache (arquivos estaticos)
 
 `index.html` e `config.js` sao servidos com `no-store` (`docker/nginx.conf`):
 sao a porta de entrada do app e o arquivo de configuracao. Sem isso, um deploy

@@ -10,6 +10,7 @@ import {
 import { AppShell } from '@/components/layout/AppShell';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { DataFreshness } from '@/components/ui/DataFreshness';
+import { AtualizandoAviso } from '@/components/ui/AtualizandoAviso';
 import { FONTES_POR_DASHBOARD } from '@/lib/dataFreshness';
 import { EspecializacoesBlock } from './components/EspecializacoesBlock';
 import { GraduacaoBlock } from './components/GraduacaoBlock';
@@ -53,6 +54,7 @@ export function AnaliseConversaoPresidenciaPage() {
     rubeusLoading,
     rubeusError,
     refetch,
+    revalidando,
     graduacaoAtual,
     graduacaoAnterior,
     mestrado,
@@ -112,6 +114,7 @@ export function AnaliseConversaoPresidenciaPage() {
               </Link>
               <div className="mt-2">
                 <DataFreshness tabelas={FONTES_POR_DASHBOARD['analise-conversao-presidencia']} ritmos={freshnessRitmos} />
+                <AtualizandoAviso visivel={revalidando} />
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium uppercase tracking-widest text-cream/85 ring-1 ring-inset ring-cream/15">

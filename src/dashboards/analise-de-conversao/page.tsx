@@ -33,6 +33,7 @@ import { STAT_GRID_CLASSES, STAT_GRID_CONTAINER } from '@/components/ui/StatCard
 import { ChartSkeleton, LoadingSteps } from '@/components/ui/Skeletons';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { DataFreshness } from '@/components/ui/DataFreshness';
+import { AtualizandoAviso } from '@/components/ui/AtualizandoAviso';
 import { FONTES_POR_DASHBOARD } from '@/lib/dataFreshness';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
@@ -106,7 +107,7 @@ export function AnaliseDeConversaoPage() {
     dataFim: null,
   });
 
-  const { loading, error, progress, filterOptions, geralKpis, leadsData, graduacaoData, rematriculaData, mestradoData, especializacoesData, presencialData, eadData, cursosLivresData, freshnessRitmos, refetch } =
+  const { loading, revalidando, error, progress, filterOptions, geralKpis, leadsData, graduacaoData, rematriculaData, mestradoData, especializacoesData, presencialData, eadData, cursosLivresData, freshnessRitmos, refetch } =
     useAnaliseConversaoData(filters, tab);
 
   const tt = useMemo(chartTooltipStyle, []);
@@ -131,6 +132,7 @@ export function AnaliseDeConversaoPage() {
               </Link>
               <div className="mt-2">
                 <DataFreshness tabelas={FONTES_POR_DASHBOARD['analise-de-conversao']} ritmos={freshnessRitmos} />
+                <AtualizandoAviso visivel={revalidando} />
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium uppercase tracking-widest text-cream/85 ring-1 ring-inset ring-cream/15">

@@ -515,6 +515,86 @@ export async function fetchFreshness(
   return { maisAntiga, fontesFato, fontesDominio, status, foraDoRitmo };
 }
 
+/**
+ * Assinatura barata do estado da carga: os carimbos reais das tabelas do
+ * dashboard, concatenados. Uma consulta de UMA linha por tabela com carimbo
+ * (compartilhada com o indicador de frescor pelo cache de promessas acima),
+ * então perguntar "mudou?" custa milissegundos em vez dos megabytes do
+ * dataset.
+ *
+ * Tabelas sem carimbo (todas as do RM) não entram: para elas a validade é
+ * por dia civil, em datasetCache.cacheValido.
+ *
+ * Falha de rede devolve string vazia de propósito: sem sinal confiável, o
+ * cache é considerado inválido e o dado é rebaixado — errar para o lado de
+ * mostrar dado atual.
+ */
+const cacheContagem = new Map<string, Promise<number | null>>();
+
+/**
+ * Número de linhas da tabela, sem trazer nenhuma linha (`head: true`): o
+ * PostgREST responde só com o cabeçalho de contagem.
+ *
+ * Serve de sinal de carga para as tabelas do RM, que não têm carimbo. Não é
+ * perfeito — uma carga que substitua linhas sem mudar o total passaria
+ * despercebida —, por isso a validade por dia civil continua valendo como
+ * rede de proteção (ver datasetCache.cacheValido).
+ */
+function contaLinhas(tabela: string): Promise<number | null> {
+  const emCache = cacheContagem.get(tabela);
+  if (emCache) return emCache;
+
+  const p = (async () => {
+    const { count, error } = await supabase
+      .from(tabela)
+      .select('*', { count: 'exact', head: true });
+    if (error) throw error;
+    return count ?? null;
+  })();
+
+  cacheContagem.set(tabela, p);
+  p.catch(() => cacheContagem.delete(tabela));
+  return p;
+}
+
+export async function assinaturaCarga(
+  tabelas: string[],
+  opcoes: { ignorarCache?: boolean } = {},
+): Promise<string> {
+  const fontes = tabelas.map((t) => REGISTRO_FONTES[t]).filter((c): c is FonteConfig => !!c);
+  const comCarimbo = fontes.filter((c) => c.colunaCarga);
+  // Sem carimbo, a contagem é o único sinal barato disponível.
+  const semCarimbo = fontes.filter((c) => !c.colunaCarga);
+
+  if (fontes.length === 0) return 'sem-fontes';
+
+  // Depois de um download demorado, o valor em cache pode ser anterior à
+  // carga que acabou de rodar. Gravar essa assinatura antiga junto do dado
+  // novo faria a próxima visita achar que mudou e rebaixar tudo à toa.
+  if (opcoes.ignorarCache) {
+    comCarimbo.forEach((c) => cache.delete(c.tabela));
+    semCarimbo.forEach((c) => cacheContagem.delete(c.tabela));
+  }
+
+  try {
+    const partes = await Promise.all([
+      ...comCarimbo.map(async (c) => {
+        const d = await buscaUltimaCarga(c.tabela, c.colunaCarga!);
+        return `${c.tabela}=${d ? d.getTime() : 'null'}`;
+      }),
+      ...semCarimbo.map(async (c) => {
+        const n = await contaLinhas(c.tabela);
+        return `${c.tabela}#${n ?? 'null'}`;
+      }),
+    ]);
+    return partes.sort().join('|');
+  } catch {
+    // Sem sinal confiável, o cache é tratado como inválido: erra-se para o
+    // lado de mostrar dado atual.
+    return '';
+  }
+}
+
 export function formataDataHora(d: Date): string {
   return `${d.toLocaleDateString('pt-BR')} às ${d.toLocaleTimeString('pt-BR', {
     hour: '2-digit',

@@ -29,6 +29,7 @@ import { ChartSkeleton, LoadingSteps } from '@/components/ui/Skeletons';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { DataFreshness } from '@/components/ui/DataFreshness';
+import { AtualizandoAviso } from '@/components/ui/AtualizandoAviso';
 import { FONTES_POR_DASHBOARD } from '@/lib/dataFreshness';
 import { MultiSelect } from '@/components/ui/MultiSelect';
 import { fmtBRLCompact, fmtPct } from '../analise-de-conversao/formatters';
@@ -132,7 +133,7 @@ export function GrowthEPerformancePage() {
   );
 
   const {
-    loading, error, progress, pletivo,
+    loading, revalidando, error, progress, pletivo,
     media, negocio, campanhas, mapa, horarios, origem, serieLeads, serieMatriculas,
     freshnessRitmos, refetch,
   } = useGrowthData(filters, viewAtiva);
@@ -193,6 +194,7 @@ export function GrowthEPerformancePage() {
               Central de Dashboards
             </Link>
             <DataFreshness tabelas={FONTES_POR_DASHBOARD['growth-e-performance']} ritmos={freshnessRitmos} />
+            <AtualizandoAviso visivel={revalidando} />
           </div>
           <div className="flex items-center gap-2">
             <span className="hidden text-xs text-ink-3 sm:inline">Olá, Equipe FMP</span>

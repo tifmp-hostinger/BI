@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { clearDashboardCache, fetchDashboardData } from '../queries';
-import { ritmoDoDataset, type RitmoFonte } from '@/lib/dataFreshness';
+import { FONTES_POR_DASHBOARD, ritmoDoDataset, type RitmoFonte } from '@/lib/dataFreshness';
+import { carregaComCache } from '@/lib/carregaComCache';
 import {
   buildFilterOptions,
   computeCursosLivresData,
@@ -42,7 +43,11 @@ type State = {
   loading: boolean;
   error: string | null;
   progress: string | null;
+  /** Há dado do cache na tela e um download rodando por trás. */
+  revalidando: boolean;
 };
+
+const CHAVE_CACHE = 'analise-de-conversao';
 
 /**
  * Recebe a aba ativa: cada bloco de dados só é computado quando a sua aba
@@ -55,25 +60,38 @@ export function useAnaliseConversaoData(filters: ConversaoFilters, tab: Conversa
     loading: true,
     error: null,
     progress: null,
+    revalidando: false,
   });
 
   const load = useCallback(async (forceRefresh: boolean) => {
     setState((s) => ({ ...s, loading: true, error: null, progress: null }));
     try {
-      const dataset = await fetchDashboardData((etapa, total, descricao) => {
-        setState((s) => ({
-          ...s,
-          progress: `Carregando dados — etapa ${etapa} de ${total} (${descricao})`,
-        }));
-      }, forceRefresh);
-      setState({ dataset, loading: false, error: null, progress: null });
+      await carregaComCache<DashboardDataset>({
+        chave: CHAVE_CACHE,
+        tabelas: FONTES_POR_DASHBOARD['analise-de-conversao'],
+        forcar: forceRefresh,
+        baixar: () =>
+          fetchDashboardData((etapa, total, descricao) => {
+            setState((s) => ({
+              ...s,
+              progress: `Carregando dados — etapa ${etapa} de ${total} (${descricao})`,
+            }));
+          }, true),
+        mostrar: (dataset) =>
+          setState((s) => ({ ...s, dataset, loading: false, error: null, progress: null })),
+        aoIniciarDownload: (temDadoNaTela) =>
+          setState((s) => ({ ...s, loading: !temDadoNaTela, revalidando: temDadoNaTela })),
+      });
+      setState((s) => ({ ...s, loading: false, revalidando: false, progress: null }));
     } catch (err) {
-      setState({
-        dataset: null,
+      // Preserva o dado do cache na tela: rede caindo não deve apagar leitura válida.
+      setState((s) => ({
+        ...s,
         loading: false,
+        revalidando: false,
         progress: null,
         error: err instanceof Error ? err.message : 'Erro ao carregar dados',
-      });
+      }));
     }
   }, []);
 
@@ -157,6 +175,7 @@ export function useAnaliseConversaoData(filters: ConversaoFilters, tab: Conversa
 
   return {
     loading: state.loading,
+    revalidando: state.revalidando,
     error: state.error,
     progress: state.progress,
     filterOptions,

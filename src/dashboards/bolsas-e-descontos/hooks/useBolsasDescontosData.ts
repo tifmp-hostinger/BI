@@ -29,7 +29,8 @@ import {
   fetchMatriculadosMestrado,
   fetchMatriculadosPos,
 } from '../queries';
-import { ritmoDoDataset, type RitmoFonte } from '@/lib/dataFreshness';
+import { FONTES_POR_DASHBOARD, ritmoDoDataset, type RitmoFonte } from '@/lib/dataFreshness';
+import { carregaComCache } from '@/lib/carregaComCache';
 
 type PanoramaData = {
   kpis: PanoramaKpis;
@@ -53,45 +54,66 @@ type Dataset = {
   freshnessRitmos: Record<string, RitmoFonte>;
 };
 
+const CHAVE_CACHE = 'bolsas-e-descontos';
+
 export function useBolsasDescontosData(filters: BolsasFilters) {
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [loading, setLoading] = useState(true);
+  const [revalidando, setRevalidando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadAll = useCallback(async () => {
+  const loadAll = useCallback(async (forcar = false) => {
     setLoading(true);
     setError(null);
     try {
-      const [dim, raw, grad, pos, mestrado] = await Promise.all([
-        fetchDimBeneficio(),
-        fetchBolsasRaw(),
-        fetchMatriculadosGrad(),
-        fetchMatriculadosPos(),
-        fetchMatriculadosMestrado(),
-      ]);
-      const dimMap = buildDimMap(dim);
-      const enrichedRows = enrichBolsaRows(raw, dimMap);
-      const matriculados: MatriculadosData = { grad, pos, mestrado };
-      const filterOptions = computeFilterOptions(enrichedRows);
-      // Proxy de frescor: sobre o dataset bruto, antes do enriquecimento
-      // descartar a coluna de data — nunca dispara consulta nova.
-      const freshnessRitmos: Record<string, RitmoFonte> = {
-        stg_rm_matriculas_bolsas: ritmoDoDataset(raw, 'data_matricula'),
-        stg_rm_matriculas_grad: ritmoDoDataset(grad, 'data'),
-        stg_rm_matriculas_pos: ritmoDoDataset(pos, 'data'),
-        stg_rm_matriculas_mestrado: ritmoDoDataset(mestrado, 'data'),
-      };
-      setDataset({ enrichedRows, matriculados, filterOptions, freshnessRitmos });
+      await carregaComCache<Dataset>({
+        chave: CHAVE_CACHE,
+        tabelas: FONTES_POR_DASHBOARD['bolsas-e-descontos'],
+        forcar,
+        // Guarda o dataset JÁ enriquecido: além de poupar o download, poupa
+        // reprocessar ~129 mil linhas a cada abertura.
+        baixar: async () => {
+          const [dim, raw, grad, pos, mestrado] = await Promise.all([
+            fetchDimBeneficio(),
+            fetchBolsasRaw(),
+            fetchMatriculadosGrad(),
+            fetchMatriculadosPos(),
+            fetchMatriculadosMestrado(),
+          ]);
+          const dimMap = buildDimMap(dim);
+          const enrichedRows = enrichBolsaRows(raw, dimMap);
+          const matriculados: MatriculadosData = { grad, pos, mestrado };
+          const filterOptions = computeFilterOptions(enrichedRows);
+          // Proxy de frescor: sobre o dataset bruto, antes do enriquecimento
+          // descartar a coluna de data — nunca dispara consulta nova.
+          const freshnessRitmos: Record<string, RitmoFonte> = {
+            stg_rm_matriculas_bolsas: ritmoDoDataset(raw, 'data_matricula'),
+            stg_rm_matriculas_grad: ritmoDoDataset(grad, 'data'),
+            stg_rm_matriculas_pos: ritmoDoDataset(pos, 'data'),
+            stg_rm_matriculas_mestrado: ritmoDoDataset(mestrado, 'data'),
+          };
+          return { enrichedRows, matriculados, filterOptions, freshnessRitmos };
+        },
+        mostrar: (d) => {
+          setDataset(d);
+          setLoading(false);
+        },
+        aoIniciarDownload: (temDadoNaTela) => {
+          setLoading(!temDadoNaTela);
+          setRevalidando(temDadoNaTela);
+        },
+      });
     } catch (err) {
-      setDataset(null);
+      // Não zera o dataset: dado vindo do cache continua legível.
       setError(err instanceof Error ? err.message : 'Erro ao carregar dados');
     } finally {
       setLoading(false);
+      setRevalidando(false);
     }
   }, []);
 
   useEffect(() => {
-    loadAll();
+    loadAll(false);
   }, [loadAll]);
 
   const filtered = useMemo<EnrichedBolsaRow[] | null>(() => {
@@ -136,6 +158,8 @@ export function useBolsasDescontosData(filters: BolsasFilters) {
     evasaoLoading: loading,
     evasaoError: error,
     freshnessRitmos: dataset?.freshnessRitmos ?? {},
-    refetch: loadAll,
+    revalidando,
+    // Botão "Atualizar": ignora o cache de propósito.
+    refetch: () => loadAll(true),
   };
 }

@@ -10,7 +10,8 @@ import {
   computeOrigem,
   computeSerieMensal,
 } from '../calculations';
-import { ritmoDeDatasets, ritmoDoDataset, type RitmoFonte } from '@/lib/dataFreshness';
+import { FONTES_POR_DASHBOARD, ritmoDeDatasets, ritmoDoDataset, type RitmoFonte } from '@/lib/dataFreshness';
+import { carregaComCache } from '@/lib/carregaComCache';
 import type { GrowthDataset, GrowthFilters, GrowthView } from '../types';
 
 type State = {
@@ -18,7 +19,11 @@ type State = {
   loading: boolean;
   error: string | null;
   progress: string | null;
+  /** Há dado na tela (vindo do cache) e um download rodando por trás. */
+  revalidando: boolean;
 };
+
+const CHAVE_CACHE = 'growth-e-performance';
 
 /**
  * A visão ativa entra como dependência para computar apenas o que está na
@@ -30,25 +35,41 @@ export function useGrowthData(filters: GrowthFilters, view: GrowthView) {
     loading: true,
     error: null,
     progress: null,
+    revalidando: false,
   });
 
   const load = useCallback(async (forceRefresh: boolean) => {
     setState((s) => ({ ...s, loading: true, error: null, progress: null }));
     try {
-      const dataset = await fetchGrowthData((etapa, total, descricao) => {
-        setState((s) => ({
-          ...s,
-          progress: `Carregando dados — etapa ${etapa} de ${total} (${descricao})`,
-        }));
-      }, forceRefresh);
-      setState({ dataset, loading: false, error: null, progress: null });
-    } catch (err) {
-      setState({
-        dataset: null,
-        loading: false,
-        progress: null,
-            error: err instanceof Error ? err.message : 'Erro ao carregar dados',
+      await carregaComCache<GrowthDataset>({
+        chave: CHAVE_CACHE,
+        tabelas: FONTES_POR_DASHBOARD['growth-e-performance'],
+        forcar: forceRefresh,
+        // forceRefresh=true sempre: o cache em memória de queries.ts já foi
+        // consultado por carregaComCache através do cache persistente.
+        baixar: () =>
+          fetchGrowthData((etapa, total, descricao) => {
+            setState((s) => ({
+              ...s,
+              progress: `Carregando dados — etapa ${etapa} de ${total} (${descricao})`,
+            }));
+          }, true),
+        mostrar: (dataset) =>
+          setState((s) => ({ ...s, dataset, loading: false, error: null, progress: null })),
+        aoIniciarDownload: (temDadoNaTela) =>
+          setState((s) => ({ ...s, loading: !temDadoNaTela, revalidando: temDadoNaTela })),
       });
+      setState((s) => ({ ...s, loading: false, revalidando: false, progress: null }));
+    } catch (err) {
+      setState((s) => ({
+        // Mantém na tela o que veio do cache: falha de rede não deve apagar
+        // um dado válido que o usuário já está lendo.
+        ...s,
+        loading: false,
+        revalidando: false,
+        progress: null,
+        error: err instanceof Error ? err.message : 'Erro ao carregar dados',
+      }));
     }
   }, []);
 
@@ -132,6 +153,7 @@ export function useGrowthData(filters: GrowthFilters, view: GrowthView) {
 
   return {
     loading: state.loading,
+    revalidando: state.revalidando,
     error: state.error,
     progress: state.progress,
     pletivo: state.dataset?.pletivo ?? [],
