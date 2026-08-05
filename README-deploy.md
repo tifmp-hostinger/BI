@@ -130,6 +130,15 @@ reconferir. O botao "Atualizar" de cada painel ignora o cache.
 como invalido e NADA e gravado. Gravar uma assinatura de falha faria ela casar
 consigo mesma nas visitas seguintes, deixando o cache eternamente "valido".
 
+**Aquecimento apos o login**: assim que o usuario entra, o app baixa os
+paineis em segundo plano (sequencial, mais leves primeiro), enquanto ele ainda
+esta na Central de Dashboards -- ao clicar, o painel ja abre pronto
+(`src/lib/aqueceDashboards.ts`). Se ele abrir um painel no meio do
+aquecimento, o download e compartilhado, nunca duplicado. A checagem "ja esta
+quente?" le so uma entrada meta leve (`meta:<chave>`), sem desserializar o
+dataset -- por isso reabrir o app com tudo quente nao baixa nada nem trava a
+tela inicial.
+
 **Ao mudar as queries** (colunas novas, formato diferente), incremente
 `VERSAO_CACHE` em `src/lib/datasetCache.ts` -- senao um cache antigo alimenta
 calculos novos com dados incompletos, que e falha silenciosa.

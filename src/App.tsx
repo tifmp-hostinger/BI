@@ -6,6 +6,7 @@ import { ModulePlaceholder } from '@/components/ui/ModulePlaceholder';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { AuthGate } from '@/components/auth/AuthGate';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { AquecedorDashboards } from '@/components/AquecedorDashboards';
 
 // Code-split por rota: cada dashboard (com recharts/leaflet pesados) vira um
 // chunk próprio, carregado só quando o usuário navega até ele.
@@ -69,6 +70,7 @@ function App() {
   return (
     <AuthProvider>
       <AuthGate>
+        <AquecedorDashboards />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<HomePage />} />

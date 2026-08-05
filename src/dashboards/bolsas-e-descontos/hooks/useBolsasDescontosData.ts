@@ -56,6 +56,35 @@ type Dataset = {
 
 const CHAVE_CACHE = 'bolsas-e-descontos';
 
+/**
+ * Download + enriquecimento completo do painel. Exportado para o aquecimento
+ * em segundo plano usar a MESMA montagem da tela (mesmo formato de cache).
+ * Guarda o dataset JÁ enriquecido: além de poupar o download, poupa
+ * reprocessar ~129 mil linhas a cada abertura.
+ */
+export async function baixarDatasetBolsas(): Promise<Dataset> {
+  const [dim, raw, grad, pos, mestrado] = await Promise.all([
+    fetchDimBeneficio(),
+    fetchBolsasRaw(),
+    fetchMatriculadosGrad(),
+    fetchMatriculadosPos(),
+    fetchMatriculadosMestrado(),
+  ]);
+  const dimMap = buildDimMap(dim);
+  const enrichedRows = enrichBolsaRows(raw, dimMap);
+  const matriculados: MatriculadosData = { grad, pos, mestrado };
+  const filterOptions = computeFilterOptions(enrichedRows);
+  // Proxy de frescor: sobre o dataset bruto, antes do enriquecimento
+  // descartar a coluna de data — nunca dispara consulta nova.
+  const freshnessRitmos: Record<string, RitmoFonte> = {
+    stg_rm_matriculas_bolsas: ritmoDoDataset(raw, 'data_matricula'),
+    stg_rm_matriculas_grad: ritmoDoDataset(grad, 'data'),
+    stg_rm_matriculas_pos: ritmoDoDataset(pos, 'data'),
+    stg_rm_matriculas_mestrado: ritmoDoDataset(mestrado, 'data'),
+  };
+  return { enrichedRows, matriculados, filterOptions, freshnessRitmos };
+}
+
 export function useBolsasDescontosData(filters: BolsasFilters) {
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [loading, setLoading] = useState(true);
@@ -70,30 +99,7 @@ export function useBolsasDescontosData(filters: BolsasFilters) {
         chave: CHAVE_CACHE,
         tabelas: FONTES_POR_DASHBOARD['bolsas-e-descontos'],
         forcar,
-        // Guarda o dataset JÁ enriquecido: além de poupar o download, poupa
-        // reprocessar ~129 mil linhas a cada abertura.
-        baixar: async () => {
-          const [dim, raw, grad, pos, mestrado] = await Promise.all([
-            fetchDimBeneficio(),
-            fetchBolsasRaw(),
-            fetchMatriculadosGrad(),
-            fetchMatriculadosPos(),
-            fetchMatriculadosMestrado(),
-          ]);
-          const dimMap = buildDimMap(dim);
-          const enrichedRows = enrichBolsaRows(raw, dimMap);
-          const matriculados: MatriculadosData = { grad, pos, mestrado };
-          const filterOptions = computeFilterOptions(enrichedRows);
-          // Proxy de frescor: sobre o dataset bruto, antes do enriquecimento
-          // descartar a coluna de data — nunca dispara consulta nova.
-          const freshnessRitmos: Record<string, RitmoFonte> = {
-            stg_rm_matriculas_bolsas: ritmoDoDataset(raw, 'data_matricula'),
-            stg_rm_matriculas_grad: ritmoDoDataset(grad, 'data'),
-            stg_rm_matriculas_pos: ritmoDoDataset(pos, 'data'),
-            stg_rm_matriculas_mestrado: ritmoDoDataset(mestrado, 'data'),
-          };
-          return { enrichedRows, matriculados, filterOptions, freshnessRitmos };
-        },
+        baixar: baixarDatasetBolsas,
         mostrar: (d) => {
           setDataset(d);
           setLoading(false);

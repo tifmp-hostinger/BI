@@ -37,14 +37,30 @@ export type EntradaCache<T> = {
   versao: number;
 };
 
+/**
+ * Cópia leve dos campos de validade, gravada sob `meta:<chave>` junto com o
+ * dataset. Existe para o aquecimento em segundo plano: checar se um painel já
+ * está quente NÃO deve exigir desserializar o dataset inteiro (o de Bolsas
+ * tem dezenas de MB — seria trave de main thread na tela inicial, a cada
+ * login, só para concluir "nada a fazer").
+ */
+export type MetaCache = {
+  assinatura: string;
+  gravadoEm: number;
+  versao: number;
+};
+
+function chaveMeta(chave: string): string {
+  return `meta:${chave}`;
+}
+
 let avisoQuotaEmitido = false;
 
-function abreBanco(): Promise<IDBDatabase | null> {
-  if (typeof indexedDB === 'undefined') return Promise.resolve(null);
+function abre(versao?: number): Promise<IDBDatabase | null> {
   return new Promise((resolve) => {
     let req: IDBOpenDBRequest;
     try {
-      req = indexedDB.open(NOME_BANCO, 1);
+      req = versao === undefined ? indexedDB.open(NOME_BANCO) : indexedDB.open(NOME_BANCO, versao);
     } catch {
       resolve(null);
       return;
@@ -57,6 +73,21 @@ function abreBanco(): Promise<IDBDatabase | null> {
     // Navegação privada ou armazenamento bloqueado: segue sem cache, não quebra.
     req.onerror = () => resolve(null);
     req.onblocked = () => resolve(null);
+  });
+}
+
+function abreBanco(): Promise<IDBDatabase | null> {
+  if (typeof indexedDB === 'undefined') return Promise.resolve(null);
+  return abre().then((db) => {
+    if (!db) return null;
+    if (db.objectStoreNames.contains(NOME_STORE)) return db;
+    // Banco existe mas sem a store: acontece se algo abriu o banco antes do
+    // app criar a estrutura (abrir um IndexedDB inexistente JÁ o cria, vazio).
+    // Sem isto o upgrade nunca mais dispararia e o cache falharia para sempre,
+    // em silêncio. Reabrir com versão+1 força o upgrade e cria a store.
+    const proximaVersao = db.version + 1;
+    db.close();
+    return abre(proximaVersao);
   });
 }
 
@@ -106,8 +137,8 @@ function diaCivil(ms: number): string {
  * elas não há como perguntar "mudou?" de forma barata, então o cache nunca
  * atravessa a virada do dia sem uma reconferência.
  */
-export function cacheValido<T>(
-  entrada: EntradaCache<T> | null,
+export function cacheValido(
+  entrada: MetaCache | null,
   assinaturaAtual: string | null,
 ): boolean {
   if (!entrada) return false;
@@ -119,6 +150,17 @@ export function cacheValido<T>(
   return diaCivil(entrada.gravadoEm) === diaCivil(Date.now());
 }
 
+/** Lê só a entrada meta — barata, para o aquecimento decidir se há trabalho. */
+export async function leMeta(chave: string): Promise<MetaCache | null> {
+  const bruto = await comStore<MetaCache>(
+    'readonly',
+    (s) => s.get(chaveMeta(chave)) as IDBRequest<MetaCache>,
+  );
+  if (!bruto || typeof bruto !== 'object') return null;
+  if (bruto.versao !== VERSAO_CACHE) return null;
+  return bruto;
+}
+
 export async function leCache<T>(chave: string): Promise<EntradaCache<T> | null> {
   const bruto = await comStore<EntradaCache<T>>('readonly', (s) => s.get(chave) as IDBRequest<EntradaCache<T>>);
   if (!bruto || typeof bruto !== 'object') return null;
@@ -127,15 +169,41 @@ export async function leCache<T>(chave: string): Promise<EntradaCache<T> | null>
 }
 
 export async function gravaCache<T>(chave: string, dataset: T, assinatura: string): Promise<void> {
-  const entrada: EntradaCache<T> = {
-    dataset,
-    assinatura,
-    gravadoEm: Date.now(),
-    versao: VERSAO_CACHE,
-  };
-  await comStore('readwrite', (s) => s.put(entrada, chave) as IDBRequest<IDBValidKey>);
+  const gravadoEm = Date.now();
+  const entrada: EntradaCache<T> = { dataset, assinatura, gravadoEm, versao: VERSAO_CACHE };
+  const meta: MetaCache = { assinatura, gravadoEm, versao: VERSAO_CACHE };
+
+  // Dataset e meta na MESMA transação: gravar um sem o outro deixaria o
+  // aquecimento (que lê só a meta) em desacordo com o que a tela lê.
+  const db = await abreBanco();
+  if (!db) return;
+  await new Promise<void>((resolve) => {
+    let tx: IDBTransaction;
+    try {
+      tx = db.transaction(NOME_STORE, 'readwrite');
+    } catch {
+      db.close();
+      return resolve();
+    }
+    const store = tx.objectStore(NOME_STORE);
+    store.put(entrada, chave);
+    store.put(meta, chaveMeta(chave));
+    tx.oncomplete = () => {
+      resolve();
+      db.close();
+    };
+    tx.onerror = tx.onabort = () => {
+      if (!avisoQuotaEmitido) {
+        avisoQuotaEmitido = true;
+        console.warn('[cache] não foi possível gravar o cache local:', tx.error?.name);
+      }
+      resolve();
+      db.close();
+    };
+  });
 }
 
 export async function limpaCache(chave: string): Promise<void> {
   await comStore('readwrite', (s) => s.delete(chave) as IDBRequest<undefined>);
+  await comStore('readwrite', (s) => s.delete(chaveMeta(chave)) as IDBRequest<undefined>);
 }

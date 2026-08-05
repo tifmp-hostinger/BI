@@ -1,5 +1,12 @@
 import { assinaturaCarga } from '@/lib/dataFreshness';
-import { cacheValido, gravaCache, leCache } from '@/lib/datasetCache';
+import { cacheValido, gravaCache, leCache, leMeta } from '@/lib/datasetCache';
+
+/**
+ * Downloads em andamento, por chave. O aquecimento em segundo plano e o
+ * painel aberto pelo usuário podem pedir o MESMO dataset ao mesmo tempo —
+ * sem isso, seriam dois downloads completos em paralelo do mesmo conteúdo.
+ */
+const downloadsEmAndamento = new Map<string, Promise<unknown>>();
 
 export type OrigemDado = 'cache' | 'rede';
 
@@ -31,28 +38,53 @@ export async function carregaComCache<T>(opcoes: {
   aoIniciarDownload?: (temDadoNaTela: boolean) => void;
   /** Ignora o cache e baixa direto (botão "Atualizar"). */
   forcar?: boolean;
+  /**
+   * Modo do aquecimento em segundo plano: garante o cache quente sem exibir
+   * nada. Com o cache já válido, decide isso lendo SÓ a entrada meta —
+   * desserializar o dataset inteiro (dezenas de MB no Bolsas) só para
+   * concluir "nada a fazer" travaria a tela inicial a cada login.
+   */
+  apenasAquecer?: boolean;
 }): Promise<void> {
-  const { chave, tabelas, baixar, mostrar, aoIniciarDownload, forcar = false } = opcoes;
+  const { chave, tabelas, baixar, mostrar, aoIniciarDownload, forcar = false, apenasAquecer = false } = opcoes;
 
   let temDadoNaTela = false;
 
   if (!forcar) {
-    // Cache e assinatura em paralelo: a assinatura é barata e não deve
-    // atrasar a exibição do que já está guardado.
-    const [entrada, assinatura] = await Promise.all([
-      leCache<T>(chave).catch(() => null),
-      assinaturaCarga(tabelas),
-    ]);
+    if (apenasAquecer) {
+      const [meta, assinatura] = await Promise.all([
+        leMeta(chave).catch(() => null),
+        assinaturaCarga(tabelas),
+      ]);
+      if (cacheValido(meta, assinatura)) return; // já quente: nada a fazer
+    } else {
+      // Cache e assinatura em paralelo: a assinatura é barata e não deve
+      // atrasar a exibição do que já está guardado.
+      const [entrada, assinatura] = await Promise.all([
+        leCache<T>(chave).catch(() => null),
+        assinaturaCarga(tabelas),
+      ]);
 
-    if (entrada) {
-      mostrar(entrada.dataset, 'cache');
-      temDadoNaTela = true;
-      if (cacheValido(entrada, assinatura)) return; // nada mudou: sem download
+      if (entrada) {
+        mostrar(entrada.dataset, 'cache');
+        temDadoNaTela = true;
+        if (cacheValido(entrada, assinatura)) return; // nada mudou: sem download
+      }
     }
   }
 
   aoIniciarDownload?.(temDadoNaTela);
-  const dataset = await baixar();
+
+  let download = downloadsEmAndamento.get(chave) as Promise<T> | undefined;
+  if (!download) {
+    download = baixar();
+    downloadsEmAndamento.set(chave, download);
+    download.then(
+      () => downloadsEmAndamento.delete(chave),
+      () => downloadsEmAndamento.delete(chave),
+    );
+  }
+  const dataset = await download;
   mostrar(dataset, 'rede');
 
   // Assinatura relida DEPOIS do download, ignorando o cache de consulta: se a

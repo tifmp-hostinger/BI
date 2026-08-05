@@ -15,7 +15,10 @@ import { FONTES_POR_DASHBOARD } from '@/lib/dataFreshness';
 import { EspecializacoesBlock } from './components/EspecializacoesBlock';
 import { GraduacaoBlock } from './components/GraduacaoBlock';
 import { MestradoBlock } from './components/MestradoBlock';
-import { useAnaliseConversaoData } from './hooks/useAnaliseConversaoData';
+import {
+  escolhePeriodosPadrao,
+  useAnaliseConversaoData,
+} from './hooks/useAnaliseConversaoData';
 
 /** Meses padrao ate o mes atual (regra herdada do Power BI). */
 function defaultMesesAte(anoAlvo: number, hoje = new Date()): number[] {
@@ -23,18 +26,6 @@ function defaultMesesAte(anoAlvo: number, hoje = new Date()): number[] {
   if (anoAlvo < anoAtual) return Array.from({ length: 12 }, (_, i) => i + 1);
   if (anoAlvo > anoAtual) return [];
   return Array.from({ length: hoje.getMonth() + 1 }, (_, i) => i + 1);
-}
-
-function pickDefaults(pletivos: { periodo: string }[]): {
-  atual: string;
-  anterior: string;
-} {
-  const validos = pletivos
-    .map((p) => p.periodo)
-    .filter((p) => /^\d{2}-\d{2}$/.test(p));
-  const atual = validos[0] ?? '26-01';
-  const anterior = validos[1] ?? '25-02';
-  return { atual, anterior };
 }
 
 export function AnaliseConversaoPresidenciaPage() {
@@ -69,7 +60,7 @@ export function AnaliseConversaoPresidenciaPage() {
   });
 
   if (base && !defaultsAplicados) {
-    const { atual, anterior } = pickDefaults(base.pletivos);
+    const { atual, anterior } = escolhePeriodosPadrao(base.pletivos);
     if (atual !== periodoGradAtual) setPeriodoGradAtual(atual);
     if (anterior !== periodoGradAnterior) setPeriodoGradAnterior(anterior);
     setDefaultsAplicados(true);
