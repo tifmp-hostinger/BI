@@ -44,14 +44,7 @@ export function SectionCard({
         </div>
       )}
       <div className="min-w-0">
-        <h3
-          className="truncate text-sm font-semibold text-ink"
-          style={{
-            fontFamily: '"Noto Serif", serif',
-            fontStyle: 'italic',
-            fontWeight: 600,
-          }}
-        >
+        <h3 className="fmp-kpi truncate text-sm leading-normal">
           {title}
         </h3>
         {subtitle && (

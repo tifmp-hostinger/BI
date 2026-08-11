@@ -61,13 +61,34 @@ function chaveRubeus(periodoAtual: string, periodoAnterior: string, anoMestrado:
  * Seleção padrão de períodos da Graduação (a mesma aplicada quando a tela
  * abre). Compartilhada entre a página e o aquecimento: se divergissem, o
  * aquecedor esquentaria uma combinação que a tela nunca pede.
+ *
+ * O "atual" é o período mais novo cujo prazo de matrícula JÁ COMEÇOU — sem
+ * esse corte, bastava a secretaria cadastrar o pletivo do ano seguinte para
+ * a tela da Presidência abrir com o funil zerado de um vestibular que ainda
+ * nem existe.
  */
-export function escolhePeriodosPadrao(pletivos: { periodo: string }[]): {
+export function escolhePeriodosPadrao(
+  pletivos: { periodo: string; data_inicio_matricula?: string | null }[],
+): {
   atual: string;
   anterior: string;
 } {
-  const validos = pletivos.map((p) => p.periodo).filter((p) => /^\d{2}-\d{2}$/.test(p));
-  return { atual: validos[0] ?? '26-01', anterior: validos[1] ?? '25-02' };
+  const validos = pletivos.filter((p) => /^\d{2}-\d{2}$/.test(p.periodo));
+  // Data LOCAL (não toISOString/UTC): à noite no Brasil o dia UTC já é o
+  // seguinte, e o painel viraria para o vestibular novo horas antes do
+  // início real da matrícula.
+  const agora = new Date();
+  const hoje = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`;
+  const jaComecou = (p: { data_inicio_matricula?: string | null }) =>
+    !!p.data_inicio_matricula && p.data_inicio_matricula.slice(0, 10) <= hoje;
+  // Lista vem ordenada do mais novo para o mais antigo (por índice DESC).
+  // Sem nenhum período iniciado (dado incompleto), mantém o mais novo.
+  const idx = validos.findIndex(jaComecou);
+  const efetivo = idx === -1 ? 0 : idx;
+  return {
+    atual: validos[efetivo]?.periodo ?? '26-01',
+    anterior: validos[efetivo + 1]?.periodo ?? '25-02',
+  };
 }
 
 type FaixaGrad = { dataInicio: string; dataFim: string } | null;
@@ -101,7 +122,15 @@ export async function aqueceLeadsRubeusPadrao(): Promise<void> {
   const base = entrada?.dataset;
   if (!base) return;
   const { atual, anterior } = escolhePeriodosPadrao(base.pletivos);
-  const anoMestrado = new Date().getFullYear();
+  // Mesmo fallback da página (page.tsx): sem meta cadastrada para o ano
+  // corrente, ela cai para o ano mais recente COM meta — aquecer o ano
+  // corrente esquentaria uma chave que a tela nunca pediria.
+  const anoCorrente = new Date().getFullYear();
+  const anosComMeta = base.metaMestrado.map((m) => m.ano);
+  const anoMestrado =
+    anosComMeta.length > 0 && !anosComMeta.includes(anoCorrente)
+      ? Math.max(...anosComMeta)
+      : anoCorrente;
   await carregaComCache<LeadsRubeus>({
     chave: chaveRubeus(atual, anterior, anoMestrado),
     tabelas: ['rubeus_registros_personalizada'],

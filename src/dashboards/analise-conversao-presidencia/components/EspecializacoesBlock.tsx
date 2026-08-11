@@ -46,7 +46,7 @@ export function EspecializacoesBlock({
 
   return (
     <BlockCard
-      title="Especializacoes"
+      title="Especializações"
       subtitle="Faturamento realizado x meta"
       icon={Wallet}
       actions={
@@ -56,7 +56,7 @@ export function EspecializacoesBlock({
             <select
               value={ano}
               onChange={(e) => onAnoChange(Number(e.target.value))}
-              className="rounded-pill bg-transparent text-2xs font-semibold text-fmp focus:outline-none"
+              className="rounded-pill bg-transparent text-2xs font-semibold text-fmp focus:outline-none focus-visible:ring-2 focus-visible:ring-fmp/40"
             >
               {anos.map((a) => (
                 <option key={a} value={a}>
@@ -105,8 +105,8 @@ export function EspecializacoesBlock({
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-        <div className="lg:col-span-2 flex items-center justify-center">
+      <div className="grid grid-cols-1 gap-4 @xl:grid-cols-5">
+        <div className="@xl:col-span-2 flex items-center justify-center">
           <GaugeSemicircle
             value={loading ? null : kpis?.percentualMeta ?? null}
             label="% Meta"
@@ -121,38 +121,62 @@ export function EspecializacoesBlock({
             }
           />
         </div>
-        <div className="lg:col-span-3">
+        <div className="@xl:col-span-3">
+          {/* Valores compactos ("R$ 1,60 mi") com o número cheio no hover —
+              "R$ 1.600.000,00" era o primeiro valor a estourar em mobile. */}
           <KpiRow
             label="Meta"
-            value={kpis && kpis.meta !== null ? fmtBRL(kpis.meta) : '—'}
+            value={kpis && kpis.meta !== null ? fmtBRLCompact(kpis.meta) : '—'}
+            exact={kpis && kpis.meta !== null ? fmtBRL(kpis.meta) : undefined}
             icon={Award}
             tone="accent"
           />
           <KpiRow
             label="Faturamento Presencial"
-            value={kpis ? fmtBRL(kpis.faturamentoPresencial) : '—'}
+            value={kpis ? fmtBRLCompact(kpis.faturamentoPresencial) : '—'}
+            exact={kpis ? fmtBRL(kpis.faturamentoPresencial) : undefined}
             icon={Building2}
           />
           <KpiRow
             label="Faturamento EAD"
-            value={kpis ? fmtBRL(kpis.faturamentoEad) : '—'}
+            value={kpis ? fmtBRLCompact(kpis.faturamentoEad) : '—'}
+            exact={kpis ? fmtBRL(kpis.faturamentoEad) : undefined}
             icon={Globe2}
           />
           <KpiRow
             label="Faturamento Total"
-            value={kpis ? fmtBRL(kpis.faturamentoTotal) : '—'}
+            value={kpis ? fmtBRLCompact(kpis.faturamentoTotal) : '—'}
+            exact={kpis ? fmtBRL(kpis.faturamentoTotal) : undefined}
             icon={Wallet}
             tone="success"
           />
+          {/* Linha "% Meta" saiu (o gauge ao lado JÁ É o % da meta) e entrou a
+              leitura executiva que não existia: quanto falta para a meta. */}
           <KpiRow
-            label="% Meta"
-            value={kpis ? fmtPercent(kpis.percentualMeta) : '—'}
+            label={
+              kpis && kpis.meta !== null && kpis.faturamentoTotal >= kpis.meta
+                ? 'Meta atingida'
+                : 'Faltam para a meta'
+            }
+            value={
+              kpis && kpis.meta !== null
+                ? kpis.faturamentoTotal >= kpis.meta
+                  ? `+${fmtBRLCompact(kpis.faturamentoTotal - kpis.meta)}`
+                  : fmtBRLCompact(kpis.meta - kpis.faturamentoTotal)
+                : '—'
+            }
+            exact={
+              kpis && kpis.meta !== null
+                ? fmtBRL(Math.abs(kpis.meta - kpis.faturamentoTotal))
+                : undefined
+            }
             icon={TrendingUp}
             tone={
               kpis && kpis.percentualMeta !== null && kpis.percentualMeta >= 1
                 ? 'success'
                 : 'warning'
             }
+            hint={kpis ? `${fmtPercent(kpis.percentualMeta)} da meta realizada` : undefined}
           />
         </div>
       </div>

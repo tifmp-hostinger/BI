@@ -25,7 +25,7 @@ export function ModulePlaceholder({ title, description }: Props) {
         to="/"
         className="mt-6 inline-flex items-center gap-1.5 rounded-pill bg-fmp px-4 py-2 text-xs font-medium text-white shadow-glow transition-all hover:-translate-y-0.5 hover:bg-fmp-dark no-underline"
       >
-        Voltar para o inicio
+        Voltar para o início
       </Link>
     </div>
   );

@@ -1,6 +1,6 @@
 import { MultiSelect } from '@/components/ui/MultiSelect';
 import type { ConversaoFilters, FilterOptions } from '../types';
-import { ANOS } from '../constants';
+import { ANOS, DATA_FIM_PADRAO, DATA_INICIO_PADRAO } from '../constants';
 
 type Props = {
   options: FilterOptions;
@@ -29,7 +29,7 @@ export function ConversaoFilterBar({
     <div className="relative z-20 rounded-md border border-line bg-white p-4 shadow-card animate-fade-in">
       <div className="flex flex-wrap items-center gap-4">
         <MultiSelect
-          label="Periodo Letivo"
+          label="Período Letivo"
           options={options.codperletOptions}
           selected={filters.codperlet}
           onChange={(next) => onCodperletChange(next.map(String))}
@@ -41,7 +41,7 @@ export function ConversaoFilterBar({
             Ano
           </span>
           <div className="flex items-center gap-1" role="group" aria-label="Filtro de ano">
-            {ANOS.map((ano) => (
+            {(options.anoOptions.length > 0 ? options.anoOptions : ANOS).map((ano) => (
               <button
                 key={ano}
                 type="button"
@@ -79,7 +79,7 @@ export function ConversaoFilterBar({
             htmlFor="filtro-data-inicio"
             className="text-2xs font-semibold uppercase tracking-widest text-ink-3"
           >
-            Data Inicio
+            Data Início
           </label>
           <input
             id="filtro-data-inicio"
@@ -105,6 +105,15 @@ export function ConversaoFilterBar({
             onChange={(e) => onDataFimChange(e.target.value || null)}
           />
         </div>
+
+        {!filters.dataInicio && !filters.dataFim && (
+          <p className="w-full text-2xs text-ink-3">
+            Sem datas selecionadas, vale a janela padrão do relatório:{' '}
+            {DATA_INICIO_PADRAO.split('-').reverse().join('/')} a{' '}
+            {DATA_FIM_PADRAO.split('-').reverse().join('/')} (regra herdada do
+            Power BI para Especializações).
+          </p>
+        )}
 
         {(filters.codperlet.length > 0 ||
           filters.ano.length > 0 ||

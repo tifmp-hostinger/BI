@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Bar,
   BarChart,
@@ -40,7 +40,8 @@ import { StateDetailPanel } from '@/components/panels/StateDetailPanel';
 import { useMatriculas } from '@/hooks/useMatriculas';
 import { nameOf } from '@/lib/brStates';
 import type { MatriculaSource } from '@/services/matriculasService';
-import { CORES_CATEGORICAS } from '@/lib/chartColors';
+import { CHART_TOOLTIP, CORES_CATEGORICAS } from '@/lib/chartColors';
+import { fmtBRL, fmtBRLCompact, fmtInt, truncateLabel } from '@/lib/formatters';
 
 const REGION_COLORS: Record<string, string> = {
   Sul: CORES_CATEGORICAS[0],
@@ -57,43 +58,11 @@ const SOURCE_OPTIONS: Array<{
   icon: typeof Users;
 }> = [
   { value: 'all', label: 'Tudo', icon: Sparkles },
-  { value: 'pos', label: 'Pos-graduacao', icon: GraduationCap },
+  { value: 'pos', label: 'Pós-graduação', icon: GraduationCap },
   { value: 'cursoslivres', label: 'Cursos Livres', icon: BookOpen },
 ];
 
 const REGION_OPTIONS = ['Todas', 'Sul', 'Sudeste', 'Nordeste', 'Centro-Oeste', 'Norte'];
-
-function fmtBRL(v: number) {
-  if (v >= 1_000_000)
-    return `R$ ${(v / 1_000_000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}M`;
-  if (v >= 1_000)
-    return `R$ ${(v / 1_000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}k`;
-  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
-}
-
-function fmtInt(v: number) {
-  return v.toLocaleString('pt-BR');
-}
-
-function chartTooltipStyle() {
-  return {
-    contentStyle: {
-      background: 'rgba(255,255,255,0.98)',
-      border: '1px solid #DEDCD4',
-      borderRadius: 12,
-      boxShadow: '0 18px 40px rgba(25,24,24,0.12)',
-      padding: 10,
-      fontSize: 12,
-    } as const,
-    labelStyle: {
-      color: '#191818',
-      fontWeight: 600,
-      marginBottom: 4,
-      fontSize: 12,
-    } as const,
-    itemStyle: { color: '#3A3838', fontSize: 12 } as const,
-  };
-}
 
 export function PresencaNacionalPage() {
   const [source, setSource] = useState<MatriculaSource | 'all'>('all');
@@ -107,7 +76,31 @@ export function PresencaNacionalPage() {
     onlyMatriculados,
   });
 
-  const tt = useMemo(chartTooltipStyle, []);
+  const tt = CHART_TOOLTIP;
+
+  // A tela abre já contando uma história: o estado líder vem selecionado no
+  // painel de detalhe (uma única vez — fechar ou trocar depois é respeitado).
+  const painelJaAberto = useRef(false);
+  useEffect(() => {
+    if (loading || painelJaAberto.current) return;
+    if (stats.byState.length > 0) {
+      painelJaAberto.current = true;
+      setSelectedUf((atual) => atual ?? stats.byState[0].uf);
+    }
+  }, [loading, stats.byState]);
+
+  // No mobile o painel renderiza ABAIXO do mapa: sem isto, tocar numa bolha
+  // parecia não fazer nada (o painel abria fora da viewport). useCallback:
+  // identidade estável, para nunca invalidar efeitos do mapa.
+  const painelRef = useRef<HTMLDivElement>(null);
+  const selecionaUf = useCallback((uf: string | null) => {
+    setSelectedUf(uf);
+    if (uf && window.matchMedia('(max-width: 1023px)').matches) {
+      requestAnimationFrame(() => {
+        painelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+  }, []);
 
   /**
    * Proxy de frescor por tabela, sobre `raw` (download completo, sem
@@ -142,8 +135,8 @@ export function PresencaNacionalPage() {
 
   return (
     <AppShell
-      title="Presenca Nacional"
-      subtitle="Distribuicao de matriculas por estado"
+      title="Presença Nacional"
+      subtitle="Distribuição de matrículas por estado"
     >
       <div className="mx-auto max-w-7xl space-y-8 p-4 sm:p-6 lg:p-8">
         {/* Hero — dark editorial */}
@@ -160,68 +153,45 @@ export function PresencaNacionalPage() {
                 Central de Dashboards
               </Link>
               <div className="mt-2">
-                <DataFreshness tabelas={FONTES_POR_DASHBOARD['presenca-nacional']} ritmos={freshnessRitmos} />
+                <DataFreshness superficie="escura" tabelas={FONTES_POR_DASHBOARD['presenca-nacional']} ritmos={freshnessRitmos} />
                 <AtualizandoAviso visivel={revalidando} />
               </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium uppercase tracking-widest text-cream/85 ring-1 ring-inset ring-cream/15">
-                  <Compass className="h-3 w-3" />
-                  Geointeligencia
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium text-cream/85 ring-1 ring-inset ring-cream/15">
-                  <MapPin className="h-3 w-3" />
-                  {stats.ufsCount} UFs
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium text-cream/85 ring-1 ring-inset ring-cream/15">
-                  <Building2 className="h-3 w-3" />
-                  {stats.cidadesCount} cidades
-                </span>
-              </div>
+              {/* Sem pills numéricas aqui: Matrículas e Faturamento já são os
+                  StatCards logo abaixo — repetir o mesmo número duas vezes na
+                  mesma dobra só dividia a atenção. */}
+              {!loading && (
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium text-cream/85 ring-1 ring-inset ring-cream/15">
+                    <MapPin className="h-3 w-3" />
+                    {stats.ufsCount} UFs
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium text-cream/85 ring-1 ring-inset ring-cream/15">
+                    <Building2 className="h-3 w-3" />
+                    {stats.cidadesCount} cidades
+                  </span>
+                </div>
+              )}
               <h1
-                className="mt-3 text-2xl sm:text-3xl lg:text-4xl text-cream"
-                style={{ fontFamily: '"Noto Serif", Georgia, serif', fontStyle: 'italic', fontWeight: 500 }}
+                className="fmp-display mt-3 text-2xl sm:text-3xl lg:text-4xl"
+                style={{ color: 'inherit' }}
               >
-                Onde a FMP esta presente
+                Onde a FMP está presente
               </h1>
               <p className="mt-2 max-w-xl text-sm leading-relaxed text-cream/70">
-                Mapa das matriculas de Pos-graduacao e Cursos Livres pelo
-                Brasil. Clique em um estado para ver cursos, cidades,
-                situacoes e faturamento.
+                Mapa das matrículas de Pós-graduação e Cursos Livres pelo
+                Brasil, somando todo o histórico. Clique em um estado para ver
+                cursos, cidades, situações e faturamento.
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="rounded-lg bg-cream/10 px-4 py-3 ring-1 ring-inset ring-cream/15 backdrop-blur">
-                <p className="text-2xs uppercase tracking-widest text-cream/50">
-                  Matriculas
-                </p>
-                <p
-                  className="mt-1 text-2xl text-cream"
-                  style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic', fontWeight: 600 }}
-                >
-                  {fmtInt(stats.total)}
-                </p>
-              </div>
-              <div className="rounded-lg bg-cream/10 px-4 py-3 ring-1 ring-inset ring-cream/15 backdrop-blur">
-                <p className="text-2xs uppercase tracking-widest text-cream/50">
-                  Faturamento
-                </p>
-                <p
-                  className="mt-1 text-2xl text-cream"
-                  style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic', fontWeight: 600 }}
-                >
-                  {fmtBRL(stats.faturado)}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={refetch}
-                className="inline-flex items-center gap-1.5 rounded-pill bg-fmp px-3.5 py-2 text-2xs font-medium text-white transition hover:bg-fmp-dark no-underline"
-              >
-                <RefreshCw className="h-3.5 w-3.5" />
-                Atualizar
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={refetch}
+              className="inline-flex items-center gap-1.5 self-start rounded-pill bg-fmp px-3.5 py-2 text-2xs font-medium text-white transition hover:bg-fmp-dark no-underline"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${revalidando ? 'animate-spin' : ''}`} />
+              Atualizar
+            </button>
           </div>
         </section>
 
@@ -253,7 +223,7 @@ export function PresencaNacionalPage() {
             })}
           </div>
 
-          <div className="ml-2 h-6 w-px bg-line" />
+          <div className="ml-2 hidden h-6 w-px bg-line sm:block" />
 
           <div className="flex flex-wrap items-center gap-2">
             {REGION_OPTIONS.map((r) => {
@@ -276,20 +246,23 @@ export function PresencaNacionalPage() {
             })}
           </div>
 
-          <label className="ml-auto inline-flex items-center gap-2 text-2xs font-semibold text-ink-2">
+          <label
+            className="ml-auto inline-flex items-center gap-2 text-2xs font-semibold text-ink-2"
+            title="Sem esta opção, o mapa inclui também matrículas canceladas, desistentes e concluídas."
+          >
             <input
               type="checkbox"
               checked={onlyMatriculados}
               onChange={(e) => setOnlyMatriculados(e.target.checked)}
               className="h-3.5 w-3.5 rounded border-line-2 text-fmp focus:ring-fmp"
             />
-            Somente matriculados
+            Somente matriculados (situação ativa)
           </label>
         </section>
 
         {error && (
           <ErrorState
-            title="Nao foi possivel carregar as matriculas"
+            title="Não foi possível carregar as matrículas"
             message={error}
             onRetry={refetch}
           />
@@ -306,20 +279,21 @@ export function PresencaNacionalPage() {
               <>
                 <StatCard
                   index={0}
-                  label="Total de matriculas"
+                  label="Total de matrículas"
                   value={fmtInt(stats.total)}
-                  subtitle={`${fmtInt(stats.totalPos)} Pos + ${fmtInt(stats.totalLivres)} Livres`}
+                  subtitle={`${fmtInt(stats.totalPos)} Pós + ${fmtInt(stats.totalLivres)} Livres`}
+                  hint="Todas as matrículas do recorte filtrado, em qualquer situação, somando todo o histórico."
                   icon={Users}
                   color="fmp"
                   highlight
                 />
                 <StatCard
                   index={1}
-                  label="UF lider"
-                  value={topState ? nameOf(topState.uf) : '—'}
+                  label="UF líder"
+                  value={topState ? topState.uf : '—'}
                   subtitle={
                     topState
-                      ? `${fmtInt(topState.total)} matriculas em ${topState.uf}`
+                      ? `${nameOf(topState.uf)} — ${fmtInt(topState.total)} matrículas`
                       : ''
                   }
                   icon={MapPin}
@@ -328,8 +302,10 @@ export function PresencaNacionalPage() {
                 <StatCard
                   index={2}
                   label="Faturamento total"
-                  value={fmtBRL(stats.faturado)}
-                  subtitle={`Ticket medio ${fmtBRL(stats.ticketMedio)}`}
+                  value={fmtBRLCompact(stats.faturado)}
+                  exactValue={fmtBRL(stats.faturado)}
+                  subtitle={`Ticket médio ${fmtBRLCompact(stats.ticketMedio)}`}
+                  hint="Soma do valor faturado das matrículas do recorte. Ticket médio = faturamento ÷ matrículas com valor."
                   icon={Wallet}
                   color="fmp"
                 />
@@ -337,7 +313,8 @@ export function PresencaNacionalPage() {
                   index={3}
                   label="Taxa de matriculados"
                   value={`${conversion}%`}
-                  subtitle={`${fmtInt(stats.matriculados)} matriculas ativas`}
+                  subtitle={`${fmtInt(stats.matriculados)} matrículas ativas`}
+                  hint="Matrículas com situação ativa ÷ todas as matrículas do recorte (inclui canceladas e concluídas)."
                   icon={TrendingUp}
                   color="gray"
                 />
@@ -351,22 +328,19 @@ export function PresencaNacionalPage() {
           <SectionCard
             className="lg:col-span-2"
             title="Mapa do Brasil"
-            subtitle="Selecione um estado para explorar"
+            subtitle="Toque em um estado para explorar"
             icon={MapPin}
             actions={
+              // Legenda do que o mapa REALMENTE codifica: gradiente areia →
+              // vermelho por volume (a legenda antiga mostrava cores de
+              // região que não existem em nenhuma bolha).
               <div className="hidden items-center gap-2 sm:flex">
-                {Object.entries(REGION_COLORS).slice(0, 5).map(([name, c]) => (
-                  <span
-                    key={name}
-                    className="inline-flex items-center gap-1 text-2xs text-ink-3"
-                  >
-                    <span
-                      className="h-2 w-2 rounded-full"
-                      style={{ background: c }}
-                    />
-                    {name}
-                  </span>
-                ))}
+                <span className="text-2xs text-ink-3">menos</span>
+                <span
+                  className="h-2 w-16 rounded-pill"
+                  style={{ background: 'linear-gradient(to right, #BFBAA4, #EE2A42)' }}
+                />
+                <span className="text-2xs text-ink-3">mais matrículas</span>
               </div>
             }
           >
@@ -374,23 +348,30 @@ export function PresencaNacionalPage() {
               <ChartSkeleton height={520} />
             ) : stats.byState.length === 0 ? (
               <EmptyState
-                title="Sem matriculas para exibir"
+                title="Sem matrículas para exibir"
                 message="Ajuste os filtros ou tente novamente."
               />
             ) : (
-              <BrazilStateMap
-                data={stats.byState}
-                selectedUf={selectedUf}
-                onSelect={setSelectedUf}
-                height={520}
-              />
+              <>
+                <BrazilStateMap
+                  data={stats.byState}
+                  selectedUf={selectedUf}
+                  onSelect={selecionaUf}
+                  height={520}
+                />
+                <p className="mt-2 text-2xs text-ink-3">
+                  Tamanho e cor da bolha = volume de matrículas (escala
+                  logarítmica: diferenças grandes aparecem comprimidas).
+                </p>
+              </>
             )}
           </SectionCard>
 
-          <div className="lg:col-span-1">
+          <div ref={painelRef} className="scroll-mt-20 lg:col-span-1">
             <StateDetailPanel
               uf={selectedUf}
               detail={detail}
+              totalNacional={stats.total}
               onClose={() => setSelectedUf(null)}
             />
           </div>
@@ -401,7 +382,7 @@ export function PresencaNacionalPage() {
           <SectionCard
             className="lg:col-span-2"
             title="Top UFs por volume"
-            subtitle="Ranking de matriculas por estado"
+            subtitle="Ranking de matrículas por estado — clique numa barra para abrir o detalhe"
             icon={TrendingUp}
           >
             {loading ? (
@@ -439,7 +420,7 @@ export function PresencaNacionalPage() {
                     contentStyle={tt.contentStyle}
                     labelStyle={tt.labelStyle}
                     itemStyle={tt.itemStyle}
-                    formatter={(v: unknown) => [`${v} matriculas`, 'Total']}
+                    formatter={(v: unknown) => [`${fmtInt(v as number)} matrículas`, 'Total']}
                     labelFormatter={(label: unknown) => {
                       const uf = String(label ?? '');
                       return `${nameOf(uf)} (${uf})`;
@@ -452,7 +433,7 @@ export function PresencaNacionalPage() {
                     maxBarSize={36}
                     onClick={(d: unknown) => {
                       const row = d as { uf?: string };
-                      if (row?.uf) setSelectedUf(row.uf);
+                      if (row?.uf) selecionaUf(row.uf);
                     }}
                     cursor="pointer"
                   />
@@ -462,7 +443,7 @@ export function PresencaNacionalPage() {
           </SectionCard>
 
           <SectionCard
-            title="Distribuicao por regiao"
+            title="Distribuição por região"
             subtitle={topRegion ? `${topRegion.name} lidera` : 'Participacao regional'}
             icon={Compass}
           >
@@ -477,7 +458,7 @@ export function PresencaNacionalPage() {
                     <Tooltip
                       contentStyle={tt.contentStyle}
                       itemStyle={tt.itemStyle}
-                      formatter={(v: unknown) => [`${v} matriculas`, '']}
+                      formatter={(v: unknown) => [`${fmtInt(v as number)} matrículas`, '']}
                     />
                     <Pie
                       data={stats.byRegion}
@@ -531,8 +512,8 @@ export function PresencaNacionalPage() {
 
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <SectionCard
-            title="Situacoes de matricula"
-            subtitle="Estagio no funil academico"
+            title="Situações de matrícula"
+            subtitle="Estágio no funil acadêmico"
           >
             {loading ? (
               <ChartSkeleton height={260} />
@@ -566,14 +547,15 @@ export function PresencaNacionalPage() {
                     tick={{ fontSize: 11, fill: '#3A3838' }}
                     tickLine={false}
                     axisLine={false}
-                    width={130}
+                    width={100}
+                    tickFormatter={(v: string) => truncateLabel(v, 14)}
                   />
                   <Tooltip
                     cursor={{ fill: 'rgba(238,42,66,0.05)' }}
                     contentStyle={tt.contentStyle}
                     labelStyle={tt.labelStyle}
                     itemStyle={tt.itemStyle}
-                    formatter={(v: unknown) => [`${v} matriculas`, 'Total']}
+                    formatter={(v: unknown) => [`${fmtInt(v as number)} matrículas`, 'Total']}
                   />
                   <Bar
                     dataKey="value"
@@ -587,8 +569,8 @@ export function PresencaNacionalPage() {
           </SectionCard>
 
           <SectionCard
-            title="Modalidades e niveis"
-            subtitle="Composicao entre Pos-graduacao e Cursos Livres"
+            title="Modalidades e níveis"
+            subtitle="Composição entre Pós-graduação e Cursos Livres"
           >
             {loading ? (
               <ChartSkeleton height={260} />
@@ -622,14 +604,15 @@ export function PresencaNacionalPage() {
                     tick={{ fontSize: 11, fill: '#3A3838' }}
                     tickLine={false}
                     axisLine={false}
-                    width={130}
+                    width={100}
+                    tickFormatter={(v: string) => truncateLabel(v, 14)}
                   />
                   <Tooltip
                     cursor={{ fill: 'rgba(238,42,66,0.05)' }}
                     contentStyle={tt.contentStyle}
                     labelStyle={tt.labelStyle}
                     itemStyle={tt.itemStyle}
-                    formatter={(v: unknown) => [`${v} matriculas`, 'Total']}
+                    formatter={(v: unknown) => [`${fmtInt(v as number)} matrículas`, 'Total']}
                   />
                   <Bar
                     dataKey="value"
@@ -656,8 +639,8 @@ export function PresencaNacionalPage() {
                 >
                   Novos indicadores em breve
                 </p>
-                <p className="text-xs text-ink-3">
-                  Camada por CEP, filtros por curso e comparativo temporal serao
+                <p className="text-xs text-ink-2">
+                  Camada por CEP, filtros por curso e comparativo temporal serão
                   adicionados nas proximas evolucoes.
                 </p>
               </div>

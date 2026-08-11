@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import { ArrowDownRight, ArrowUpRight, HelpCircle, Minus } from 'lucide-react';
+import { BalaoInfo } from '@/components/ui/BalaoInfo';
 
 /**
  * Grade padrão para linhas de StatCard, em TODOS os dashboards.
@@ -37,10 +38,12 @@ type StatCardProps = {
   subtitle?: string;
   icon?: LucideIcon;
   trend?: Trend;
+  /** Contra o que a tendência compara (ex. "vs. 2025/2"). */
+  trendLabel?: string;
   color?: ColorKey;
   highlight?: boolean;
   index?: number;
-  /** Explicação da métrica: vira um "?" discreto ao lado do rótulo. */
+  /** Explicação da métrica: vira um "?" que abre um balão ao clique/toque. */
   hint?: string;
   /** Valor por extenso no hover, quando `value` está abreviado (ex. "R$ 872 mil"). */
   exactValue?: string;
@@ -58,12 +61,43 @@ const COLOR_STYLES: Record<
   gray: { icon: 'text-ink-3', bg: 'bg-paper', bar: 'bg-sand', text: 'text-ink-2' },
 };
 
+/**
+ * Tamanho do valor por CONTAINER (o card é @container) e por comprimento:
+ * a grade dimensiona os cards por container query, então a fonte precisa
+ * acompanhar a largura real do card — nunca a da viewport. Valores longos
+ * ("R$ 123,45 mi") descem um degrau em vez de serem truncados: número
+ * cortado com reticências é um número errado.
+ */
+function classeValor(texto: string): string {
+  const longo = texto.length > 11;
+  return longo
+    ? 'text-lg @[15rem]:text-xl @[19rem]:text-2xl'
+    : 'text-xl @[15rem]:text-2xl @[19rem]:text-3xl';
+}
+
+/**
+ * "?" que abre balão de explicação ao clique/toque — tooltip nativo (title)
+ * não existe em touch e some rápido no desktop; a explicação "mastigada"
+ * precisa ser legível onde o usuário estiver. Via portal (BalaoInfo): um
+ * balão absoluto comum era clipado pelo overflow-hidden do próprio card.
+ */
+export function HintPopover({ hint, label }: { hint: string; label: string }) {
+  return (
+    <BalaoInfo rotuloAcao={`O que é ${label}?`} gatilho={<HelpCircle className="h-3 w-3" strokeWidth={2.4} />}>
+      <span className="block text-2xs font-normal normal-case leading-relaxed tracking-normal text-ink-2">
+        {hint}
+      </span>
+    </BalaoInfo>
+  );
+}
+
 export function StatCard({
   label,
   value,
   subtitle,
   icon: Icon,
   trend,
+  trendLabel = 'vs. período anterior',
   color = 'fmp',
   highlight = false,
   index = 0,
@@ -75,10 +109,11 @@ export function StatCard({
     trend?.direction === 'up' ? ArrowUpRight : trend?.direction === 'down' ? ArrowDownRight : Minus;
   const trendColor =
     trend?.direction === 'up' ? 'text-success' : trend?.direction === 'down' ? 'text-danger' : 'text-ink-3';
+  const valorTexto = String(value);
 
   return (
     <div
-      className={`relative overflow-hidden rounded-md border border-line bg-white p-5 shadow-card transition-all duration-200 hover:shadow-card-hover animate-slide-up ${
+      className={`@container relative overflow-hidden rounded-md border border-line bg-white p-5 shadow-card transition-all duration-200 hover:shadow-card-hover animate-slide-up ${
         highlight ? 'ring-1 ring-fmp/30' : ''
       }`}
       style={{ animationDelay: `${index * 60}ms` }}
@@ -86,28 +121,17 @@ export function StatCard({
       <div className={`absolute inset-x-0 top-0 h-1 ${styles.bar}`} />
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="flex items-center gap-1 text-2xs font-semibold uppercase tracking-widest text-ink-3">
+          <p className="flex items-center gap-0.5 text-2xs font-semibold uppercase tracking-widest text-ink-3">
             {label}
-            {hint && (
-              <span
-                tabIndex={0}
-                role="note"
-                aria-label={hint}
-                title={hint}
-                className="cursor-help rounded-full text-ink-3/70 transition hover:text-fmp focus:text-fmp focus:outline-none"
-              >
-                <HelpCircle className="h-3 w-3" strokeWidth={2.4} />
-              </span>
-            )}
+            {hint && <HintPopover hint={hint} label={label} />}
           </p>
           <p
-            className="mt-2 truncate text-2xl text-ink sm:text-3xl"
-            style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic', fontWeight: 600, lineHeight: 1.15 }}
-            title={exactValue}
+            className={`fmp-kpi mt-2 break-words leading-tight ${classeValor(valorTexto)}`}
+            title={exactValue ?? valorTexto}
           >
             {value}
           </p>
-          {subtitle && <p className="mt-1 text-xs text-ink-3 line-clamp-1">{subtitle}</p>}
+          {subtitle && <p className="mt-1 text-xs text-ink-3 line-clamp-2">{subtitle}</p>}
         </div>
         {Icon && (
           <div className={`rounded-sm p-2.5 ${styles.bg}`}>
@@ -123,7 +147,7 @@ export function StatCard({
             {trend.value > 0 ? '+' : ''}
             {trend.value}%
           </span>
-          <span className="text-2xs text-ink-3">vs. periodo anterior</span>
+          <span className="text-2xs text-ink-3">{trendLabel}</span>
         </div>
       )}
     </div>

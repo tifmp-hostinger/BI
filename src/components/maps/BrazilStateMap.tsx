@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import 'leaflet.heat';
 import { BR_STATES, nameOf, type BrState } from '@/lib/brStates';
 import type { StateAgg } from '@/services/matriculasService';
 
@@ -30,6 +29,11 @@ type Props = {
 };
 
 const FMP_SAND = '#BFBAA4';
+
+/** Limites do Brasil: o enquadramento inicial mostra o país INTEIRO em
+ * qualquer largura de tela — antes o zoom fixo 4 cortava o Nordeste no
+ * celular e o usuário precisava arrastar para achar o próprio estado. */
+const LIMITES_BRASIL = L.latLngBounds([-33.9, -74.1], [5.4, -34.6]);
 
 function fmtMetric(v: number, format: 'int' | 'currency'): string {
   if (format === 'currency') {
@@ -79,13 +83,13 @@ export function BrazilStateMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const layerRef = useRef<L.LayerGroup | null>(null);
-  const heatRef = useRef<L.Layer | null>(null);
   const selectedRef = useRef<string | null>(selectedUf);
-  // Callbacks de apresentação em ref: as chamadoras passam funções inline
-  // (identidade nova a cada render); nas dependências do efeito elas
-  // redesenhariam o mapa inteiro em todo render.
-  const fnsRef = useRef({ secondaryLine, colorValue });
-  fnsRef.current = { secondaryLine, colorValue };
+  // Callbacks em ref: as chamadoras passam funções inline (identidade nova a
+  // cada render); como dependência de efeito elas DESTRUIRIAM e recriariam o
+  // mapa inteiro em todo render (o cleanup do efeito de init chama
+  // map.remove()) — perdendo zoom/pan do usuário e re-baixando tiles.
+  const fnsRef = useRef({ secondaryLine, colorValue, onSelect });
+  fnsRef.current = { secondaryLine, colorValue, onSelect };
 
   const byUf = useMemo(() => {
     const m = new Map<string, StateAgg>();
@@ -100,16 +104,31 @@ export function BrazilStateMap({
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
+    // Toque grosso (celular/tablet): o arrasto de um dedo fica com a PÁGINA,
+    // não com o mapa — antes o mapa em largura total sequestrava o scroll e o
+    // usuário ficava preso dentro dele. Pinça continua dando zoom.
+    const toqueGrosso =
+      typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches;
+
     const map = L.map(containerRef.current, {
-      center: [-14.5, -52],
-      zoom: 4,
       minZoom: 3,
       maxZoom: 8,
-      scrollWheelZoom: true,
+      // Roda do mouse volta a rolar a página; zoom pelos botões ou pinça.
+      scrollWheelZoom: false,
+      dragging: !toqueGrosso,
       zoomControl: true,
       attributionControl: false,
       preferCanvas: false,
     });
+    map.fitBounds(LIMITES_BRASIL, { padding: [8, 8] });
+
+    // Reenquadra quando o container muda de largura (rotação do celular,
+    // colapso do menu lateral) — center/zoom fixos não acompanham.
+    const observador = new ResizeObserver(() => {
+      map.invalidateSize();
+      map.fitBounds(LIMITES_BRASIL, { padding: [8, 8] });
+    });
+    observador.observe(containerRef.current);
 
     L.tileLayer(
       'https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png',
@@ -124,15 +143,17 @@ export function BrazilStateMap({
     layerRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
 
-    map.on('click', () => onSelect(null));
+    map.on('click', () => fnsRef.current.onSelect(null));
 
     return () => {
+      observador.disconnect();
       map.remove();
       mapRef.current = null;
       layerRef.current = null;
-      heatRef.current = null;
     };
-  }, [onSelect]);
+    // Sem deps de callback: o mapa é criado UMA vez por montagem.
+     
+  }, []);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -140,10 +161,6 @@ export function BrazilStateMap({
     if (!map || !layer) return;
 
     layer.clearLayers();
-    if (heatRef.current) {
-      map.removeLayer(heatRef.current);
-      heatRef.current = null;
-    }
 
     // Tamanho vem de `total`; a cor pode vir de outra métrica (colorValue).
     const { secondaryLine: linhaSecundaria, colorValue: corDe } = fnsRef.current;
@@ -158,36 +175,9 @@ export function BrazilStateMap({
       if (colorOf(s) > maxColor) maxColor = colorOf(s);
     }
 
-    const heatPoints: [number, number, number][] = BR_STATES.filter(
-      (s) => (byUf.get(s.uf)?.total ?? 0) > 0
-    ).map((s) => {
-      const agg = byUf.get(s.uf)!;
-      const norm = Math.max(0.25, Math.min(1, Math.log10(1 + colorOf(agg)) / Math.log10(1 + maxColor)));
-      return [s.lat, s.lng, norm];
-    });
-
-    if (heatPoints.length > 0) {
-      const heat = (L as unknown as {
-        heatLayer: (
-          points: [number, number, number][],
-          options?: Record<string, unknown>
-        ) => L.Layer;
-      }).heatLayer(heatPoints, {
-        radius: 55,
-        blur: 45,
-        minOpacity: 0.35,
-        maxZoom: 8,
-        gradient: {
-          0.2: '#E9D9C8',
-          0.4: '#E8A79C',
-          0.6: '#EE6474',
-          0.8: '#EE2A42',
-          1.0: '#B81E32',
-        },
-      });
-      heat.addTo(map);
-      heatRef.current = heat;
-    }
+    // Sem mapa de calor: a mancha (raio fixo em pixels de tela) vazava sobre
+    // estados vizinhos sugerindo presença onde não há, e codificava a MESMA
+    // métrica que a bolha já mostra em tamanho e cor — só ruído por cima.
 
     for (const s of BR_STATES) {
       const agg = byUf.get(s.uf);
@@ -222,17 +212,19 @@ export function BrazilStateMap({
       });
 
       const linha2 = agg ? linhaSecundaria(agg) : null;
+      // Fonte e cores dos tokens do app (Outfit + escala ink) — o tooltip
+      // antes usava Inter e a paleta slate, destoando dos tooltips recharts.
       marker.bindTooltip(
-        `<div style="font-family:Inter,sans-serif;">
-          <div style="font-size:10px;color:#64748B;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;">${s.region}</div>
-          <div style="font-size:13px;font-weight:600;color:#0F172A;margin-top:2px;">${s.name} <span style="color:#94A3B8;font-weight:500;">(${s.uf})</span></div>
+        `<div style="font-family:Outfit,sans-serif;">
+          <div style="font-size:10px;color:#6E6B66;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;">${s.region}</div>
+          <div style="font-size:13px;font-weight:600;color:#191818;margin-top:2px;">${s.name} <span style="color:#6E6B66;font-weight:500;">(${s.uf})</span></div>
           <div style="font-size:12px;color:#B81E32;margin-top:4px;font-weight:600;">${fmtMetric(total, metricFormat)} ${metricLabel}</div>
           ${
             agg
               ? linha2
-                ? `<div style="font-size:10px;color:#64748B;margin-top:2px;">${linha2}</div>`
+                ? `<div style="font-size:10px;color:#6E6B66;margin-top:2px;">${linha2}</div>`
                 : ''
-              : '<div style="font-size:10px;color:#94A3B8;margin-top:2px;">Sem dados</div>'
+              : '<div style="font-size:10px;color:#6E6B66;margin-top:2px;">Sem dados</div>'
           }
         </div>`,
         { direction: 'top', offset: [0, -6], className: 'cep-tooltip' }
@@ -240,17 +232,19 @@ export function BrazilStateMap({
 
       marker.on('click', (e) => {
         L.DomEvent.stopPropagation(e as unknown as Event);
-        onSelect(s.uf);
+        fnsRef.current.onSelect(s.uf);
       });
 
       marker.addTo(layer);
     }
-  }, [byUf, data, onSelect, metricLabel, metricFormat]);
+    // onSelect via fnsRef (identidade instável nas chamadoras).
+     
+  }, [byUf, data, metricLabel, metricFormat]);
 
   return (
     <div
       ref={containerRef}
-      className="w-full overflow-hidden rounded-2xl ring-1 ring-inset ring-gray-200/70"
+      className="w-full overflow-hidden rounded-md ring-1 ring-inset ring-line"
       style={{ height }}
     />
   );
@@ -281,7 +275,11 @@ function renderBubble({
     ? `background: radial-gradient(circle at 30% 25%, ${lighten(color)}, ${color});`
     : 'background: rgba(255,255,255,0.75);';
 
-  const fontColor = hasData ? '#ffffff' : '#8A8578';
+  // Texto ESCURO sobre a bolha: a rampa de cor vai de areia a vermelho, e
+  // com texto branco o contraste ficava entre 2,4:1 (estados de pouco
+  // volume) e 4,2:1 (o mais alto) — ilegível na maior parte do mapa. Em
+  // tinta escura toda a rampa fica entre 5,1:1 e 7,3:1.
+  const fontColor = hasData ? '#191818' : '#6E6B66';
   const fontSize = size > 46 ? 12 : size > 38 ? 11 : 10;
   const label = valorLabel || state.uf;
 
@@ -293,12 +291,12 @@ function renderBubble({
       ${bg}
       ${border}
       transition:all 0.2s ease-out;
-      font-family:Inter,sans-serif;
+      font-family:Outfit,sans-serif;
     ">
       <span style="font-size:${fontSize}px;font-weight:700;color:${fontColor};line-height:1;">${label}</span>
       ${
         hasData
-          ? `<span style="font-size:${Math.max(8, fontSize - 2)}px;color:rgba(255,255,255,0.75);font-weight:500;letter-spacing:0.06em;margin-top:1px;">${state.uf}</span>`
+          ? `<span style="font-size:${Math.max(9, fontSize - 2)}px;color:rgba(25,24,24,0.72);font-weight:600;letter-spacing:0.06em;margin-top:1px;">${state.uf}</span>`
           : ''
       }
     </div>

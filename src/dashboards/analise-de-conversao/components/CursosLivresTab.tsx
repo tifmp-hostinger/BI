@@ -2,9 +2,8 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   ComposedChart,
-  Funnel,
-  FunnelChart,
   LabelList,
   Line,
   ResponsiveContainer,
@@ -20,25 +19,8 @@ import { ChartSkeleton } from '@/components/ui/Skeletons';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { fmtBRLCompact, fmtInt, fmtPct, truncateLabel } from '../formatters';
 import type { CursosLivresData } from '../types';
+import { CHART_TOOLTIP, FMP_DARK, FMP_RED, NEUTRAL } from '@/lib/chartColors';
 
-const FMP_RED = '#EE2A42';
-const FMP_DARK = '#B81E32';
-const NEUTRAL = '#BFBAA4';
-
-function tt() {
-  return {
-    contentStyle: {
-      background: 'rgba(255,255,255,0.98)',
-      border: '1px solid #DEDCD4',
-      borderRadius: 12,
-      boxShadow: '0 18px 40px rgba(25,24,24,0.12)',
-      padding: 10,
-      fontSize: 12,
-    } as const,
-    labelStyle: { color: '#191818', fontWeight: 600, marginBottom: 4, fontSize: 12 } as const,
-    itemStyle: { color: '#3A3838', fontSize: 12 } as const,
-  };
-}
 
 type Props = {
   loading: boolean;
@@ -46,7 +28,7 @@ type Props = {
 };
 
 export function CursosLivresTab({ loading, data }: Props) {
-  const tooltip = tt();
+  const tooltip = CHART_TOOLTIP;
 
   if (loading) {
     return (
@@ -72,51 +54,47 @@ export function CursosLivresTab({ loading, data }: Props) {
       <section className={STAT_GRID_CONTAINER}>
         <div className={STAT_GRID_CLASSES}>
           <StatCard index={0} label="Leads" value={fmtInt(data.leads)} icon={Users} color="fmp" highlight />
-          <StatCard index={1} label="Inscricoes" value={fmtInt(data.insc)} icon={Users} color="fmp" />
-          <StatCard index={2} label="Matriculas" value={fmtInt(data.mat)} icon={GraduationCap} color="fmp" />
-          <StatCard index={3} label="% Conversao" value={fmtPct(data.pctConversao)} icon={TrendingUp} color="gray" />
-          <StatCard index={4} label="Faturamento" value={fmtBRLCompact(data.fat)} icon={DollarSign} color="fmp" />
+          <StatCard index={1} label="Inscrições" value={fmtInt(data.insc)} icon={Users} color="fmp" />
+          <StatCard index={2} label="Matrículas" value={fmtInt(data.mat)} icon={GraduationCap} color="fmp" />
+          <StatCard index={3} label="% Conversão" value={fmtPct(data.pctConversao)} hint="Leads que viraram matrícula ÷ matrículas — fórmula herdada do relatório original (mantida para os números baterem com o BI)." icon={TrendingUp} color="gray" />
+          <StatCard index={4} label="Faturamento" value={fmtBRLCompact(data.fat)} hint="Receita das matrículas de Cursos Livres no recorte filtrado." icon={DollarSign} color="fmp" />
         </div>
       </section>
 
       <ReorderableGrid storageKey="conv-reorder-cursoslivres" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <RItem rid="funil-canal">
-        <SectionCard title="Leads Gerados por Canal" subtitle="canal_nome x CL_Leads - Funil" icon={Radio}>
+        <SectionCard title="Leads Gerados por Canal" subtitle="Ranking dos canais que mais trouxeram interessados" icon={Radio}>
           {data.leadsPorCanal.length === 0 ? (
             <EmptyState title="Sem dados de canal para os filtros selecionados" />
           ) : (
-            <ResponsiveContainer width="100%" height={Math.max(300, Math.min(data.leadsPorCanal.length, 12) * 36)}>
-              <FunnelChart margin={{ top: 8, right: 180, left: 180, bottom: 8 }}>
+            <ResponsiveContainer width="100%" height={Math.max(300, Math.min(data.leadsPorCanal.length, 12) * 32)}>
+              <BarChart data={data.leadsPorCanal.slice(0, 12)} layout="vertical" margin={{ top: 4, right: 48, left: 0, bottom: 4 }}>
+                <XAxis type="number" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtInt(v)} />
+                <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#3A3838' }} tickLine={false} axisLine={false} width={130} tickFormatter={(v: string) => truncateLabel(v, 20)} />
                 <Tooltip
+                  cursor={{ fill: 'rgba(238,42,66,0.05)' }}
                   contentStyle={tooltip.contentStyle}
                   labelStyle={tooltip.labelStyle}
                   itemStyle={tooltip.itemStyle}
-                  formatter={(v: unknown, _n: unknown, p: { payload?: { categoria?: string; valor?: number } }) => {
-                    const pctTopo = maxLeads > 0 ? Math.round(((p?.payload?.valor ?? 0) / maxLeads) * 100) : 0;
-                    return [`${fmtInt(v as number)} leads (${pctTopo}% do topo)`, p?.payload?.categoria ?? 'Canal'];
+                  formatter={(v: unknown) => {
+                    const pctTopo = maxLeads > 0 ? Math.round(((v as number) / maxLeads) * 100) : 0;
+                    return [`${fmtInt(v as number)} leads (${pctTopo}% do maior canal)`, 'Canal'];
                   }}
                 />
-                <Funnel
-                  dataKey="valor"
-                  nameKey="categoria"
-                  data={data.leadsPorCanal.slice(0, 12).map((r, i) => ({
-                    ...r,
-                    fill: `rgba(238,42,66,${Math.max(0.35, 1 - i * 0.06).toFixed(2)})`,
-                  }))}
-                  isAnimationActive
-                  stroke="#fff"
-                >
-                  <LabelList position="left" dataKey="categoria" fill="#3A3838" stroke="none" fontSize={11} fontWeight={600} formatter={(v: unknown) => truncateLabel(String(v ?? ''), 24)} />
+                <Bar dataKey="valor" radius={[4, 8, 8, 4]} maxBarSize={20}>
+                  {data.leadsPorCanal.slice(0, 12).map((_, i) => (
+                    <Cell key={i} fill={`rgba(238,42,66,${Math.max(0.35, 1 - (i * 0.65) / Math.max(1, Math.min(data.leadsPorCanal.length, 12) - 1)).toFixed(2)})`} />
+                  ))}
                   <LabelList position="right" dataKey="valor" fill={FMP_DARK} stroke="none" fontSize={11} fontWeight={700} formatter={(v: unknown) => fmtInt(v as number)} />
-                </Funnel>
-              </FunnelChart>
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           )}
         </SectionCard>
 
         </RItem>
         <RItem rid="insc-mat-mes">
-        <SectionCard title="Inscricoes x Matriculas por Mes" subtitle="Mes x CL_Leads (colunas) + CL_Mat (linha)" icon={Users}>
+        <SectionCard title="Leads x Matrículas por Mês" subtitle="Colunas: leads (CRM) | Linha: matrículas" icon={Users}>
           {data.inscVsMatMensal.length === 0 || data.inscVsMatMensal.every((d) => d.leads === 0 && d.mat === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
           ) : (
@@ -131,7 +109,7 @@ export function CursosLivresTab({ loading, data }: Props) {
                 <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#DEDCD4" />
                 <XAxis dataKey="mesAno" tick={{ fontSize: 9, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: string) => truncateLabel(v, 10)} interval="preserveStartEnd" />
                 <YAxis tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown, name: unknown) => { if (name === 'mat') return [fmtInt(v as number), 'Matriculas']; return [fmtInt(v as number), 'Leads']; }} />
+                <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown, name: unknown) => { if (name === 'mat') return [fmtInt(v as number), 'Matrículas']; return [fmtInt(v as number), 'Leads']; }} />
                 <Bar dataKey="leads" fill="url(#barCLLeads)" radius={[8, 8, 4, 4]} maxBarSize={36} />
                 <Line type="monotone" dataKey="mat" stroke={NEUTRAL} strokeWidth={2.5} dot={{ r: 4, fill: NEUTRAL }} />
               </ComposedChart>
@@ -141,7 +119,7 @@ export function CursosLivresTab({ loading, data }: Props) {
 
         </RItem>
         <RItem rid="fat-curso" className="lg:col-span-2">
-        <SectionCard title="Faturamento por Curso" subtitle="curso x CL_Fat ordenado desc" icon={DollarSign}>
+        <SectionCard title="Faturamento por Curso" subtitle="Cursos ordenados pela receita gerada" icon={DollarSign}>
           {data.fatPorCurso.length === 0 || data.fatPorCurso.every((d) => d.valor === 0) ? (
             <EmptyState title="Sem dados de faturamento para os filtros selecionados" />
           ) : (

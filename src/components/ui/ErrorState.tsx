@@ -7,7 +7,7 @@ type Props = {
 };
 
 export function ErrorState({
-  title = 'Nao foi possivel carregar',
+  title = 'Não foi possível carregar',
   message = 'Ocorreu um problema ao buscar os dados. Tente novamente em instantes.',
   onRetry,
 }: Props) {

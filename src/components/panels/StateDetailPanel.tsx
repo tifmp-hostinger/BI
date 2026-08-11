@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import {
   Bar,
   BarChart,
@@ -22,45 +21,21 @@ import {
 } from 'lucide-react';
 import type { StateDetail } from '@/services/matriculasService';
 import { nameOf, regionOf } from '@/lib/brStates';
-import { CORES_CATEGORICAS } from '@/lib/chartColors';
+import { CHART_TOOLTIP, CORES_CATEGORICAS } from '@/lib/chartColors';
+import { fmtBRL, fmtBRLCompact, fmtInt, truncateLabel } from '@/lib/formatters';
 
 type Props = {
   uf: string | null;
   detail: StateDetail | null;
   onClose: () => void;
+  /** Total nacional do recorte atual — vira "X% do total" no cabeçalho. */
+  totalNacional?: number;
 };
 
 const SITU_COLORS = CORES_CATEGORICAS;
+const tt = CHART_TOOLTIP;
 
-function fmtBRL(v: number) {
-  return v.toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    maximumFractionDigits: 0,
-  });
-}
-
-function fmtInt(v: number) {
-  return v.toLocaleString('pt-BR');
-}
-
-export function StateDetailPanel({ uf, detail, onClose }: Props) {
-  const tt = useMemo(
-    () => ({
-      contentStyle: {
-        background: 'rgba(255,255,255,0.98)',
-        border: '1px solid #DEDCD4',
-        borderRadius: 12,
-        boxShadow: '0 18px 40px rgba(25,24,24,0.12)',
-        padding: 10,
-        fontSize: 12,
-      } as const,
-      labelStyle: { color: '#191818', fontWeight: 600, fontSize: 12 } as const,
-      itemStyle: { color: '#3A3838', fontSize: 12 } as const,
-    }),
-    []
-  );
-
+export function StateDetailPanel({ uf, detail, onClose, totalNacional }: Props) {
   if (!uf || !detail) {
     return (
       <div className="flex h-full min-h-[400px] flex-col items-center justify-center rounded-md border border-dashed border-line bg-white p-8 text-center">
@@ -70,15 +45,12 @@ export function StateDetailPanel({ uf, detail, onClose }: Props) {
             <MapPin className="h-6 w-6" strokeWidth={2.2} />
           </div>
         </div>
-        <h4
-          className="mt-5 text-sm text-ink"
-          style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic', fontWeight: 600 }}
-        >
+        <h4 className="fmp-kpi mt-5 text-sm leading-normal">
           Selecione um estado no mapa
         </h4>
         <p className="mt-1 max-w-xs text-xs leading-relaxed text-ink-3">
-          Clique em qualquer marcador para ver o detalhamento dinamico com
-          cursos, cidades, situacoes e faturamento.
+          Clique em qualquer marcador para ver cursos, cidades, situações e
+          faturamento daquele estado.
         </p>
       </div>
     );
@@ -87,6 +59,10 @@ export function StateDetailPanel({ uf, detail, onClose }: Props) {
   const region = regionOf(uf);
   const name = nameOf(uf);
   const cursosMax = detail.cursos[0]?.value ?? 1;
+  const pctNacional =
+    totalNacional && totalNacional > 0
+      ? Math.round((detail.total / totalNacional) * 100)
+      : null;
 
   return (
     <div
@@ -102,14 +78,13 @@ export function StateDetailPanel({ uf, detail, onClose }: Props) {
             <span className="h-1 w-1 rounded-full bg-sand" />
             <span className="text-2xs font-medium text-ink-3">{uf}</span>
           </div>
-          <h3
-            className="mt-1 text-lg text-ink"
-            style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic', fontWeight: 600 }}
-          >
+          <h3 className="fmp-kpi mt-1 text-lg leading-normal">
             {name}
           </h3>
-          <p className="text-xs text-ink-3">
-            Detalhamento dinamico das matriculas
+          <p className="text-xs text-ink-2">
+            {pctNacional !== null
+              ? `${pctNacional}% de todas as matrículas do recorte`
+              : 'Detalhamento das matrículas'}
           </p>
         </div>
         <button
@@ -126,13 +101,13 @@ export function StateDetailPanel({ uf, detail, onClose }: Props) {
         <div className="grid grid-cols-2 gap-3">
           <MicroStat
             icon={Users}
-            label="Matriculas"
+            label="Matrículas"
             value={fmtInt(detail.total)}
             color="fmp"
           />
           <MicroStat
             icon={GraduationCap}
-            label="Pos-graduacao"
+            label="Pós-graduação"
             value={fmtInt(detail.pos)}
             color="info"
           />
@@ -145,14 +120,16 @@ export function StateDetailPanel({ uf, detail, onClose }: Props) {
           <MicroStat
             icon={Wallet}
             label="Faturamento"
-            value={fmtBRL(detail.faturado)}
+            value={fmtBRLCompact(detail.faturado)}
+            exact={fmtBRL(detail.faturado)}
             color="success"
           />
         </div>
 
         <MetricStrip
-          label="Ticket medio"
-          value={fmtBRL(detail.ticketMedio)}
+          label="Ticket médio"
+          value={fmtBRLCompact(detail.ticketMedio)}
+          exact={fmtBRL(detail.ticketMedio)}
           secondary={`${fmtInt(detail.matriculados)} matriculados ativos`}
         />
 
@@ -182,8 +159,8 @@ export function StateDetailPanel({ uf, detail, onClose }: Props) {
                       />
                     </div>
                     {c.faturado > 0 && (
-                      <p className="mt-1 text-2xs text-ink-3">
-                        {fmtBRL(c.faturado)} faturado
+                      <p className="mt-1 text-2xs text-ink-3" title={fmtBRL(c.faturado)}>
+                        {fmtBRLCompact(c.faturado)} faturado
                       </p>
                     )}
                   </li>
@@ -201,14 +178,11 @@ export function StateDetailPanel({ uf, detail, onClose }: Props) {
                   key={c.name}
                   className="flex items-center justify-between rounded-sm border border-line bg-paper px-3 py-2 text-xs"
                 >
-                  <span className="flex items-center gap-2 text-ink-2">
-                    <ChevronRight className="h-3 w-3 text-fmp" />
+                  <span className="flex min-w-0 items-center gap-2 text-ink-2">
+                    <ChevronRight className="h-3 w-3 flex-shrink-0 text-fmp" />
                     <span className="line-clamp-1">{c.name}</span>
                   </span>
-                  <span
-                    className="font-semibold text-ink"
-                    style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic' }}
-                  >
+                  <span className="fmp-kpi flex-shrink-0 text-xs leading-normal">
                     {fmtInt(c.value)}
                   </span>
                 </li>
@@ -218,13 +192,13 @@ export function StateDetailPanel({ uf, detail, onClose }: Props) {
         )}
 
         {detail.situacoes.length > 0 && (
-          <Section title="Situacoes de matricula">
+          <Section title="Situações de matrícula">
             <ResponsiveContainer width="100%" height={180}>
               <PieChart>
                 <Tooltip
                   contentStyle={tt.contentStyle}
                   itemStyle={tt.itemStyle}
-                  formatter={(v: unknown) => [`${v}`, 'matriculas']}
+                  formatter={(v: unknown) => [`${v}`, 'matrículas']}
                 />
                 <Pie
                   data={detail.situacoes}
@@ -241,8 +215,10 @@ export function StateDetailPanel({ uf, detail, onClose }: Props) {
                 </Pie>
               </PieChart>
             </ResponsiveContainer>
+            {/* Legenda com TODAS as fatias do donut — antes listava só 5 e as
+                fatias seguintes ficavam com cor sem nome. */}
             <ul className="mt-2 space-y-1">
-              {detail.situacoes.slice(0, 5).map((s, i) => (
+              {detail.situacoes.map((s, i) => (
                 <li
                   key={s.name}
                   className="flex items-center justify-between text-2xs"
@@ -266,7 +242,7 @@ export function StateDetailPanel({ uf, detail, onClose }: Props) {
         )}
 
         {detail.modalidades.length > 0 && (
-          <Section title="Modalidade / Nivel">
+          <Section title="Modalidade / Nível">
             <ResponsiveContainer width="100%" height={Math.max(120, detail.modalidades.length * 28)}>
               <BarChart
                 data={detail.modalidades}
@@ -290,13 +266,14 @@ export function StateDetailPanel({ uf, detail, onClose }: Props) {
                   tick={{ fontSize: 10, fill: '#3A3838' }}
                   tickLine={false}
                   axisLine={false}
-                  width={110}
+                  width={100}
+                  tickFormatter={(v: string) => truncateLabel(v, 14)}
                 />
                 <Tooltip
                   cursor={{ fill: 'rgba(238,42,66,0.05)' }}
                   contentStyle={tt.contentStyle}
                   itemStyle={tt.itemStyle}
-                  formatter={(v: unknown) => [`${v}`, 'matriculas']}
+                  formatter={(v: unknown) => [`${v}`, 'matrículas']}
                 />
                 <Bar
                   dataKey="value"
@@ -310,20 +287,25 @@ export function StateDetailPanel({ uf, detail, onClose }: Props) {
         )}
 
         {detail.amostraAlunos.length > 0 && (
-          <Section title="Amostra de alunos" icon={Users}>
+          <Section
+            title={`Amostra de matrículas (${detail.amostraAlunos.length} de ${fmtInt(detail.total)})`}
+            icon={Users}
+          >
             <ul className="divide-y divide-line rounded-sm border border-line bg-paper">
+              {/* Identificação SEMPRE por RA — nome de aluno nunca aparece
+                  na aplicação (regra de privacidade do projeto). */}
               {detail.amostraAlunos.map((a, i) => (
                 <li
                   key={`${a.ra}-${i}`}
                   className="px-3 py-2 text-2xs"
                 >
                   <p className="line-clamp-1 font-semibold text-ink">
-                    {a.aluno || 'Aluno sem nome'}
+                    RA {a.ra || '—'}
                   </p>
                   <p className="mt-0.5 line-clamp-1 text-ink-3">
                     {a.curso}
                   </p>
-                  <div className="mt-1 flex items-center gap-2 text-sand">
+                  <div className="mt-1 flex items-center gap-2 text-ink-3">
                     <span>{a.cidade || '—'}</span>
                     <span className="h-1 w-1 rounded-full bg-sand" />
                     <span className="line-clamp-1">{a.situacao || '—'}</span>
@@ -364,11 +346,14 @@ function MicroStat({
   icon: Icon,
   label,
   value,
+  exact,
   color,
 }: {
   icon: typeof Users;
   label: string;
   value: string;
+  /** Valor por extenso no hover quando `value` está abreviado. */
+  exact?: string;
   color: 'fmp' | 'info' | 'success' | 'warning';
 }) {
   const styles: Record<typeof color, { bg: string; text: string }> = {
@@ -379,17 +364,14 @@ function MicroStat({
   };
   const s = styles[color];
   return (
-    <div className="rounded-sm border border-line bg-paper p-3">
+    <div className="min-w-0 rounded-sm border border-line bg-paper p-3">
       <div className={`inline-flex rounded-sm p-1.5 ${s.bg}`}>
         <Icon className={`h-3.5 w-3.5 ${s.text}`} strokeWidth={2.4} />
       </div>
       <p className="mt-2 text-2xs font-medium uppercase tracking-wider text-ink-3">
         {label}
       </p>
-      <p
-        className="mt-0.5 text-base text-ink"
-        style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic', fontWeight: 600 }}
-      >
+      <p className="fmp-kpi mt-0.5 break-words text-base leading-tight" title={exact}>
         {value}
       </p>
     </div>
@@ -399,22 +381,21 @@ function MicroStat({
 function MetricStrip({
   label,
   value,
+  exact,
   secondary,
 }: {
   label: string;
   value: string;
+  exact?: string;
   secondary?: string;
 }) {
   return (
     <div className="flex items-center justify-between rounded-sm border border-fmp/20 bg-fmp-muted p-4">
-      <div>
+      <div className="min-w-0">
         <p className="text-2xs font-semibold uppercase tracking-widest text-fmp">
           {label}
         </p>
-        <p
-          className="mt-0.5 text-xl text-ink"
-          style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic', fontWeight: 600 }}
-        >
+        <p className="fmp-kpi mt-0.5 break-words text-xl leading-tight" title={exact}>
           {value}
         </p>
       </div>

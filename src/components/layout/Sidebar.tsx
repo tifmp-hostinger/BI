@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   MapPin,
   Percent,
-  Settings,
   PanelLeftClose,
   PanelLeftOpen,
   Shield,
@@ -37,7 +36,6 @@ const ICONS: Record<string, LucideIcon> = {
   Activity,
   Users,
   Shield,
-  Settings,
   Target,
   Percent,
   TrendingUp,
@@ -98,7 +96,7 @@ export function Sidebar({ items, open, onClose, colapsado = false, onToggleColap
                 >
                   FMP Analytics
                 </p>
-                <p className="text-2xs uppercase tracking-widest text-sand/70">
+                <p className="text-2xs uppercase tracking-widest text-sand">
                   Central de Dashboards
                 </p>
               </div>
@@ -133,7 +131,7 @@ export function Sidebar({ items, open, onClose, colapsado = false, onToggleColap
         {/* Nav */}
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
           {!colapsado && (
-            <p className="mb-2 mt-2 px-3 text-2xs font-semibold uppercase tracking-widest text-sand/50">
+            <p className="mb-2 mt-2 px-3 text-2xs font-semibold uppercase tracking-widest text-sand/85">
               Painel
             </p>
           )}
@@ -144,7 +142,7 @@ export function Sidebar({ items, open, onClose, colapsado = false, onToggleColap
             className={({ isActive }) =>
               `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all no-underline ${
                 isActive
-                  ? 'bg-fmp text-white'
+                  ? 'bg-fmp-pressed text-white'
                   : 'text-cream/70 hover:bg-white/10 hover:text-cream'
               }`
             }
@@ -152,14 +150,14 @@ export function Sidebar({ items, open, onClose, colapsado = false, onToggleColap
             <LayoutDashboard className="h-4 w-4 flex-shrink-0" strokeWidth={2.3} />
             {!colapsado && (
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium">Inicio</p>
-                <p className="truncate text-2xs text-cream/40">Visao geral</p>
+                <p className="truncate text-sm font-medium">Início</p>
+                <p className="truncate text-2xs text-current opacity-80">Visão geral</p>
               </div>
             )}
           </NavLink>
 
           {!colapsado && (
-            <p className="mb-2 mt-5 px-3 text-2xs font-semibold uppercase tracking-widest text-sand/50">
+            <p className="mb-2 mt-5 px-3 text-2xs font-semibold uppercase tracking-widest text-sand/85">
               Dashboards
             </p>
           )}
@@ -172,14 +170,14 @@ export function Sidebar({ items, open, onClose, colapsado = false, onToggleColap
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{item.title}</p>
                     {item.subtitle && (
-                      <p className="truncate text-2xs text-cream/40">
+                      <p className="truncate text-2xs text-current opacity-80">
                         {item.subtitle}
                       </p>
                     )}
                   </div>
                 )}
                 {!colapsado && item.disabled && (
-                  <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-2xs font-semibold text-cream/50">
+                  <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-2xs font-semibold text-cream/75">
                     Em breve
                   </span>
                 )}
@@ -190,7 +188,7 @@ export function Sidebar({ items, open, onClose, colapsado = false, onToggleColap
               return (
                 <div
                   key={item.slug}
-                  className="flex cursor-not-allowed items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-cream/30 animate-slide-right"
+                  className="flex cursor-not-allowed items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-cream/50 animate-slide-right"
                   style={{ animationDelay: `${i * 40}ms` }}
                 >
                   {commonInner}
@@ -208,7 +206,7 @@ export function Sidebar({ items, open, onClose, colapsado = false, onToggleColap
                 className={({ isActive }) =>
                   `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all no-underline animate-slide-right ${
                     isActive
-                      ? 'bg-fmp text-white'
+                      ? 'bg-fmp-pressed text-white'
                       : 'text-cream/70 hover:bg-white/10 hover:text-cream'
                   }`
                 }
@@ -218,9 +216,9 @@ export function Sidebar({ items, open, onClose, colapsado = false, onToggleColap
             );
           })}
 
-          {!colapsado && (
-            <p className="mb-2 mt-5 px-3 text-2xs font-semibold uppercase tracking-widest text-sand/50">
-              Administracao
+          {!colapsado && perfil?.papel === 'admin' && (
+            <p className="mb-2 mt-5 px-3 text-2xs font-semibold uppercase tracking-widest text-sand/85">
+              Administração
             </p>
           )}
           {/* Gestão de usuários: item real, só para quem tem papel admin. */}
@@ -228,11 +226,11 @@ export function Sidebar({ items, open, onClose, colapsado = false, onToggleColap
             <NavLink
               to="/usuarios"
               onClick={onClose}
-              title={colapsado ? 'Usuarios — Acessos da plataforma' : undefined}
+              title={colapsado ? 'Usuários — Acessos da plataforma' : undefined}
               className={({ isActive }) =>
                 `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all no-underline ${
                   isActive
-                    ? 'bg-fmp text-white'
+                    ? 'bg-fmp-pressed text-white'
                     : 'text-cream/70 hover:bg-white/10 hover:text-cream'
                 }`
               }
@@ -240,21 +238,12 @@ export function Sidebar({ items, open, onClose, colapsado = false, onToggleColap
               <Shield className="h-4 w-4 flex-shrink-0" strokeWidth={2.3} />
               {!colapsado && (
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">Usuarios</p>
-                  <p className="truncate text-2xs text-cream/40">Acessos da plataforma</p>
+                  <p className="truncate text-sm font-medium">Usuários</p>
+                  <p className="truncate text-2xs text-current opacity-80">Acessos da plataforma</p>
                 </div>
               )}
             </NavLink>
           )}
-          <div className="flex cursor-not-allowed items-center gap-3 rounded-xl px-3 py-2.5 text-cream/30">
-            <Settings className="h-4 w-4 flex-shrink-0" strokeWidth={2.3} />
-            {!colapsado && (
-              <div className="min-w-0">
-                <p className="text-sm font-medium">Configuracoes</p>
-                <p className="text-2xs text-cream/40">Preferencias do sistema</p>
-              </div>
-            )}
-          </div>
         </nav>
 
         {/* User badge */}
@@ -277,7 +266,7 @@ export function Sidebar({ items, open, onClose, colapsado = false, onToggleColap
                 <p className="truncate text-sm font-medium text-cream">
                   {perfil?.nome_completo ?? '—'}
                 </p>
-                <p className="truncate text-2xs text-cream/40">
+                <p className="truncate text-2xs text-cream/70">
                   {perfil?.cargo ?? perfil?.codusuario ?? ''}
                 </p>
               </div>

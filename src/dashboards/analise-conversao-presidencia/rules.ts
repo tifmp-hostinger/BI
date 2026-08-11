@@ -12,6 +12,16 @@ export const RUBEUS_PROCESSO_GRADUACAO = 'Graduação';
 export const RUBEUS_PROCESSO_MESTRADO = 'Mestrado';
 export const RUBEUS_PROCESSO_POS = 'Pós Graduação';
 
+// -------- Limiares de semaforo (verde/laranja) --------
+
+/**
+ * Réguas internas de conversão usadas no semáforo dos blocos. Valores
+ * herdados do comportamento visual do Power BI; expostos aqui (e no hint dos
+ * cards) para o usuário saber a régua em vez de ver só a cor.
+ */
+export const LIMIAR_CONVERSAO_GRAD = 0.5;
+export const LIMIAR_CONVERSAO_MESTRADO = 0.6;
+
 // -------- Situacoes / matriculas --------
 
 export const MATRICULA_SITUACAO_ATIVA = 'Matriculado';

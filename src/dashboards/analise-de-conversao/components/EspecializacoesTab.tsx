@@ -23,27 +23,10 @@ import { ChartSkeleton } from '@/components/ui/Skeletons';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { fmtBRLCompact, fmtInt, fmtPct, truncateLabel } from '../formatters';
 import type { EspecializacoesData } from '../types';
-import { CORES_CATEGORICAS } from '@/lib/chartColors';
+import { CHART_TOOLTIP, CORES_CATEGORICAS, FMP_DARK, FMP_RED, NEUTRAL } from '@/lib/chartColors';
 
-const FMP_RED = '#EE2A42';
-const FMP_DARK = '#B81E32';
-const NEUTRAL = '#BFBAA4';
 const PIE_COLORS = CORES_CATEGORICAS;
 
-function tt() {
-  return {
-    contentStyle: {
-      background: 'rgba(255,255,255,0.98)',
-      border: '1px solid #DEDCD4',
-      borderRadius: 12,
-      boxShadow: '0 18px 40px rgba(25,24,24,0.12)',
-      padding: 10,
-      fontSize: 12,
-    } as const,
-    labelStyle: { color: '#191818', fontWeight: 600, marginBottom: 4, fontSize: 12 } as const,
-    itemStyle: { color: '#3A3838', fontSize: 12 } as const,
-  };
-}
 
 type Props = {
   loading: boolean;
@@ -51,7 +34,7 @@ type Props = {
 };
 
 export function EspecializacoesTab({ loading, data }: Props) {
-  const tooltip = tt();
+  const tooltip = CHART_TOOLTIP;
 
   if (loading) {
     return (
@@ -76,16 +59,16 @@ export function EspecializacoesTab({ loading, data }: Props) {
       <section className={STAT_GRID_CONTAINER}>
         <div className={STAT_GRID_CLASSES}>
           <StatCard index={0} label="Leads" value={fmtInt(data.leads)} icon={Users} color="fmp" highlight />
-          <StatCard index={1} label="Faturamento" value={fmtBRLCompact(data.fat)} icon={DollarSign} color="fmp" />
-          <StatCard index={2} label="Meta Faturamento" value={fmtBRLCompact(data.metaFat)} icon={TrendingUp} color="gray" />
-          <StatCard index={3} label="Matriculas" value={fmtInt(data.mat)} icon={GraduationCap} color="gray" />
+          <StatCard index={1} label="Faturamento" value={fmtBRLCompact(data.fat)} hint="Receita das matrículas de Especializações na janela de datas do recorte." icon={DollarSign} color="fmp" />
+          <StatCard index={2} label="Meta de faturamento" value={fmtBRLCompact(data.metaFat)} icon={TrendingUp} color="gray" />
+          <StatCard index={3} label="Matrículas" value={fmtInt(data.mat)} icon={GraduationCap} color="gray" />
         </div>
       </section>
 
       <div className="flex flex-col items-center rounded-md border border-line bg-white p-6 shadow-card animate-fade-in">
         <GaugeSemicircle
           value={data.pctMeta}
-          label="Especializacoes | Meta Fat."
+          label="Especializações | Meta"
           size={220}
           formatValue={(v) => fmtPct(v)}
           caption={`${fmtBRLCompact(data.fat)} / ${fmtBRLCompact(data.metaFat)}`}
@@ -94,7 +77,7 @@ export function EspecializacoesTab({ loading, data }: Props) {
 
       <ReorderableGrid storageKey="conv-reorder-especializacoes" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <RItem rid="fat-mes">
-        <SectionCard title="Faturamento e Matriculas por Mes" subtitle="Mes fiscal x Espec_Fat (colunas) + Espec_Mat (linha)" icon={TrendingUp}>
+        <SectionCard title="Faturamento e Matrículas por Mês" subtitle="Colunas: faturamento | Linha: matrículas (mês fiscal)" icon={TrendingUp}>
           {data.fatMensal.length === 0 || data.fatMensal.every((d) => d.fat === 0 && d.mat === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
           ) : (
@@ -110,10 +93,10 @@ export function EspecializacoesTab({ loading, data }: Props) {
                 <XAxis dataKey="mesAno" tick={{ fontSize: 9, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: string) => truncateLabel(v, 10)} interval="preserveStartEnd" />
                 <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
                 <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown, name: unknown) => { if (name === 'mat') return [fmtInt(v as number), 'Matriculas']; return [fmtBRLCompact(v as number), 'Faturamento']; }} />
-                <Legend verticalAlign="bottom" iconType="circle" formatter={(v: string) => { const labels: Record<string, string> = { fat: 'Faturamento', mat: 'Matriculas' }; return <span className="text-xs text-ink-2">{labels[v] ?? v}</span>; }} />
+                <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown, name: unknown) => { if (name === 'mat') return [fmtInt(v as number), 'Matrículas']; return [fmtBRLCompact(v as number), 'Faturamento']; }} />
+                <Legend verticalAlign="bottom" iconType="circle" formatter={(v: string) => { const labels: Record<string, string> = { fat: 'Faturamento', mat: 'Matrículas' }; return <span className="text-xs text-ink-2">{labels[v] ?? v}</span>; }} />
                 <Bar yAxisId="left" dataKey="fat" fill="url(#barEspecFat)" radius={[8, 8, 4, 4]} maxBarSize={36}>
-                  <LabelList dataKey="fat" position="top" formatter={(v: unknown) => fmtBRLCompact(v as number)} style={{ fontSize: 8, fill: '#3A3838', fontWeight: 600 }} />
+                  <LabelList dataKey="fat" position="top" formatter={(v: unknown) => fmtBRLCompact(v as number)} style={{ fontSize: 10, fill: '#3A3838', fontWeight: 600 }} />
                 </Bar>
                 <Line yAxisId="right" type="monotone" dataKey="mat" stroke={NEUTRAL} strokeWidth={2.5} dot={{ r: 3, fill: NEUTRAL }} />
               </ComposedChart>
@@ -123,7 +106,7 @@ export function EspecializacoesTab({ loading, data }: Props) {
 
         </RItem>
         <RItem rid="fat-modalidade-mes">
-        <SectionCard title="Faturamento por Modalidade de Ensino" subtitle="Mes x Espec_Fat_EAD + Espec_Fat_Pres + Espec_Mat (eixo sec.)" icon={TrendingUp}>
+        <SectionCard title="Faturamento por Modalidade de Ensino" subtitle="EAD x Presencial mês a mês, com matrículas no eixo direito" icon={TrendingUp}>
           {data.fatMensal.length === 0 || data.fatMensal.every((d) => d.fatEad === 0 && d.fatPres === 0 && d.mat === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
           ) : (
@@ -133,10 +116,10 @@ export function EspecializacoesTab({ loading, data }: Props) {
                 <XAxis dataKey="mesAno" tick={{ fontSize: 9, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: string) => truncateLabel(v, 10)} interval="preserveStartEnd" />
                 <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
                 <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown, name: unknown) => { if (name === 'mat') return [fmtInt(v as number), 'Matriculas']; return [fmtBRLCompact(v as number), 'Faturamento']; }} />
-                <Legend verticalAlign="bottom" iconType="circle" formatter={(v: string) => { const labels: Record<string, string> = { fatEad: 'EAD', fatPres: 'Presencial', mat: 'Matriculas' }; return <span className="text-xs text-ink-2">{labels[v] ?? v}</span>; }} />
-                <Line yAxisId="left" type="monotone" dataKey="fatEad" stroke={FMP_RED} strokeWidth={2.5} dot={{ r: 3, fill: FMP_RED }} />
-                <Line yAxisId="left" type="monotone" dataKey="fatPres" stroke={NEUTRAL} strokeWidth={2.5} dot={{ r: 3, fill: NEUTRAL }} />
+                <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown, name: unknown) => { if (name === 'mat') return [fmtInt(v as number), 'Matrículas']; return [fmtBRLCompact(v as number), 'Faturamento']; }} />
+                <Legend verticalAlign="bottom" iconType="circle" formatter={(v: string) => { const labels: Record<string, string> = { fatEad: 'EAD', fatPres: 'Presencial', mat: 'Matrículas' }; return <span className="text-xs text-ink-2">{labels[v] ?? v}</span>; }} />
+                <Line yAxisId="left" type="monotone" dataKey="fatEad" name="EAD" stroke={FMP_RED} strokeWidth={2.5} dot={{ r: 3, fill: FMP_RED }} />
+                <Line yAxisId="left" type="monotone" dataKey="fatPres" name="Presencial" stroke={NEUTRAL} strokeWidth={2.5} dot={{ r: 3, fill: NEUTRAL }} />
                 <Line yAxisId="right" type="monotone" dataKey="mat" stroke={FMP_DARK} strokeWidth={2} dot={false} strokeDasharray="5 3" />
               </ComposedChart>
             </ResponsiveContainer>
@@ -145,7 +128,7 @@ export function EspecializacoesTab({ loading, data }: Props) {
 
         </RItem>
         <RItem rid="top5-cursos">
-        <SectionCard title="Top 5 Cursos com Maior Faturamento" subtitle="cursoreduzido x Espec_Fat" icon={DollarSign}>
+        <SectionCard title="Top 5 Cursos com Maior Faturamento" subtitle="Cursos ordenados pela receita gerada" icon={DollarSign}>
           {data.top5CursosFat.length === 0 || data.top5CursosFat.every((d) => d.valor === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
           ) : (
