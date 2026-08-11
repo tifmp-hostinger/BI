@@ -20,11 +20,15 @@ import {
   useAnaliseConversaoData,
 } from './hooks/useAnaliseConversaoData';
 
-/** Meses padrao ate o mes atual (regra herdada do Power BI). */
+/**
+ * Meses padrão por ano (regra herdada do Power BI): ano corrente vai até o
+ * mês atual; ano passado cobre os 12 meses (comparar 8 meses de 2026 com 8
+ * de 2025 induzia a ler um faturamento anual menor sem perceber); ano futuro
+ * também abre com os 12 para não mostrar card vazio.
+ */
 function defaultMesesAte(anoAlvo: number, hoje = new Date()): number[] {
   const anoAtual = hoje.getFullYear();
-  if (anoAlvo < anoAtual) return Array.from({ length: 12 }, (_, i) => i + 1);
-  if (anoAlvo > anoAtual) return [];
+  if (anoAlvo !== anoAtual) return Array.from({ length: 12 }, (_, i) => i + 1);
   return Array.from({ length: hoje.getMonth() + 1 }, (_, i) => i + 1);
 }
 
@@ -63,8 +67,29 @@ export function AnaliseConversaoPresidenciaPage() {
     const { atual, anterior } = escolhePeriodosPadrao(base.pletivos);
     if (atual !== periodoGradAtual) setPeriodoGradAtual(atual);
     if (anterior !== periodoGradAnterior) setPeriodoGradAnterior(anterior);
+    // Ano sem meta cadastrada (típico na virada do ano): cai para o ano mais
+    // recente COM meta — senão o select renderia um ano fora das opções e os
+    // KPIs abririam vazios.
+    const anosComMetaMest = base.metaMestrado.map((m) => m.ano);
+    if (anosComMetaMest.length > 0 && !anosComMetaMest.includes(anoMestrado)) {
+      setAnoMestrado(Math.max(...anosComMetaMest));
+    }
+    const anosComMetaPos = base.metaPos.map((m) => m.ano);
+    if (anosComMetaPos.length > 0 && !anosComMetaPos.includes(anoPos)) {
+      const alvo = Math.max(...anosComMetaPos);
+      setAnoPos(alvo);
+      setMesesPos(defaultMesesAte(alvo));
+    }
     setDefaultsAplicados(true);
   }
+
+  // Trocar o ano das Especializações recalcula os meses padrão daquele ano —
+  // antes a seleção de meses ficava congelada e comparar 2025 com jan-ago
+  // passava um faturamento anual errado sem aviso.
+  const trocaAnoPos = (ano: number) => {
+    setAnoPos(ano);
+    setMesesPos(defaultMesesAte(ano));
+  };
 
   const anosMestrado = useMemo(() => {
     if (!base) return [anoAtual];
@@ -86,8 +111,8 @@ export function AnaliseConversaoPresidenciaPage() {
 
   return (
     <AppShell
-      title="Analise de Conversao - Presidencia"
-      subtitle="Funil comercial academico: leads, inscricoes, matriculas"
+      title="Análise de Conversão - Presidência"
+      subtitle="Funil comercial acadêmico: leads, inscrições, matrículas"
     >
       <div className="mx-auto max-w-7xl space-y-8 p-4 sm:p-6 lg:p-8">
         {/* Hero — dark editorial */}
@@ -110,7 +135,7 @@ export function AnaliseConversaoPresidenciaPage() {
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium uppercase tracking-widest text-cream/85 ring-1 ring-inset ring-cream/15">
                   <Target className="h-3 w-3" />
-                  Presidencia
+                  Presidência
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium text-cream/85 ring-1 ring-inset ring-cream/15">
                   <Award className="h-3 w-3" />
@@ -118,14 +143,14 @@ export function AnaliseConversaoPresidenciaPage() {
                 </span>
               </div>
               <h1
-                className="mt-3 text-2xl sm:text-3xl lg:text-4xl text-cream"
-                style={{ fontFamily: '"Noto Serif", Georgia, serif', fontStyle: 'italic', fontWeight: 500 }}
+                className="fmp-display mt-3 text-2xl sm:text-3xl lg:text-4xl"
+                style={{ color: 'inherit' }}
               >
-                Analise de Conversao
+                Análise de Conversão
               </h1>
               <p className="mt-2 max-w-xl text-sm leading-relaxed text-cream/70">
-                Reproduz o funil comercial academico do Power BI com paridade
-                total. Graduacao, Mestrado e Especializacoes em uma unica tela,
+                Como estão leads, inscrições e matrículas frente às metas de
+                Graduação, Mestrado e Especializações — em uma única tela,
                 sem expor dados pessoais.
               </p>
             </div>
@@ -135,7 +160,7 @@ export function AnaliseConversaoPresidenciaPage() {
               onClick={refetch}
               className="inline-flex items-center gap-1.5 rounded-pill bg-fmp px-3.5 py-2 text-2xs font-medium text-white transition hover:bg-fmp-dark no-underline"
             >
-              <RefreshCw className="h-3.5 w-3.5" />
+              <RefreshCw className={`h-3.5 w-3.5 ${revalidando ? 'animate-spin' : ''}`} />
               Atualizar
             </button>
           </div>
@@ -143,7 +168,7 @@ export function AnaliseConversaoPresidenciaPage() {
 
         {error && (
           <ErrorState
-            title="Nao foi possivel carregar os dados"
+            title="Não foi possível carregar os dados"
             message={error}
             onRetry={refetch}
           />
@@ -153,7 +178,7 @@ export function AnaliseConversaoPresidenciaPage() {
           <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning-light p-4 text-warning-dark shadow-card">
             <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
             <div>
-              <p className="text-sm font-semibold">Leads (Rubeus) indisponiveis</p>
+              <p className="text-sm font-semibold">Leads (Rubeus) indisponíveis</p>
               <p className="text-2xs">
                 Os demais indicadores continuam sendo exibidos. {rubeusError}
               </p>
@@ -164,26 +189,27 @@ export function AnaliseConversaoPresidenciaPage() {
         {/* Blocos */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <GraduacaoBlock
-            title="Graduacao - Periodo Atual"
+            title="Graduação - Período Atual"
             subtitle="Vestibular vigente"
             kpis={graduacaoAtual}
             pletivos={base?.pletivos ?? []}
             periodo={periodoGradAtual}
             onPeriodoChange={setPeriodoGradAtual}
             loading={loading || rubeusLoading}
+            comparacao={graduacaoAnterior}
           />
           <EspecializacoesBlock
             kpis={especializacoes}
             anos={anosPos}
             ano={anoPos}
-            onAnoChange={setAnoPos}
+            onAnoChange={trocaAnoPos}
             meses={mesesPos}
             onMesesChange={setMesesPos}
             loading={loading}
           />
           <GraduacaoBlock
-            title="Graduacao - Periodo Anterior"
-            subtitle="Comparativo historico"
+            title="Graduação - Período Anterior"
+            subtitle="Referência de comparação dos chips ▲/▼"
             kpis={graduacaoAnterior}
             pletivos={base?.pletivos ?? []}
             periodo={periodoGradAnterior}
@@ -213,13 +239,9 @@ export function AnaliseConversaoPresidenciaPage() {
                   Regras herdadas do Power BI
                 </p>
                 <p className="text-xs text-ink-3">
-                  Este dashboard preserva a logica original, incluindo
-                  inconsistencias documentadas em
-                  {' '}
-                  <code className="rounded bg-white px-1.5 py-0.5 text-2xs text-fmp">
-                    docs/analise-conversao-presidencia-observacoes.md
-                  </code>
-                  .
+                  Alguns indicadores seguem regras históricas do modelo
+                  anterior, mantidas de propósito para os números continuarem
+                  comparáveis.
                 </p>
               </div>
             </div>

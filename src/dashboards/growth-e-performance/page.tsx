@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -18,7 +18,6 @@ import {
   Table as TableIcon,
   Target,
   TrendingUp,
-  Users,
   Wallet,
   X,
 } from 'lucide-react';
@@ -32,7 +31,7 @@ import { DataFreshness } from '@/components/ui/DataFreshness';
 import { AtualizandoAviso } from '@/components/ui/AtualizandoAviso';
 import { FONTES_POR_DASHBOARD } from '@/lib/dataFreshness';
 import { MultiSelect } from '@/components/ui/MultiSelect';
-import { fmtBRLCompact, fmtPct } from '../analise-de-conversao/formatters';
+import { fmtBRLCompact, fmtInt, fmtPct, fmtRatio } from '@/lib/formatters';
 import { DATA_INICIO_DEFAULT, PRODUTOS, type Produto } from './constants';
 import { useGrowthData } from './hooks/useGrowthData';
 import { FunnelPanel } from './components/FunnelPanel';
@@ -45,14 +44,22 @@ import {
 } from './components/GrowthViews';
 import type { Fonte, GrowthFilters, GrowthView } from './types';
 
-const VIEWS: { id: GrowthView; label: string; icon: typeof TableIcon }[] = [
+type TabId = 'campanhas' | 'mapa' | 'horarios' | 'series' | 'origem';
+
+const VIEWS: { id: TabId; label: string; icon: typeof TableIcon }[] = [
   { id: 'campanhas', label: 'Campanhas', icon: TableIcon },
   { id: 'mapa', label: 'Mapa', icon: MapIcon },
   { id: 'horarios', label: 'Horários', icon: Clock },
-  { id: 'leads', label: 'Leads', icon: Users },
-  { id: 'matriculas', label: 'Matrículas', icon: BarChart3 },
+  // Leads e Matrículas eram duas abas com o MESMO gráfico (só a série
+  // vermelha mudava) — viraram uma aba com alternância interna.
+  { id: 'series', label: 'Séries mensais', icon: BarChart3 },
   { id: 'origem', label: 'Origem', icon: Share2 },
 ];
+
+/** Aba correspondente a cada visão de dados. */
+function tabDoView(v: GrowthView): TabId {
+  return v === 'leads' || v === 'matriculas' ? 'series' : v;
+}
 
 /**
  * Cursos Livres não tem mapa: o Google Ads nunca teve campanha dessa
@@ -104,9 +111,34 @@ const HINTS = {
 } as const;
 
 export function GrowthEPerformancePage() {
-  const [produto, setProduto] = useState<Produto>('Graduação');
-  // BI original abre com o padrão em "Matrículas" (bookmark default).
-  const [view, setView] = useState<GrowthView>('matriculas');
+  // Última seleção persiste entre visitas: quem acompanha Pós EAD não
+  // precisa refazer o caminho a cada abertura (Graduação/Matrículas segue
+  // sendo o padrão da primeira visita, como no BI).
+  const [produto, setProduto] = useState<Produto>(() => {
+    try {
+      const salvo = localStorage.getItem('fmp-growth-produto');
+      return PRODUTOS.some((p) => p.label === salvo) ? (salvo as Produto) : 'Graduação';
+    } catch {
+      return 'Graduação';
+    }
+  });
+  const [view, setView] = useState<GrowthView>(() => {
+    try {
+      const salvo = localStorage.getItem('fmp-growth-view');
+      const validas: GrowthView[] = ['campanhas', 'mapa', 'horarios', 'leads', 'matriculas', 'origem'];
+      return validas.includes(salvo as GrowthView) ? (salvo as GrowthView) : 'matriculas';
+    } catch {
+      return 'matriculas';
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem('fmp-growth-produto', produto);
+      localStorage.setItem('fmp-growth-view', view);
+    } catch {
+      // localStorage indisponível: preferência vale só nesta sessão.
+    }
+  }, [produto, view]);
   const [googleOn, setGoogleOn] = useState(false);
   const [metaOn, setMetaOn] = useState(false);
   const [dataInicio, setDataInicio] = useState<string | null>(DATA_INICIO_DEFAULT);
@@ -118,7 +150,12 @@ export function GrowthEPerformancePage() {
   const viewsVisiveis = viewsDoProduto(produto);
   // Se a aba ativa não existe no produto atual (Mapa em Cursos Livres),
   // cai no padrão Matrículas em vez de mostrar uma visão vazia.
-  const viewAtiva: GrowthView = viewsVisiveis.some((v) => v.id === view) ? view : 'matriculas';
+  const tabAtiva: TabId = viewsVisiveis.some((v) => v.id === tabDoView(view))
+    ? tabDoView(view)
+    : 'series';
+  const viewAtiva: GrowthView = tabAtiva === 'series'
+    ? (view === 'leads' ? 'leads' : 'matriculas')
+    : (view as GrowthView);
 
   const filters: GrowthFilters = useMemo(
     () => ({
@@ -234,7 +271,7 @@ export function GrowthEPerformancePage() {
               onClick={refetch}
               className="inline-flex items-center gap-1.5 rounded-pill bg-fmp px-3 py-1.5 text-2xs font-medium text-white transition hover:bg-fmp-dark"
             >
-              <RefreshCw className="h-3.5 w-3.5" />
+              <RefreshCw className={`h-3.5 w-3.5 ${revalidando ? 'animate-spin' : ''}`} />
               Atualizar
             </button>
           </div>
@@ -304,6 +341,36 @@ export function GrowthEPerformancePage() {
                       value={dataFim ?? ''}
                       onChange={(e) => setDataFim(e.target.value || null)}
                     />
+                    {/* Atalhos: o período padrão (desde out/2025) cresce sem
+                        limite a cada dia e mistura ciclos de captação — os
+                        recortes recentes ficam a um clique. */}
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {([
+                        { label: '30 dias', dias: 30 },
+                        { label: '90 dias', dias: 90 },
+                        { label: 'Tudo', dias: null },
+                      ] as const).map((p) => (
+                        <button
+                          key={p.label}
+                          type="button"
+                          onClick={() => {
+                            if (p.dias === null) {
+                              setDataInicio(DATA_INICIO_DEFAULT);
+                            } else {
+                              const d = new Date();
+                              d.setDate(d.getDate() - p.dias);
+                              setDataInicio(
+                                `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
+                              );
+                            }
+                            setDataFim(hojeISO());
+                          }}
+                          className="rounded-pill bg-paper px-2 py-1 text-2xs font-semibold text-ink-2 transition hover:bg-line"
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Período Letivo: oculto por padrão no BI original */}
@@ -389,7 +456,7 @@ export function GrowthEPerformancePage() {
                         {chipsAtivos.map((c) => (
                           <span
                             key={c.label}
-                            className="inline-flex items-center gap-1 rounded-full bg-fmp-muted px-2.5 py-1 text-2xs font-semibold text-fmp"
+                            className="inline-flex items-center gap-1 rounded-pill bg-fmp-muted px-2.5 py-1 text-2xs font-semibold text-fmp"
                           >
                             {c.label}
                             <button
@@ -406,7 +473,7 @@ export function GrowthEPerformancePage() {
                         <button
                           type="button"
                           onClick={limparFiltros}
-                          className="rounded-full bg-paper px-2.5 py-1 text-2xs font-semibold text-ink-3 transition hover:bg-line"
+                          className="rounded-pill bg-paper px-2.5 py-1 text-2xs font-semibold text-ink-3 transition hover:bg-line"
                         >
                           Limpar tudo
                         </button>
@@ -433,12 +500,32 @@ export function GrowthEPerformancePage() {
                       <div className={STAT_GRID_CLASSES}>
                         <StatCard index={0} label="Investimento" value={fmtBRLCompact(media.investimento)} exactValue={exatoBRL(media.investimento)} hint={HINTS.investimento} icon={DollarSign} color="fmp" highlight />
                         <StatCard index={1} label="Ticket Médio" value={fmtOrDash(negocio.ticketMedio, fmtBRLCompact)} exactValue={exatoBRL(negocio.ticketMedio)} hint={HINTS.ticketMedio} icon={Wallet} color="fmp" />
-                        <StatCard index={2} label="ROAS" value={fmtOrDash(negocio.roas, (n) => n.toFixed(2))} exactValue={exatoNum(negocio.roas)} hint={HINTS.roas} icon={TrendingUp} color="fmp" />
+                        {/* ROAS e "ROAS Mídia" eram dois cards quase iguais
+                            sem distinção visível — viraram um card com o
+                            secundário no subtítulo. "2,50x" em pt-BR no lugar
+                            de "2.50" com ponto. */}
+                        <StatCard
+                          index={2}
+                          label="ROAS"
+                          value={fmtOrDash(negocio.roas, fmtRatio)}
+                          exactValue={exatoNum(negocio.roas)}
+                          subtitle={negocio.roasMidia !== null ? `Por origem no período: ${fmtRatio(negocio.roasMidia)}` : undefined}
+                          hint={`${HINTS.roas} A variação "por origem": ${HINTS.roasMidia}`}
+                          icon={TrendingUp}
+                          color="fmp"
+                        />
                         <StatCard index={3} label="CPL" value={fmtOrDash(media.cpl, fmtBRLCompact)} exactValue={exatoBRL(media.cpl)} hint={HINTS.cpl} icon={Target} color="gray" />
                         <StatCard index={4} label="CAC" value={fmtOrDash(negocio.cac, fmtBRLCompact)} exactValue={exatoBRL(negocio.cac)} hint={HINTS.cac} icon={Target} color="gray" />
                         <StatCard index={5} label="Faturamento" value={fmtBRLCompact(negocio.faturamento)} exactValue={exatoBRL(negocio.faturamento)} hint={HINTS.faturamento} icon={DollarSign} color="fmp" />
-                        <StatCard index={6} label="ROAS Mídia" value={fmtOrDash(negocio.roasMidia, (n) => n.toFixed(2))} exactValue={exatoNum(negocio.roasMidia)} hint={HINTS.roasMidia} icon={TrendingUp} color="gray" />
-                        <StatCard index={7} label="Conversão" value={fmtOrDash(negocio.taxaConv, fmtPct)} hint={HINTS.conversao} icon={Percent} color="gray" />
+                        <StatCard
+                          index={6}
+                          label="Conversão"
+                          value={fmtOrDash(negocio.taxaConv, fmtPct)}
+                          subtitle={`${fmtInt(negocio.matriculas)} matrículas ÷ ${fmtInt(media.leads)} leads`}
+                          hint={HINTS.conversao}
+                          icon={Percent}
+                          color="gray"
+                        />
                       </div>
                     </section>
 
@@ -453,10 +540,10 @@ export function GrowthEPerformancePage() {
                           key={v.id}
                           type="button"
                           role="tab"
-                          aria-selected={viewAtiva === v.id}
-                          onClick={() => setView(v.id)}
+                          aria-selected={tabAtiva === v.id}
+                          onClick={() => setView(v.id === 'series' ? 'matriculas' : v.id)}
                           className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-pill px-4 py-2 text-xs font-semibold transition ${
-                            viewAtiva === v.id ? 'bg-fmp text-white shadow-glow' : 'text-ink-2 hover:bg-paper'
+                            tabAtiva === v.id ? 'bg-fmp text-white shadow-glow' : 'text-ink-2 hover:bg-paper'
                           }`}
                         >
                           <v.icon className="h-3.5 w-3.5" />
@@ -481,15 +568,7 @@ export function GrowthEPerformancePage() {
                           {horarios ? <HorariosView data={horarios} /> : <ChartSkeleton height={360} />}
                         </SectionCard>
                       )}
-                      {viewAtiva === 'leads' && (
-                        <SectionCard
-                          title="Leads por Mês"
-                          subtitle="Mês Ano × Leads + Investimento — segue o filtro de Data Início/Fim"
-                          icon={Calendar}
-                        >
-                          {serieLeads ? <SerieMensalView data={serieLeads} label="Leads" /> : <ChartSkeleton height={360} />}
-                        </SectionCard>
-                      )}
+
                       {viewAtiva === 'origem' && (
                         <SectionCard
                           title="Origem das matrículas"
@@ -499,13 +578,34 @@ export function GrowthEPerformancePage() {
                           {origem ? <OrigemView data={origem} /> : <ChartSkeleton height={360} />}
                         </SectionCard>
                       )}
-                      {viewAtiva === 'matriculas' && (
+                      {tabAtiva === 'series' && (
                         <SectionCard
-                          title="Matrículas por Mês"
-                          subtitle="Mês Ano × Matrículas + Investimento — segue o filtro de Data Início/Fim"
+                          title={viewAtiva === 'leads' ? 'Leads por Mês' : 'Matrículas por Mês'}
+                          subtitle="Linha vermelha: volume mensal | Linha bege: investimento — segue o filtro de datas"
                           icon={Calendar}
+                          actions={
+                            <div className="flex items-center gap-1 rounded-pill border border-line bg-paper p-0.5">
+                              {(['matriculas', 'leads'] as const).map((opcao) => (
+                                <button
+                                  key={opcao}
+                                  type="button"
+                                  aria-pressed={viewAtiva === opcao}
+                                  onClick={() => setView(opcao)}
+                                  className={`rounded-pill px-2.5 py-1 text-2xs font-semibold transition ${
+                                    viewAtiva === opcao ? 'bg-fmp text-white' : 'text-ink-2 hover:bg-white'
+                                  }`}
+                                >
+                                  {opcao === 'matriculas' ? 'Matrículas' : 'Leads'}
+                                </button>
+                              ))}
+                            </div>
+                          }
                         >
-                          {serieMatriculas ? <SerieMensalView data={serieMatriculas} label="Matrículas" /> : <ChartSkeleton height={360} />}
+                          {viewAtiva === 'leads' ? (
+                            serieLeads ? <SerieMensalView data={serieLeads} label="Leads" /> : <ChartSkeleton height={360} />
+                          ) : (
+                            serieMatriculas ? <SerieMensalView data={serieMatriculas} label="Matrículas" /> : <ChartSkeleton height={360} />
+                          )}
                         </SectionCard>
                       )}
                     </ErrorBoundary>
@@ -518,7 +618,7 @@ export function GrowthEPerformancePage() {
             </ErrorBoundary>
 
             <footer className="pt-2 text-center text-2xs text-ink-3">
-              Desenvolvido por Assessoria de Business Intelligence | Julho/2026
+              Desenvolvido por Assessoria de Business Intelligence
             </footer>
           </div>
         </div>

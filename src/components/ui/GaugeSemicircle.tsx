@@ -43,34 +43,38 @@ export function GaugeSemicircle({
       ? null
       : describeArc(cx, cy, r, -90, fillEndAngle);
 
+  // 1 casa decimal: gauge é leitura de ordem de grandeza — "74,53%" é falsa
+  // precisão e engorda o número; alinha com o fmtPct padrão do app.
   const display =
     formatValue?.(value) ??
     (value === null || !Number.isFinite(value)
       ? '—'
       : `${(value * 100).toLocaleString('pt-BR', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
+          minimumFractionDigits: 1,
+          maximumFractionDigits: 1,
         })}%`);
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex w-full flex-col items-center">
+      {/* Sem width/height fixos: o viewBox mantém a proporção e o SVG encolhe
+          junto com colunas mais estreitas que `size` em vez de estourar. */}
       <svg
-        width={width}
-        height={height}
         viewBox={`0 0 ${width} ${height}`}
+        className="h-auto w-full"
+        style={{ maxWidth: size }}
         role="img"
         aria-label={label ?? 'Indicador'}
       >
         <defs>
           <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#EE2A42" stopOpacity={0.85} />
-            <stop offset="100%" stopColor="#EE2A42" />
+            <stop offset="0%" stopColor="var(--fmp-red)" stopOpacity={0.85} />
+            <stop offset="100%" stopColor="var(--fmp-red)" />
           </linearGradient>
         </defs>
         <path
           d={trackPath}
           fill="none"
-          stroke="#DEDCD4"
+          stroke="var(--fmp-line)"
           strokeWidth={strokeWidth}
           strokeLinecap="round"
         />
@@ -85,14 +89,7 @@ export function GaugeSemicircle({
         )}
       </svg>
       <div className="-mt-6 text-center">
-        <p
-          className="text-2xl tabular-nums text-ink"
-          style={{
-            fontFamily: '"Noto Serif", Georgia, serif',
-            fontStyle: 'italic',
-            fontWeight: 600,
-          }}
-        >
+        <p className="fmp-kpi text-2xl leading-normal tabular-nums">
           {display}
         </p>
         {label && (

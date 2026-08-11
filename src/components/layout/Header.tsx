@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Bell, ChevronDown, LogOut, Menu, Search, ShieldCheck, User } from 'lucide-react';
+import { ChevronDown, LogOut, Menu, ShieldCheck, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 type Props = {
@@ -47,33 +47,13 @@ export function Header({ title, subtitle, onOpenSidebar }: Props) {
         </button>
 
         <div className="min-w-0 flex-1">
-          <h1
-            className="truncate text-lg font-semibold text-ink"
-            style={{ fontFamily: '"Noto Serif", Georgia, serif', fontStyle: 'italic', fontWeight: 600 }}
-          >
+          <h1 className="fmp-kpi truncate text-lg leading-normal">
             {title}
           </h1>
           {subtitle && (
             <p className="truncate text-xs text-ink-3">{subtitle}</p>
           )}
         </div>
-
-        <div className="hidden items-center gap-2 rounded-full glass-input px-3 py-1.5 md:flex">
-          <Search className="h-4 w-4 text-sand" />
-          <input
-            className="w-40 border-0 bg-transparent text-xs text-ink placeholder-sand focus:outline-none focus:ring-0 lg:w-56"
-            placeholder="Buscar em dashboards..."
-          />
-        </div>
-
-        <button
-          type="button"
-          className="relative rounded-full glass-button p-2 text-ink-2"
-          aria-label="Notificacoes"
-        >
-          <Bell className="h-4 w-4" />
-          <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-fmp ring-2 ring-white" />
-        </button>
 
         <div ref={dropdownRef} className="relative">
           <button

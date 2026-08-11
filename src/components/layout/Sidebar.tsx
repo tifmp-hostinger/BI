@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   MapPin,
   Percent,
-  Settings,
   PanelLeftClose,
   PanelLeftOpen,
   Shield,
@@ -37,7 +36,6 @@ const ICONS: Record<string, LucideIcon> = {
   Activity,
   Users,
   Shield,
-  Settings,
   Target,
   Percent,
   TrendingUp,
@@ -152,8 +150,8 @@ export function Sidebar({ items, open, onClose, colapsado = false, onToggleColap
             <LayoutDashboard className="h-4 w-4 flex-shrink-0" strokeWidth={2.3} />
             {!colapsado && (
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium">Inicio</p>
-                <p className="truncate text-2xs text-cream/40">Visao geral</p>
+                <p className="truncate text-sm font-medium">Início</p>
+                <p className="truncate text-2xs text-cream/40">Visão geral</p>
               </div>
             )}
           </NavLink>
@@ -218,9 +216,9 @@ export function Sidebar({ items, open, onClose, colapsado = false, onToggleColap
             );
           })}
 
-          {!colapsado && (
+          {!colapsado && perfil?.papel === 'admin' && (
             <p className="mb-2 mt-5 px-3 text-2xs font-semibold uppercase tracking-widest text-sand/50">
-              Administracao
+              Administração
             </p>
           )}
           {/* Gestão de usuários: item real, só para quem tem papel admin. */}
@@ -228,7 +226,7 @@ export function Sidebar({ items, open, onClose, colapsado = false, onToggleColap
             <NavLink
               to="/usuarios"
               onClick={onClose}
-              title={colapsado ? 'Usuarios — Acessos da plataforma' : undefined}
+              title={colapsado ? 'Usuários — Acessos da plataforma' : undefined}
               className={({ isActive }) =>
                 `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all no-underline ${
                   isActive
@@ -240,21 +238,12 @@ export function Sidebar({ items, open, onClose, colapsado = false, onToggleColap
               <Shield className="h-4 w-4 flex-shrink-0" strokeWidth={2.3} />
               {!colapsado && (
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">Usuarios</p>
+                  <p className="truncate text-sm font-medium">Usuários</p>
                   <p className="truncate text-2xs text-cream/40">Acessos da plataforma</p>
                 </div>
               )}
             </NavLink>
           )}
-          <div className="flex cursor-not-allowed items-center gap-3 rounded-xl px-3 py-2.5 text-cream/30">
-            <Settings className="h-4 w-4 flex-shrink-0" strokeWidth={2.3} />
-            {!colapsado && (
-              <div className="min-w-0">
-                <p className="text-sm font-medium">Configuracoes</p>
-                <p className="text-2xs text-cream/40">Preferencias do sistema</p>
-              </div>
-            )}
-          </div>
         </nav>
 
         {/* User badge */}

@@ -140,7 +140,16 @@ export function buildFilterOptions(ds: DashboardDataset) {
     nome: c.mesNome,
   }));
 
-  return { codperletOptions, anoOptions, mesOptions };
+  // Período letivo VIGENTE (maior índice do pletivo) — mesma regra usada em
+  // computeGraduacaoData para as vagas. Exposto para a página pré-selecionar
+  // o filtro: sem ele, a aba Graduação somava matrículas de TODOS os
+  // períodos e dividia pelas vagas só do atual — o gauge "% da meta" abria
+  // inflado por padrão.
+  const periodoVigente =
+    [...ds.pletivo].sort((a, b) => (a.indice ?? 0) - (b.indice ?? 0)).slice(-1)[0]
+      ?.periodo_letivo ?? null;
+
+  return { codperletOptions, anoOptions, mesOptions, periodoVigente };
 }
 
 function filterRubeusByDate(

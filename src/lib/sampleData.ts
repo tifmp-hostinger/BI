@@ -4,12 +4,12 @@ export const SAMPLE_DASHBOARDS: Dashboard[] = [
   {
     id: '1',
     slug: 'presenca-nacional',
-    title: 'Presenca Nacional',
+    title: 'Presença Nacional',
     description:
-      'Mapa de calor e drill-down por estado das matriculas de Pos-graduacao e Cursos Livres.',
+      'Mapa por estado das matrículas de Pós-graduação e Cursos Livres.',
     icon: 'MapPin',
     color: 'fmp',
-    category: 'Geolocalizacao',
+    category: 'Geolocalização',
     is_active: true,
     sort_order: 1,
     created_at: new Date().toISOString(),
@@ -17,12 +17,12 @@ export const SAMPLE_DASHBOARDS: Dashboard[] = [
   {
     id: '7',
     slug: 'analise-conversao-presidencia',
-    title: 'Analise de Conversao - Presidencia',
+    title: 'Análise de Conversão - Presidência',
     description:
-      'Funil comercial academico: Graduacao, Mestrado e Especializacoes com paridade de regras Power BI.',
+      'Funil comercial acadêmico: Graduação, Mestrado e Especializações frente às metas.',
     icon: 'Target',
     color: 'fmp',
-    category: 'Presidencia',
+    category: 'Presidência',
     is_active: true,
     sort_order: 2,
     created_at: new Date().toISOString(),
@@ -43,9 +43,9 @@ export const SAMPLE_DASHBOARDS: Dashboard[] = [
   {
     id: '9',
     slug: 'analise-de-conversao',
-    title: 'Analise de Conversao',
+    title: 'Análise de Conversão',
     description:
-      'Funil comercial completo: leads, inscricoes e matriculas por processo (Graduacao, Especializacoes, Mestrado e Cursos Livres).',
+      'Funil comercial completo: leads, inscrições e matrículas por processo (Graduação, Especializações, Mestrado e Cursos Livres).',
     icon: 'Target',
     color: 'fmp',
     category: 'Comercial',
@@ -58,7 +58,7 @@ export const SAMPLE_DASHBOARDS: Dashboard[] = [
     slug: 'growth-e-performance',
     title: 'Growth e Performance',
     description:
-      'Midia paga (Google + Meta) cruzada com o funil de captacao, segmentada por produto.',
+      'Mídia paga (Google + Meta) cruzada com o funil de captação, segmentada por produto.',
     icon: 'TrendingUp',
     color: 'fmp',
     category: 'Comercial',

@@ -34,14 +34,12 @@ export function parseBRNumber(v: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-export function fmtInt(v: number | null | undefined): string {
-  if (v === null || v === undefined || !Number.isFinite(v)) return '—';
-  return Math.round(v).toLocaleString('pt-BR');
-}
+// Formatação numérica básica centralizada em src/lib/formatters.ts.
+export { fmtInt, fmtBRL, fmtBRLCompact, formatPeriodoLetivo } from '@/lib/formatters';
 
 export function fmtPercent(
   v: number | null | undefined,
-  digits = 2
+  digits = 1
 ): string {
   if (v === null || v === undefined || !Number.isFinite(v)) return '—';
   return `${(v * 100).toLocaleString('pt-BR', {
@@ -50,37 +48,6 @@ export function fmtPercent(
   })}%`;
 }
 
-export function fmtBRL(v: number | null | undefined): string {
-  if (v === null || v === undefined || !Number.isFinite(v)) return '—';
-  return v.toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    maximumFractionDigits: 2,
-  });
-}
-
-/** Compacta valores altos: 800000 -> "R$ 800 mil", 1600000 -> "R$ 1,60 mi". */
-export function fmtBRLCompact(v: number | null | undefined): string {
-  if (v === null || v === undefined || !Number.isFinite(v)) return '—';
-  const abs = Math.abs(v);
-  if (abs >= 1_000_000) {
-    return `R$ ${(v / 1_000_000).toLocaleString('pt-BR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })} mi`;
-  }
-  if (abs >= 1_000) {
-    return `R$ ${(v / 1_000).toLocaleString('pt-BR', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    })} mil`;
-  }
-  return v.toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    maximumFractionDigits: 2,
-  });
-}
 
 /** Normaliza string para comparacao: NFD strip acento + lowercase + trim + colapsa espacos. */
 export function normalizeStr(v: unknown): string {

@@ -10,11 +10,12 @@ import {
   YAxis,
   Legend,
 } from 'recharts';
-import { ArrowUpDown } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BrazilStateMap } from '@/components/maps/BrazilStateMap';
 import type { StateAgg } from '@/services/matriculasService';
-import { fmtBRLCompact, fmtInt, fmtPct, truncateLabel } from '../../analise-de-conversao/formatters';
+import { fmtBRL, fmtBRLCompact, fmtInt, fmtIntCompact, fmtPct, truncateLabel } from '@/lib/formatters';
+import { CHART_TOOLTIP } from '@/lib/chartColors';
 import type {
   CampanhaRow,
   HorarioDatum,
@@ -27,19 +28,7 @@ import type {
 const FMP_RED = '#EE2A42';
 const FMP_DARK = '#B81E32';
 const NEUTRAL = '#BFBAA4';
-
-const TT = {
-  contentStyle: {
-    background: 'rgba(255,255,255,0.98)',
-    border: '1px solid #DEDCD4',
-    borderRadius: 12,
-    boxShadow: '0 18px 40px rgba(25,24,24,0.12)',
-    padding: 10,
-    fontSize: 12,
-  } as const,
-  labelStyle: { color: '#191818', fontWeight: 600, marginBottom: 4, fontSize: 12 } as const,
-  itemStyle: { color: '#3A3838', fontSize: 12 } as const,
-};
+const TT = CHART_TOOLTIP;
 
 type ColunaCampanha = 'campanha' | 'plataforma' | 'leads' | 'investimento' | 'impressoes';
 
@@ -97,7 +86,11 @@ export function CampanhasView({ rows }: { rows: CampanhaRow[] }) {
                     } ${c.numerica ? 'flex-row-reverse' : ''}`}
                   >
                     {c.label}
-                    <ArrowUpDown className={`h-3 w-3 ${ativa ? 'opacity-100' : 'opacity-30'}`} />
+                    {ativa ? (
+                      ordem.desc ? <ArrowDown className="h-3 w-3" /> : <ArrowUp className="h-3 w-3" />
+                    ) : (
+                      <ArrowUpDown className="h-3 w-3 opacity-30" />
+                    )}
                   </button>
                 </th>
               );
@@ -133,9 +126,23 @@ export function CampanhasView({ rows }: { rows: CampanhaRow[] }) {
             </tr>
           ))}
         </tbody>
+        <tfoot>
+          <tr className="border-t-2 border-line font-semibold text-ink">
+            <td className="px-3 py-2">Total ({ordenadas.length} campanha{ordenadas.length === 1 ? '' : 's'})</td>
+            <td className="px-3 py-2" />
+            <td className="px-3 py-2 text-right">{fmtInt(ordenadas.reduce((s, r) => s + r.leads, 0))}</td>
+            <td
+              className="px-3 py-2 text-right"
+              title={fmtBRL(ordenadas.reduce((s, r) => s + r.investimento, 0))}
+            >
+              {fmtBRLCompact(ordenadas.reduce((s, r) => s + r.investimento, 0))}
+            </td>
+            <td className="px-3 py-2 text-right">{fmtIntCompact(ordenadas.reduce((s, r) => s + r.impressoes, 0))}</td>
+          </tr>
+        </tfoot>
       </table>
       <p className="mt-2 text-2xs text-ink-3">
-        {ordenadas.length} campanha{ordenadas.length === 1 ? '' : 's'} · clique num cabeçalho para reordenar
+        Clique num cabeçalho para reordenar.
       </p>
     </div>
   );
@@ -145,7 +152,10 @@ export function MapaView({ data }: { data: MapaUfDatum[] }) {
   const [selectedUf, setSelectedUf] = useState<string | null>(null);
   if (data.length === 0) {
     return (
-      <EmptyState title="Não há investimento em Google Ads para os filtros selecionados. O mapa considera apenas o Google, única fonte com dado geográfico." />
+      <EmptyState
+        title="Sem investimento Google no recorte"
+        message="O mapa considera apenas o Google Ads, única fonte com dado geográfico."
+      />
     );
   }
   // Dupla codificação do esriVisual do BI: tamanho = investimento (métrica
@@ -173,12 +183,13 @@ export function MapaView({ data }: { data: MapaUfDatum[] }) {
         metricFormat="currency"
         colorValue={(agg) => agg.matriculados}
         secondaryLine={(agg) =>
-          `${agg.matriculados.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} conversões`
+          `${agg.matriculados.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} conversões`
         }
       />
       <p className="mt-2 text-2xs text-ink-3">
         Investimento por UF (tamanho da bolha) e conversões (intensidade de cor) — somente Google Ads
-        (o Meta não entra no mapa, como no BI original).
+        (o Meta não entra no mapa, como no BI original). Conversões fracionadas são normais: o Google
+        divide o crédito entre os anúncios da jornada.
       </p>
     </div>
   );
@@ -198,8 +209,17 @@ export function HorariosView({ data }: { data: HorarioDatum[] }) {
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#DEDCD4" />
-        <XAxis dataKey="faixa" tick={{ fontSize: 9, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
-        <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
+        {/* "00:00 - 02:00" -> "0h": 12 rótulos de até 3 caracteres cabem
+            até em 320px sem o recharts pular ticks. */}
+        <XAxis
+          dataKey="faixa"
+          tick={{ fontSize: 10, fill: '#6E6B66' }}
+          tickLine={false}
+          axisLine={false}
+          interval={0}
+          tickFormatter={(v: string) => `${parseInt(v, 10)}h`}
+        />
+        <YAxis yAxisId="left" width={40} tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
         <YAxis
           yAxisId="right"
           orientation="right"
@@ -305,8 +325,7 @@ export function OrigemView({ data }: { data: OrigemData }) {
 
       <section>
         <h4
-          className="text-xs font-semibold text-ink"
-          style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic' }}
+          className="fmp-kpi text-xs leading-normal"
           title="O canal em que a pessoa apareceu pela primeira vez no CRM. Toda a jornada dela é creditada a esse canal."
         >
           Por plataforma de mídia
@@ -331,10 +350,7 @@ export function OrigemView({ data }: { data: OrigemData }) {
       </section>
 
       <section>
-        <h4
-          className="text-xs font-semibold text-ink"
-          style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic' }}
-        >
+        <h4 className="fmp-kpi text-xs leading-normal">
           Por canal de origem
         </h4>
         <p className="mt-0.5 text-2xs text-ink-3">
@@ -364,15 +380,19 @@ export function SerieMensalView({ data, label }: { data: SerieMensalDatum[]; lab
     <ResponsiveContainer width="100%" height={360}>
       <ComposedChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
         <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#DEDCD4" />
+        {/* "Outubro - 25" -> "out/25": com 6 caracteres praticamente todos
+            os meses aparecem, em vez de só o primeiro e o último. */}
         <XAxis
           dataKey="mesAno"
-          tick={{ fontSize: 9, fill: '#6E6B66' }}
+          tick={{ fontSize: 10, fill: '#6E6B66' }}
           tickLine={false}
           axisLine={false}
-          tickFormatter={(v: string) => truncateLabel(v, 12)}
-          interval="preserveStartEnd"
+          tickFormatter={(v: string) => {
+            const [mes, ano] = v.split(' - ');
+            return ano ? `${mes.slice(0, 3).toLowerCase()}/${ano}` : truncateLabel(v, 12);
+          }}
         />
-        <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
+        <YAxis yAxisId="left" width={44} tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtIntCompact(v)} />
         <YAxis
           yAxisId="right"
           orientation="right"

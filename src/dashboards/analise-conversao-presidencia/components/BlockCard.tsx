@@ -8,6 +8,12 @@ type Props = {
   actions?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
+  /**
+   * 'alerta' pinta o rodapé com o vermelho da marca (avisos como "Processo
+   * Seletivo Finalizado"); 'neutro' é o padrão — informação neutra em
+   * vermelho lia como problema.
+   */
+  footerTone?: 'neutro' | 'alerta';
   className?: string;
 };
 
@@ -18,11 +24,12 @@ export function BlockCard({
   actions,
   children,
   footer,
+  footerTone = 'neutro',
   className = '',
 }: Props) {
   return (
     <section
-      className={`relative overflow-hidden rounded-md border border-line bg-white shadow-card animate-fade-in ${className}`}
+      className={`@container relative overflow-hidden rounded-md border border-line bg-white shadow-card transition-shadow duration-200 hover:shadow-card-hover animate-fade-in ${className}`}
     >
       <div className="absolute inset-x-0 top-0 h-1 bg-fmp" />
       <header className="flex flex-wrap items-start justify-between gap-4 px-5 pb-3 pt-5">
@@ -33,10 +40,7 @@ export function BlockCard({
             </div>
           )}
           <div className="min-w-0">
-            <h3
-              className="text-sm text-ink"
-              style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic', fontWeight: 600 }}
-            >
+            <h3 className="fmp-kpi text-sm leading-normal">
               {title}
             </h3>
             {subtitle && (
@@ -50,7 +54,11 @@ export function BlockCard({
       </header>
       <div className="px-5 py-4">{children}</div>
       {footer && (
-        <footer className="border-t border-line px-5 py-3 text-2xs font-semibold text-fmp">
+        <footer
+          className={`border-t border-line px-5 py-3 text-2xs font-semibold ${
+            footerTone === 'alerta' ? 'text-fmp' : 'text-ink-3'
+          }`}
+        >
           {footer}
         </footer>
       )}

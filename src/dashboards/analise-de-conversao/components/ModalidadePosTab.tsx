@@ -22,26 +22,10 @@ import { BrazilStateMap } from '@/components/maps/BrazilStateMap';
 import { fmtBRLCompact, fmtInt, fmtPct, truncateLabel } from '../formatters';
 import type { ModalidadePosData } from '../types';
 import type { StateAgg } from '@/services/matriculasService';
-import { CORES_CATEGORICAS } from '@/lib/chartColors';
+import { CHART_TOOLTIP, CORES_CATEGORICAS, FMP_DARK, FMP_RED } from '@/lib/chartColors';
 
-const FMP_RED = '#EE2A42';
-const FMP_DARK = '#B81E32';
 const PIE_COLORS = CORES_CATEGORICAS;
 
-function tt() {
-  return {
-    contentStyle: {
-      background: 'rgba(255,255,255,0.98)',
-      border: '1px solid #DEDCD4',
-      borderRadius: 12,
-      boxShadow: '0 18px 40px rgba(25,24,24,0.12)',
-      padding: 10,
-      fontSize: 12,
-    } as const,
-    labelStyle: { color: '#191818', fontWeight: 600, marginBottom: 4, fontSize: 12 } as const,
-    itemStyle: { color: '#3A3838', fontSize: 12 } as const,
-  };
-}
 
 type Props = {
   loading: boolean;
@@ -49,7 +33,7 @@ type Props = {
 };
 
 export function ModalidadePosTab({ loading, data }: Props) {
-  const tooltip = tt();
+  const tooltip = CHART_TOOLTIP;
   const [selectedUf, setSelectedUf] = useState<string | null>(null);
 
   if (loading) {
@@ -85,19 +69,19 @@ export function ModalidadePosTab({ loading, data }: Props) {
       <section className={STAT_GRID_CONTAINER}>
         <div className={STAT_GRID_CLASSES}>
           <StatCard index={0} label="Leads" value={fmtInt(data.leads)} icon={Users} color="fmp" highlight />
-          <StatCard index={1} label="Inscricoes" value={fmtInt(data.insc)} icon={Users} color="fmp" />
-          <StatCard index={2} label="Matriculas" value={fmtInt(data.mat)} icon={GraduationCap} color="fmp" />
+          <StatCard index={1} label="Inscrições" value={fmtInt(data.insc)} icon={Users} color="fmp" />
+          <StatCard index={2} label="Matrículas" value={fmtInt(data.mat)} icon={GraduationCap} color="fmp" />
           <StatCard index={3} label="Com TCC" value={fmtInt(data.comTcc)} icon={BookOpen} color="gray" />
           <StatCard index={4} label="Sem TCC" value={fmtInt(data.semTcc)} icon={BookOpen} color="gray" />
           <StatCard index={5} label="Faturamento" value={fmtBRLCompact(data.fat)} icon={DollarSign} color="fmp" />
-          <StatCard index={6} label="Ticket Medio" value={fmtBRLCompact(data.tktMedio)} icon={Wallet} color="gray" />
-          <StatCard index={7} label="Desc. Medio" value={fmtPct(data.descontoMedio)} icon={Percent} color="gray" />
+          <StatCard index={6} label="Ticket médio" value={fmtBRLCompact(data.tktMedio)} hint="Faturamento ÷ matrículas do recorte." icon={Wallet} color="gray" />
+          <StatCard index={7} label="Desconto médio" value={fmtPct(data.descontoMedio)} hint="Percentual médio de desconto aplicado sobre o valor original." icon={Percent} color="gray" />
         </div>
       </section>
 
       <ReorderableGrid storageKey={`conv-reorder-pos-${data.modalidade === 'Pós EAD' ? 'ead' : 'presencial'}`} className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <RItem rid="fat-curso">
-        <SectionCard title={`Faturamento por Curso - ${data.modalidade}`} subtitle="cursoreduzido x faturamento" icon={DollarSign}>
+        <SectionCard title={`Faturamento por Curso - ${data.modalidade}`} subtitle="Cursos ordenados pela receita gerada" icon={DollarSign}>
           {data.fatPorCurso.length === 0 || data.fatPorCurso.every((d) => d.valor === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
           ) : (
@@ -123,7 +107,7 @@ export function ModalidadePosTab({ loading, data }: Props) {
 
         </RItem>
         <RItem rid="top-descontos">
-        <SectionCard title="TOP Descontos com Maior Faturamento" subtitle="bolsas x Espec_Fat" icon={TrendingUp}>
+        <SectionCard title="Top Descontos com Maior Faturamento" subtitle="Tipos de desconto ordenados pela receita associada" icon={TrendingUp}>
           {data.topDescontosFat.length === 0 || data.topDescontosFat.every((d) => d.valor === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
           ) : (
@@ -147,7 +131,7 @@ export function ModalidadePosTab({ loading, data }: Props) {
 
         </RItem>
         <RItem rid="planos-pgto">
-        <SectionCard title="TOP 5 Planos de Pagamento" subtitle="codplanopgto x Espec_Fat" icon={Wallet}>
+        <SectionCard title="Top 5 Planos de Pagamento" subtitle="Participação de cada plano na receita" icon={Wallet}>
           {data.top5PlanosPgto.length === 0 || data.top5PlanosPgto.every((d) => d.valor === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
           ) : (

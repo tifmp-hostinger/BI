@@ -54,6 +54,22 @@ function chaveMeta(chave: string): string {
   return `meta:${chave}`;
 }
 
+/**
+ * Mini-resumo do painel para a Central de Dashboards ("12.345 matrículas").
+ * Gravado sob `resumo:<chave>` pelo aquecimento, que já tem o dataset em
+ * memória — a Home lê SÓ esta entrada minúscula, nunca o dataset (o de
+ * Bolsas tem dezenas de MB; desserializá-lo na tela inicial travaria o app).
+ */
+export type ResumoDashboard = {
+  itens: { rotulo: string; valor: string }[];
+  gravadoEm: number;
+  versao: number;
+};
+
+function chaveResumo(chave: string): string {
+  return `resumo:${chave}`;
+}
+
 let avisoQuotaEmitido = false;
 
 function abre(versao?: number): Promise<IDBDatabase | null> {
@@ -203,7 +219,26 @@ export async function gravaCache<T>(chave: string, dataset: T, assinatura: strin
   });
 }
 
+export async function leResumo(chave: string): Promise<ResumoDashboard | null> {
+  const bruto = await comStore<ResumoDashboard>(
+    'readonly',
+    (s) => s.get(chaveResumo(chave)) as IDBRequest<ResumoDashboard>,
+  );
+  if (!bruto || typeof bruto !== 'object' || !Array.isArray(bruto.itens)) return null;
+  if (bruto.versao !== VERSAO_CACHE) return null;
+  return bruto;
+}
+
+export async function gravaResumo(
+  chave: string,
+  itens: { rotulo: string; valor: string }[],
+): Promise<void> {
+  const entrada: ResumoDashboard = { itens, gravadoEm: Date.now(), versao: VERSAO_CACHE };
+  await comStore('readwrite', (s) => s.put(entrada, chaveResumo(chave)) as IDBRequest<IDBValidKey>);
+}
+
 export async function limpaCache(chave: string): Promise<void> {
   await comStore('readwrite', (s) => s.delete(chave) as IDBRequest<undefined>);
   await comStore('readwrite', (s) => s.delete(chaveMeta(chave)) as IDBRequest<undefined>);
+  await comStore('readwrite', (s) => s.delete(chaveResumo(chave)) as IDBRequest<undefined>);
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Bar,
@@ -6,8 +6,6 @@ import {
   CartesianGrid,
   Cell,
   ComposedChart,
-  Funnel,
-  FunnelChart,
   LabelList,
   Legend,
   Line,
@@ -37,35 +35,12 @@ import { DataFreshness } from '@/components/ui/DataFreshness';
 import { AtualizandoAviso } from '@/components/ui/AtualizandoAviso';
 import { FONTES_POR_DASHBOARD } from '@/lib/dataFreshness';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { CORES_CATEGORICAS } from '@/lib/chartColors';
+import { CHART_TOOLTIP, CORES_CATEGORICAS, FMP_DARK, FMP_RED, NEUTRAL } from '@/lib/chartColors';
 import { useBolsasDescontosData } from './hooks/useBolsasDescontosData';
 import { BolsasFilterBar } from './components/BolsasFilterBar';
-import { fmtBRLCompact, fmtInt, truncateLabel } from './formatters';
+import { fmtBRL, fmtBRLCompact, fmtInt, truncateLabel } from './formatters';
 import type { BolsasFilters } from './types';
 
-function chartTooltipStyle() {
-  return {
-    contentStyle: {
-      background: 'rgba(255,255,255,0.98)',
-      border: '1px solid #DEDCD4',
-      borderRadius: 12,
-      boxShadow: '0 18px 40px rgba(25,24,24,0.12)',
-      padding: 10,
-      fontSize: 12,
-    } as const,
-    labelStyle: {
-      color: '#191818',
-      fontWeight: 600,
-      marginBottom: 4,
-      fontSize: 12,
-    } as const,
-    itemStyle: { color: '#3A3838', fontSize: 12 } as const,
-  };
-}
-
-const FMP_RED = '#EE2A42';
-const FMP_DARK = '#B81E32';
-const NEUTRAL = '#BFBAA4';
 const COLORS = CORES_CATEGORICAS;
 
 type Tab = 'panorama' | 'evasao';
@@ -93,7 +68,26 @@ export function BolsasEDescontosPage() {
     refetch,
   } = useBolsasDescontosData(filters);
 
-  const tt = useMemo(chartTooltipStyle, []);
+  const tt = CHART_TOOLTIP;
+
+  // Filtro padrão realista: o painel abre no ANO CORRENTE (com chip visível
+  // e removível) em vez de agregar o histórico inteiro desde ~2000. Aplicado
+  // DURANTE o render (padrão "adjust state during render"): num useEffect o
+  // usuário via um frame com os números do histórico completo antes de tudo
+  // trocar sozinho para o ano corrente. Se o ano atual não tem dado, cai
+  // para o mais recente que tem.
+  const anoDefaultAplicado = useRef(false);
+  if (!anoDefaultAplicado.current && filterOptions) {
+    anoDefaultAplicado.current = true;
+    const anoAtual = new Date().getFullYear();
+    const alvo = filterOptions.anoOptions.includes(anoAtual)
+      ? anoAtual
+      : filterOptions.anoOptions[0];
+    if (alvo !== undefined && filters.ano.length === 0) {
+      setFilters((f) => ({ ...f, ano: [alvo] }));
+    }
+  }
+
   const loading = tab === 'panorama' ? panoramaLoading : evasaoLoading;
   const error = tab === 'panorama' ? panoramaError : evasaoError;
 
@@ -148,7 +142,7 @@ export function BolsasEDescontosPage() {
               onClick={refetch}
               className="inline-flex items-center gap-1.5 rounded-pill bg-fmp px-3.5 py-2 text-2xs font-medium text-white transition hover:bg-fmp-dark no-underline"
             >
-              <RefreshCw className="h-3.5 w-3.5" />
+              <RefreshCw className={`h-3.5 w-3.5 ${revalidando ? 'animate-spin' : ''}`} />
               Atualizar
             </button>
           </div>
@@ -212,12 +206,12 @@ export function BolsasEDescontosPage() {
                 {loading && Array.from({ length: 6 }).map((_, i) => <StatCardSkeleton key={i} index={i} />)}
                 {!loading && panorama && (
                   <>
-                    <StatCard index={0} label="Matrículas" value={fmtInt(panorama.kpis.matriculas)} icon={Users} color="fmp" highlight />
-                    <StatCard index={1} label="Bolsas" value={fmtInt(panorama.kpis.bolsas)} icon={Award} color="fmp" />
-                    <StatCard index={2} label="Descontos" value={fmtInt(panorama.kpis.descontos)} icon={Percent} color="gray" />
+                    <StatCard index={0} label="Matrículas" value={fmtInt(panorama.kpis.matriculas)} hint="Alunos únicos (RA) matriculados no período. Este card reage só aos filtros de Período e Ano — Nível e Benefício não se aplicam a ele." icon={Users} color="fmp" highlight />
+                    <StatCard index={1} label="Bolsas" value={fmtInt(panorama.kpis.bolsas)} hint="Ocorrências de bolsa nas matrículas do recorte filtrado." icon={Award} color="fmp" />
+                    <StatCard index={2} label="Descontos" value={fmtInt(panorama.kpis.descontos)} hint="Ocorrências de desconto nas matrículas do recorte filtrado." icon={Percent} color="gray" />
                     <StatCard index={3} label="Formados" value={fmtInt(panorama.kpis.formados)} icon={GraduationCap} color="gray" />
-                    <StatCard index={4} label="Fat. Original Previsto" value={fmtBRLCompact(panorama.kpis.fatOriginalPrevisto)} icon={Wallet} color="fmp" />
-                    <StatCard index={5} label="Fat. Desconto Previsto" value={fmtBRLCompact(panorama.kpis.fatDescontoPrevisto)} icon={Wallet} color="gray" />
+                    <StatCard index={4} label="Faturamento original previsto" value={fmtBRLCompact(panorama.kpis.fatOriginalPrevisto)} exactValue={fmtBRL(panorama.kpis.fatOriginalPrevisto)} hint="Soma do valor original das mensalidades do recorte, antes de bolsas e descontos." icon={Wallet} color="fmp" />
+                    <StatCard index={5} label="Faturamento líquido previsto" value={fmtBRLCompact(panorama.kpis.fatDescontoPrevisto)} exactValue={fmtBRL(panorama.kpis.fatDescontoPrevisto)} hint="Faturamento previsto após aplicar bolsas e descontos." icon={Wallet} color="gray" />
                   </>
                 )}
               </div>
@@ -226,7 +220,7 @@ export function BolsasEDescontosPage() {
             {/* Charts 2x2 */}
             <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               {/* 1. Waterfall — Top 5 Descontos */}
-              <SectionCard title="Top 5 Descontos com Maior Nº de Ocorrências" subtitle="Categoria: bolsa padronizada" icon={Percent}>
+              <SectionCard title="Top 5 Descontos com Maior Nº de Ocorrências" subtitle="Agrupado por tipo de benefício" icon={Percent}>
                 {loading ? (
                   <ChartSkeleton height={320} />
                 ) : !panorama || panorama.topDescontos.length === 0 ? (
@@ -246,11 +240,11 @@ export function BolsasEDescontosPage() {
                         tick={{ fontSize: 10, fill: '#6E6B66' }}
                         tickLine={false}
                         axisLine={false}
-                        tickFormatter={(v: string) => truncateLabel(v, 16)}
+                        tickFormatter={(v: string) => truncateLabel(v, 12)}
                         interval={0}
-                        angle={-15}
+                        angle={-35}
                         textAnchor="end"
-                        height={60}
+                        height={72}
                       />
                       <YAxis tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
                       <Tooltip
@@ -267,7 +261,7 @@ export function BolsasEDescontosPage() {
               </SectionCard>
 
               {/* 2. Area — Nº Ocorrências por Bolsa */}
-              <SectionCard title="Nº Ocorrências por Bolsa" subtitle="Categoria: bolsa padronizada" icon={Award}>
+              <SectionCard title="Nº Ocorrências por Bolsa" subtitle="Agrupado por tipo de benefício" icon={Award}>
                 {loading ? (
                   <ChartSkeleton height={320} />
                 ) : !panorama || panorama.ocorrenciasBolsa.length === 0 ? (
@@ -277,7 +271,7 @@ export function BolsasEDescontosPage() {
                     <BarChart
                       data={panorama.ocorrenciasBolsa}
                       layout="vertical"
-                      margin={{ top: 4, right: 24, left: 0, bottom: 4 }}
+                      margin={{ top: 4, right: 48, left: 0, bottom: 4 }}
                     >
                       <defs>
                         <linearGradient id="barOcorrencias" x1="0" y1="0" x2="1" y2="0">
@@ -299,8 +293,8 @@ export function BolsasEDescontosPage() {
                         tick={{ fontSize: 10, fill: '#3A3838' }}
                         tickLine={false}
                         axisLine={false}
-                        width={180}
-                        tickFormatter={(v: string) => truncateLabel(v, 26)}
+                        width={120}
+                        tickFormatter={(v: string) => truncateLabel(v, 18)}
                       />
                       <Tooltip
                         cursor={{ fill: 'rgba(238,42,66,0.05)' }}
@@ -322,48 +316,18 @@ export function BolsasEDescontosPage() {
                 )}
               </SectionCard>
 
-              {/* 3. Pie — Distribuição dos Benefícios Financeiros */}
-              <SectionCard title="Distribuição dos Benefícios Financeiros" subtitle="Bolsas vs Descontos" icon={Percent}>
+              {/* 3. Proporção Bolsas vs Descontos — barra única com %: numa
+                  "distribuição" de só duas categorias, o % é a resposta; o
+                  donut antigo ocupava 320px para codificar 2 números que os
+                  cards acima já mostram. */}
+              <SectionCard title="Distribuição dos Benefícios Financeiros" subtitle="Participação de bolsas e descontos no recorte" icon={Percent}>
                 {loading ? (
                   <ChartSkeleton height={320} />
                 ) : !panorama || panorama.distribuicao.length === 0 ||
                   panorama.distribuicao.every((d) => d.valor === 0) ? (
                   <EmptyState title="Sem dados para os filtros selecionados" />
                 ) : (
-                  <ResponsiveContainer width="100%" height={320}>
-                    <PieChart>
-                      <Tooltip
-                        contentStyle={tt.contentStyle}
-                        labelStyle={tt.labelStyle}
-                        itemStyle={tt.itemStyle}
-                        formatter={(v: unknown) => [`${fmtInt(v as number)}`, '']}
-                      />
-                      <Pie
-                        data={panorama.distribuicao}
-                        dataKey="valor"
-                        nameKey="categoria"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={110}
-                        innerRadius={55}
-                        paddingAngle={3}
-                        stroke="none"
-                        label={(entry: unknown) => {
-                          const e = entry as { categoria?: string; valor?: number };
-                          return `${e.categoria ?? ''}: ${fmtInt(e.valor ?? 0)}`;
-                        }}
-                        labelLine={false}
-                      >
-                        <Cell fill={CORES_CATEGORICAS[0]} />
-                        <Cell fill={CORES_CATEGORICAS[1]} />
-                      </Pie>
-                      <Legend
-                        verticalAlign="bottom"
-                        iconType="circle"
-                        formatter={(v: string) => <span className="text-xs text-ink-2">{v}</span>}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <DistribuicaoProporcao dados={panorama.distribuicao} />
                 )}
               </SectionCard>
 
@@ -396,8 +360,8 @@ export function BolsasEDescontosPage() {
                         tick={{ fontSize: 10, fill: '#3A3838' }}
                         tickLine={false}
                         axisLine={false}
-                        width={160}
-                        tickFormatter={(v: string) => truncateLabel(v, 24)}
+                        width={110}
+                        tickFormatter={(v: string) => truncateLabel(v, 16)}
                       />
                       <Tooltip
                         cursor={{ fill: 'rgba(238,42,66,0.05)' }}
@@ -432,8 +396,9 @@ export function BolsasEDescontosPage() {
                 {!loading && evasao && (
                   <StatCard
                     index={0}
-                    label="Renúncia de Valor - Evasão"
+                    label="Renúncia de valor - Evasão"
                     value={fmtBRLCompact(evasao.renunciaValorEvasao)}
+                    exactValue={fmtBRL(evasao.renunciaValorEvasao)}
                     subtitle="Soma do valor original das matrículas evadidas"
                     icon={TrendingDown}
                     color="danger"
@@ -445,54 +410,64 @@ export function BolsasEDescontosPage() {
 
             {/* Charts */}
             <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {/* 1. Funnel — Top 10 Benefícios com Maior Evasão (using radial bar as funnel approximation) */}
-              <SectionCard title="Top 10 Benefícios Financeiros com Maior Evasão" subtitle="Categoria: bolsa padronizada" icon={TrendingDown}>
+              {/* 1. Ranking — Top 10 Benefícios com Maior Evasão. Era um
+                  "funil", mas o dado é um RANKING: a metáfora de etapas
+                  enganava e as margens de 180px por lado zeravam a área útil
+                  no celular. Barras horizontais na rampa vermelha da marca. */}
+              <SectionCard title="Top 10 Benefícios Financeiros com Maior Evasão" subtitle="Agrupado por tipo de benefício" icon={TrendingDown}>
                 {loading ? (
                   <ChartSkeleton height={360} />
                 ) : !evasao || evasao.evasaoBeneficios.length === 0 ? (
                   <EmptyState title="Sem dados para os filtros selecionados" />
                 ) : (
-                  <ResponsiveContainer width="100%" height={380}>
-                    <FunnelChart margin={{ top: 8, right: 180, left: 180, bottom: 8 }}>
+                  <ResponsiveContainer width="100%" height={Math.max(300, evasao.evasaoBeneficios.length * 32)}>
+                    <BarChart
+                      data={evasao.evasaoBeneficios}
+                      layout="vertical"
+                      margin={{ top: 4, right: 48, left: 0, bottom: 4 }}
+                    >
+                      <CartesianGrid strokeDasharray="4 4" horizontal={false} stroke="#DEDCD4" />
+                      <XAxis
+                        type="number"
+                        tick={{ fontSize: 11, fill: '#6E6B66' }}
+                        tickLine={false}
+                        axisLine={false}
+                        tickFormatter={(v: number) => fmtInt(v)}
+                      />
+                      <YAxis
+                        type="category"
+                        dataKey="categoria"
+                        tick={{ fontSize: 10, fill: '#3A3838' }}
+                        tickLine={false}
+                        axisLine={false}
+                        width={120}
+                        tickFormatter={(v: string) => truncateLabel(v, 18)}
+                      />
                       <Tooltip
+                        cursor={{ fill: 'rgba(238,42,66,0.05)' }}
                         contentStyle={tt.contentStyle}
                         labelStyle={tt.labelStyle}
                         itemStyle={tt.itemStyle}
-                        formatter={(v: unknown, _n: unknown, p: { payload?: { categoria?: string } }) => [
-                          `${fmtInt(v as number)} evasões`,
-                          p?.payload?.categoria ?? 'Evasão',
-                        ]}
+                        formatter={(v: unknown) => [`${fmtInt(v as number)} evasões`, 'Evasão']}
                       />
-                      <Funnel
-                        dataKey="valor"
-                        nameKey="categoria"
-                        data={evasao.evasaoBeneficios.map((r, i) => ({
-                          ...r,
-                          fill: `rgba(238,42,66,${Math.max(0.35, 1 - i * 0.07).toFixed(2)})`,
-                        }))}
-                        isAnimationActive
-                        stroke="#fff"
-                      >
+                      <Bar dataKey="valor" radius={[4, 8, 8, 4]} maxBarSize={20}>
+                        {evasao.evasaoBeneficios.map((_, i) => (
+                          <Cell
+                            key={i}
+                            fill={`rgba(238,42,66,${Math.max(
+                              0.35,
+                              1 - (i * 0.65) / Math.max(1, evasao.evasaoBeneficios.length - 1),
+                            ).toFixed(2)})`}
+                          />
+                        ))}
                         <LabelList
-                          position="left"
-                          dataKey="categoria"
-                          fill="#3A3838"
-                          stroke="none"
-                          fontSize={11}
-                          fontWeight={600}
-                          formatter={(v: unknown) => truncateLabel(String(v ?? ''), 24)}
-                        />
-                        <LabelList
-                          position="right"
                           dataKey="valor"
-                          fill="#B81E32"
-                          stroke="none"
-                          fontSize={11}
-                          fontWeight={700}
+                          position="right"
                           formatter={(v: unknown) => fmtInt(v as number)}
+                          style={{ fontSize: 10, fill: '#B81E32', fontWeight: 700 }}
                         />
-                      </Funnel>
-                    </FunnelChart>
+                      </Bar>
+                    </BarChart>
                   </ResponsiveContainer>
                 )}
               </SectionCard>
@@ -519,16 +494,19 @@ export function BolsasEDescontosPage() {
                         tickLine={false}
                         axisLine={false}
                       />
+                      {/* Ticks na cor da própria série: sem isso não dava
+                          para saber qual eixo pertencia às colunas e qual à
+                          linha. */}
                       <YAxis
                         yAxisId="left"
-                        tick={{ fontSize: 11, fill: '#6E6B66' }}
+                        tick={{ fontSize: 11, fill: FMP_DARK }}
                         tickLine={false}
                         axisLine={false}
                       />
                       <YAxis
                         yAxisId="right"
                         orientation="right"
-                        tick={{ fontSize: 11, fill: '#6E6B66' }}
+                        tick={{ fontSize: 11, fill: '#8A8578' }}
                         tickLine={false}
                         axisLine={false}
                       />
@@ -538,6 +516,10 @@ export function BolsasEDescontosPage() {
                         itemStyle={tt.itemStyle}
                         formatter={(v: unknown, name: unknown) => {
                           if (name === 'matBeneFin') return [`${fmtInt(v as number)}`, 'Mat. com Benefício'];
+                          // Sem "% das matrículas" aqui: numerador (toda linha
+                          // com situação de evasão) e denominador (só situação
+                          // Matriculado) são populações diferentes — a razão
+                          // podia passar de 100% e virava desinformação.
                           return [`${fmtInt(v as number)}`, 'Evasão'];
                         }}
                       />
@@ -645,8 +627,9 @@ export function BolsasEDescontosPage() {
                   Regras herdadas do Power BI
                 </p>
                 <p className="text-xs text-ink-3">
-                  Este dashboard preserva a lógica original do relatório homônimo,
-                  incluindo inconsistências documentadas na migração de paridade.
+                  Os cálculos replicam o relatório original do Power BI,
+                  incluindo regras históricas de contagem — os números seguem
+                  comparáveis com o BI anterior.
                 </p>
               </div>
             </div>
@@ -660,5 +643,51 @@ export function BolsasEDescontosPage() {
         </section>
       </div>
     </AppShell>
+  );
+}
+
+/**
+ * Barra de proporção Bolsas vs Descontos com percentuais explícitos — numa
+ * "distribuição" de duas categorias, o % é a resposta que o usuário procura.
+ */
+function DistribuicaoProporcao({ dados }: { dados: { categoria: string; valor: number }[] }) {
+  const total = dados.reduce((soma, d) => soma + d.valor, 0);
+  return (
+    <div className="flex h-full min-h-[280px] flex-col justify-center gap-5">
+      <div className="flex h-9 w-full overflow-hidden rounded-pill">
+        {dados.map((d, i) => {
+          const pct = total > 0 ? (d.valor / total) * 100 : 0;
+          return (
+            <div
+              key={d.categoria}
+              style={{ width: `${pct}%`, background: COLORS[i % COLORS.length] }}
+              title={`${d.categoria}: ${fmtInt(d.valor)} (${Math.round(pct)}%)`}
+            />
+          );
+        })}
+      </div>
+      <ul className="space-y-2">
+        {dados.map((d, i) => {
+          const pct = total > 0 ? Math.round((d.valor / total) * 100) : 0;
+          return (
+            <li key={d.categoria} className="flex items-center justify-between text-sm">
+              <span className="flex items-center gap-2 text-ink-2">
+                <span
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ background: COLORS[i % COLORS.length] }}
+                />
+                {d.categoria}
+              </span>
+              <span className="fmp-kpi text-base leading-normal">
+                {fmtInt(d.valor)} <span className="text-xs font-normal text-ink-3">({pct}%)</span>
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="text-2xs text-ink-3">
+        {fmtInt(total)} benefícios no recorte filtrado.
+      </p>
+    </div>
   );
 }

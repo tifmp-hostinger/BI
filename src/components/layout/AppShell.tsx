@@ -1,8 +1,12 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { useDashboards } from '@/hooks/useDashboards';
+
+/** Chave do último dashboard visitado — a Home usa para "Continuar de onde parou". */
+export const CHAVE_ULTIMO_DASHBOARD = 'fmp-ultimo-dashboard';
 
 type Props = {
   title: string;
@@ -29,6 +33,18 @@ export function AppShell({ title, subtitle, children }: Props) {
     }
   }, [colapsado]);
   const { data: dashboards } = useDashboards();
+
+  // Registra o último dashboard visitado para o atalho da Home.
+  const { pathname } = useLocation();
+  useEffect(() => {
+    const m = pathname.match(/^\/dashboards\/([\w-]+)/);
+    if (!m) return;
+    try {
+      localStorage.setItem(CHAVE_ULTIMO_DASHBOARD, m[1]);
+    } catch {
+      // localStorage indisponível: o atalho simplesmente não aparece.
+    }
+  }, [pathname]);
 
   const items = dashboards.map((d) => ({
     slug: d.slug,

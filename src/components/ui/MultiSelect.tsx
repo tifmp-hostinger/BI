@@ -27,8 +27,15 @@ export function MultiSelect({
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
+    const teclado = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener('keydown', teclado);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      document.removeEventListener('keydown', teclado);
+    };
   }, [open]);
 
   const allSelected = selected.length === 0;
@@ -66,7 +73,7 @@ export function MultiSelect({
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 z-50 mt-1 max-h-64 min-w-full overflow-y-auto rounded-md border border-line bg-white py-1 shadow-lg">
+        <div className="absolute top-full left-0 z-50 mt-1 max-h-64 min-w-full max-w-[min(20rem,90vw)] overflow-y-auto rounded-md border border-line bg-white py-1 shadow-lg">
           <button
             type="button"
             onClick={() => onChange([])}

@@ -69,15 +69,23 @@ export function iniciaAquecimentoDashboards(): void {
   iniciado = true;
 
   void (async () => {
+    const { atualizaResumo } = await import('@/lib/resumoDashboards');
     for (const alvo of ALVOS) {
       try {
+        // Quando o aquecimento baixa de fato, `mostrar` entrega o dataset já
+        // em memória — aproveitado para gravar o mini-resumo da Home sem
+        // nenhuma desserialização extra.
+        let datasetBaixado: unknown = null;
         await carregaComCache<unknown>({
           chave: alvo.chave,
           tabelas: FONTES_POR_DASHBOARD[alvo.chave],
           baixar: alvo.baixar,
-          mostrar: () => {},
+          mostrar: (dataset) => {
+            datasetBaixado = dataset;
+          },
           apenasAquecer: true,
         });
+        await atualizaResumo(alvo.chave, datasetBaixado);
         await alvo.extras?.();
       } catch (e) {
         // Painel que falhou no aquecimento carrega normalmente quando aberto.

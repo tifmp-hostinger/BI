@@ -2,8 +2,6 @@ import {
   Bar,
   BarChart,
   Cell,
-  Funnel,
-  FunnelChart,
   LabelList,
   Pie,
   PieChart,
@@ -12,7 +10,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { Users, GraduationCap, Radio, DollarSign } from 'lucide-react';
+import { Users, GraduationCap, Radio, Receipt, TrendingUp } from 'lucide-react';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { ReorderableGrid, RItem } from '@/components/ui/ReorderableGrid';
 import { StatCard, StatCardSkeleton, STAT_GRID_CLASSES, STAT_GRID_CONTAINER } from '@/components/ui/StatCard';
@@ -21,26 +19,11 @@ import { ChartSkeleton } from '@/components/ui/Skeletons';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { fmtInt, fmtPct, truncateLabel } from '../formatters';
 import type { MestradoData } from '../types';
-import { CORES_CATEGORICAS } from '@/lib/chartColors';
+import { CHART_TOOLTIP, CORES_CATEGORICAS, FMP_DARK, FMP_RED } from '@/lib/chartColors';
+import { MEST_META } from '../constants';
 
-const FMP_RED = '#EE2A42';
-const FMP_DARK = '#B81E32';
 const PIE_COLORS = CORES_CATEGORICAS;
 
-function tt() {
-  return {
-    contentStyle: {
-      background: 'rgba(255,255,255,0.98)',
-      border: '1px solid #DEDCD4',
-      borderRadius: 12,
-      boxShadow: '0 18px 40px rgba(25,24,24,0.12)',
-      padding: 10,
-      fontSize: 12,
-    } as const,
-    labelStyle: { color: '#191818', fontWeight: 600, marginBottom: 4, fontSize: 12 } as const,
-    itemStyle: { color: '#3A3838', fontSize: 12 } as const,
-  };
-}
 
 type Props = {
   loading: boolean;
@@ -48,7 +31,7 @@ type Props = {
 };
 
 export function MestradoTab({ loading, data }: Props) {
-  const tooltip = tt();
+  const tooltip = CHART_TOOLTIP;
 
   if (loading) {
     return (
@@ -73,10 +56,10 @@ export function MestradoTab({ loading, data }: Props) {
       <section className={STAT_GRID_CONTAINER}>
         <div className={STAT_GRID_CLASSES}>
           <StatCard index={0} label="Leads" value={fmtInt(data.leads)} icon={Users} color="fmp" highlight />
-          <StatCard index={1} label="Inscricoes" value={fmtInt(data.insc)} icon={Users} color="fmp" />
-          <StatCard index={2} label="Matriculas" value={fmtInt(data.mat)} icon={GraduationCap} color="fmp" />
-          <StatCard index={3} label="Taxa Paga" value={fmtInt(data.taxaPaga)} icon={DollarSign} color="gray" />
-          <StatCard index={4} label="% Conversao" value={fmtPct(data.pctConversao)} icon={DollarSign} color="gray" />
+          <StatCard index={1} label="Inscrições" value={fmtInt(data.insc)} icon={Users} color="fmp" />
+          <StatCard index={2} label="Matrículas" value={fmtInt(data.mat)} icon={GraduationCap} color="fmp" />
+          <StatCard index={3} label="Taxas de inscrição pagas" value={fmtInt(data.taxaPaga)} hint="Contagem de taxas de inscrição pagas — não é valor em reais." icon={Receipt} color="gray" />
+          <StatCard index={4} label="% Matrículas qualificadas" value={fmtPct(data.pctConversao)} hint="Matrículas com situação qualificada ÷ matrículas — fórmula herdada do relatório original." icon={TrendingUp} color="gray" />
         </div>
       </section>
 
@@ -86,13 +69,13 @@ export function MestradoTab({ loading, data }: Props) {
           label="Mestrado | Meta"
           size={220}
           formatValue={(v) => fmtPct(v)}
-          caption={`${fmtInt(data.mat)} / 20 meta`}
+          caption={`${fmtInt(data.mat)} / ${fmtInt(MEST_META)} meta`}
         />
       </div>
 
       <ReorderableGrid storageKey="conv-reorder-mestrado" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <RItem rid="insc-processo">
-        <SectionCard title="Inscricoes por Processo Seletivo" subtitle="periodo_letivo x Mest_Insc" icon={Users}>
+        <SectionCard title="Inscrições por Processo Seletivo" subtitle="Volume de inscrições por período letivo" icon={Users}>
           {data.inscPorProcesso.length === 0 ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
           ) : (
@@ -106,7 +89,7 @@ export function MestradoTab({ loading, data }: Props) {
                 </defs>
                 <XAxis type="number" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtInt(v)} />
                 <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#3A3838' }} tickLine={false} axisLine={false} width={160} tickFormatter={(v: string) => truncateLabel(v, 22)} />
-                <Tooltip cursor={{ fill: 'rgba(238,42,66,0.05)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [`${fmtInt(v as number)} inscricoes`, 'Processo']} />
+                <Tooltip cursor={{ fill: 'rgba(238,42,66,0.05)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [`${fmtInt(v as number)} inscrições`, 'Processo']} />
                 <Bar dataKey="valor" fill="url(#barProcMest)" radius={[4, 8, 8, 4]} maxBarSize={28} />
               </BarChart>
             </ResponsiveContainer>
@@ -115,14 +98,14 @@ export function MestradoTab({ loading, data }: Props) {
 
         </RItem>
         <RItem rid="status-insc">
-        <SectionCard title="Status das Inscricoes" subtitle="statusps x Mest_Insc" icon={Users}>
+        <SectionCard title="Status das Inscrições" subtitle="Situação de cada inscrição no processo seletivo" icon={Users}>
           {data.statusInscricoes.length === 0 || data.statusInscricoes.every((d) => d.valor === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
           ) : (
             <>
               <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
-                  <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtInt(v as number), 'Inscricoes']} />
+                  <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtInt(v as number), 'Inscrições']} />
                   <Pie data={data.statusInscricoes} dataKey="valor" nameKey="categoria" cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={3} stroke="none">
                     {data.statusInscricoes.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                   </Pie>
@@ -149,35 +132,32 @@ export function MestradoTab({ loading, data }: Props) {
 
         </RItem>
         <RItem rid="leads-canal" className="lg:col-span-2">
-        <SectionCard title="Leads Gerados por Canal" subtitle="canal_nome x Mest_Leads - Funil" icon={Radio}>
+        <SectionCard title="Leads Gerados por Canal" subtitle="Ranking dos canais que mais trouxeram interessados" icon={Radio}>
           {data.leadsPorCanal.length === 0 ? (
             <EmptyState title="Sem dados de canal para os filtros selecionados" />
           ) : (
-            <ResponsiveContainer width="100%" height={Math.max(300, data.leadsPorCanal.length * 36)}>
-              <FunnelChart margin={{ top: 8, right: 180, left: 180, bottom: 8 }}>
+            <ResponsiveContainer width="100%" height={Math.max(300, Math.min(data.leadsPorCanal.length, 12) * 32)}>
+              <BarChart data={data.leadsPorCanal.slice(0, 12)} layout="vertical" margin={{ top: 4, right: 48, left: 0, bottom: 4 }}>
+                <XAxis type="number" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtInt(v)} />
+                <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#3A3838' }} tickLine={false} axisLine={false} width={130} tickFormatter={(v: string) => truncateLabel(v, 20)} />
                 <Tooltip
+                  cursor={{ fill: 'rgba(238,42,66,0.05)' }}
                   contentStyle={tooltip.contentStyle}
                   labelStyle={tooltip.labelStyle}
                   itemStyle={tooltip.itemStyle}
-                  formatter={(v: unknown, _n: unknown, p: { payload?: { categoria?: string } }) => [
-                    `${fmtInt(v as number)} leads`,
-                    p?.payload?.categoria ?? 'Canal',
-                  ]}
+                  formatter={(v: unknown) => {
+                    const total = data.leadsPorCanal.reduce((soma, c) => soma + c.valor, 0);
+                    const pct = total > 0 ? Math.round(((v as number) / total) * 100) : 0;
+                    return [`${fmtInt(v as number)} leads (${pct}% do total)`, 'Canal'];
+                  }}
                 />
-                <Funnel
-                  dataKey="valor"
-                  nameKey="categoria"
-                  data={data.leadsPorCanal.slice(0, 12).map((r, i) => ({
-                    ...r,
-                    fill: `rgba(238,42,66,${Math.max(0.35, 1 - i * 0.06).toFixed(2)})`,
-                  }))}
-                  isAnimationActive
-                  stroke="#fff"
-                >
-                  <LabelList position="left" dataKey="categoria" fill="#3A3838" stroke="none" fontSize={11} fontWeight={600} formatter={(v: unknown) => truncateLabel(String(v ?? ''), 24)} />
+                <Bar dataKey="valor" radius={[4, 8, 8, 4]} maxBarSize={20}>
+                  {data.leadsPorCanal.slice(0, 12).map((_, i) => (
+                    <Cell key={i} fill={`rgba(238,42,66,${Math.max(0.35, 1 - (i * 0.65) / Math.max(1, Math.min(data.leadsPorCanal.length, 12) - 1)).toFixed(2)})`} />
+                  ))}
                   <LabelList position="right" dataKey="valor" fill={FMP_DARK} stroke="none" fontSize={11} fontWeight={700} formatter={(v: unknown) => fmtInt(v as number)} />
-                </Funnel>
-              </FunnelChart>
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           )}
         </SectionCard>

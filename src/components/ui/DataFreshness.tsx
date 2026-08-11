@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AlertTriangle, Clock, HelpCircle } from 'lucide-react';
+import { BalaoInfo } from '@/components/ui/BalaoInfo';
 import {
   diasAtras,
   faltamRitmos,
@@ -172,7 +173,7 @@ export function DataFreshness({
 
   return (
     <span
-      className={`inline-flex items-center gap-1 text-2xs ${ESTILO[resumo.status]}`}
+      className={`inline-flex flex-wrap items-center gap-1 text-2xs ${ESTILO[resumo.status]}`}
       title={detalhe || undefined}
     >
       {alerta ? (
@@ -181,15 +182,36 @@ export function DataFreshness({
         <Clock className="h-3 w-3 flex-shrink-0" />
       )}
       {rotulo(resumo)}
-      <span
-        tabIndex={0}
-        role="note"
-        aria-label={AJUDA}
-        title={AJUDA}
-        className="cursor-help text-ink-3/70 transition hover:text-fmp focus:text-fmp focus:outline-none"
-      >
-        <HelpCircle className="h-3 w-3" strokeWidth={2.4} />
-      </span>
+      <DetalhePopover ajuda={AJUDA} detalhe={detalhe} />
     </span>
+  );
+}
+
+/**
+ * Balão de detalhe aberto por clique/toque: o conteúdo mais útil do carimbo
+ * (detalhamento por fonte + explicação da régua de atraso) vivia só no
+ * atributo `title`, que não quebra linha direito, some sozinho e não existe
+ * em touch. Via portal (BalaoInfo): os heroes têm overflow-hidden e um
+ * balão absoluto comum era clipado. O `title` externo continua como
+ * redundância para hover no desktop.
+ */
+function DetalhePopover({ ajuda, detalhe }: { ajuda: string; detalhe: string }) {
+  return (
+    <BalaoInfo
+      rotuloAcao="Como interpretar a data da carga"
+      gatilho={<HelpCircle className="h-3 w-3" strokeWidth={2.4} />}
+      classeGatilho="cursor-help rounded-full p-0.5 text-current opacity-70 transition hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none"
+    >
+      {detalhe && (
+        <span className="block whitespace-pre-line text-2xs leading-relaxed text-ink-2">
+          {detalhe}
+        </span>
+      )}
+      <span
+        className={`block whitespace-pre-line text-2xs leading-relaxed text-ink-3 ${detalhe ? 'mt-2 border-t border-line pt-2' : ''}`}
+      >
+        {ajuda}
+      </span>
+    </BalaoInfo>
   );
 }
