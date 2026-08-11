@@ -135,7 +135,7 @@ export function PresencaNacionalPage() {
 
   return (
     <AppShell
-      title="Presenca Nacional"
+      title="Presença Nacional"
       subtitle="Distribuição de matrículas por estado"
     >
       <div className="mx-auto max-w-7xl space-y-8 p-4 sm:p-6 lg:p-8">
@@ -153,7 +153,7 @@ export function PresencaNacionalPage() {
                 Central de Dashboards
               </Link>
               <div className="mt-2">
-                <DataFreshness tabelas={FONTES_POR_DASHBOARD['presenca-nacional']} ritmos={freshnessRitmos} />
+                <DataFreshness superficie="escura" tabelas={FONTES_POR_DASHBOARD['presenca-nacional']} ritmos={freshnessRitmos} />
                 <AtualizandoAviso visivel={revalidando} />
               </div>
               {/* Sem pills numéricas aqui: Matrículas e Faturamento já são os
@@ -639,7 +639,7 @@ export function PresencaNacionalPage() {
                 >
                   Novos indicadores em breve
                 </p>
-                <p className="text-xs text-ink-3">
+                <p className="text-xs text-ink-2">
                   Camada por CEP, filtros por curso e comparativo temporal serão
                   adicionados nas proximas evolucoes.
                 </p>

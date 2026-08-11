@@ -21,12 +21,29 @@ const AJUDA =
   '(Cursos Livres passa semanas sem inscrição; Graduação segue o ciclo do vestibular) ' +
   'não disparam alerta à toa. As cargas rodam por um processo agendado, fora da aplicação.';
 
-const ESTILO: Record<string, string> = {
-  ok: 'text-ink-3',
-  atencao: 'text-warning-dark',
-  atrasado: 'text-danger',
-  desconhecido: 'italic text-ink-3',
-  erro: 'text-warning-dark',
+/**
+ * Cores por status E por superfície. O carimbo aparece nos DOIS contextos do
+ * app: dentro do hero escuro (4 painéis) e na barra clara do Growth. Havia
+ * um único conjunto de cores, pensado para fundo claro — sobre o hero
+ * escuro, "Sem sinal de frescor" em cinza-tinta dava 3,3:1 e o alerta em
+ * vermelho da marca, 4,3:1. Cada superfície agora tem seu conjunto, todos
+ * acima de 4,5:1.
+ */
+const ESTILO: Record<'clara' | 'escura', Record<string, string>> = {
+  clara: {
+    ok: 'text-ink-3',
+    atencao: 'text-warning-dark',
+    atrasado: 'text-fmp-pressed',
+    desconhecido: 'italic text-ink-3',
+    erro: 'text-warning-dark',
+  },
+  escura: {
+    ok: 'text-cream/70',
+    atencao: 'text-warning-light',
+    atrasado: 'text-fmp-light',
+    desconhecido: 'italic text-cream/60',
+    erro: 'text-warning-light',
+  },
 };
 
 function rotuloFonte(f: Freshness): string {
@@ -127,9 +144,12 @@ function montaDetalhe(resumo: FreshnessResumo): string {
 export function DataFreshness({
   tabelas,
   ritmos = {},
+  superficie = 'clara',
 }: {
   tabelas: string[];
   ritmos?: Record<string, RitmoFonte>;
+  /** 'escura' quando renderizado sobre o hero escuro dos painéis. */
+  superficie?: 'clara' | 'escura';
 }) {
   const [resumo, setResumo] = useState<FreshnessResumo | null>(null);
   const chave = tabelas.join('|');
@@ -161,7 +181,7 @@ export function DataFreshness({
 
   if (aguardandoDataset || !resumo) {
     return (
-      <span className="inline-flex items-center gap-1 text-2xs text-ink-3">
+      <span className={`inline-flex items-center gap-1 text-2xs ${ESTILO[superficie].ok}`}>
         <Clock className="h-3 w-3 animate-pulse" />
         Verificando data da carga…
       </span>
@@ -173,7 +193,7 @@ export function DataFreshness({
 
   return (
     <span
-      className={`inline-flex flex-wrap items-center gap-1 text-2xs ${ESTILO[resumo.status]}`}
+      className={`inline-flex flex-wrap items-center gap-1 text-2xs ${ESTILO[superficie][resumo.status]}`}
       title={detalhe || undefined}
     >
       {alerta ? (

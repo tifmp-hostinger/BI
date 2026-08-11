@@ -62,13 +62,15 @@ export function FunnelPanel({ media, negocio }: { media: MediaMetrics; negocio: 
             {e.taxa && (
               <p className="pb-0.5 text-center text-2xs text-ink-3">↓ {e.taxa}</p>
             )}
+            {/* Rampa SÓLIDA escurecendo para baixo (fmp 600→800). Antes as
+                etapas eram vermelho com transparência sobre o card branco:
+                a última ficava rosa-claro e o texto branco caía para 2,5:1,
+                praticamente ilegível. Sólido dá 5,2 / 6,4 / 8,2. */}
             <div
               className="flex flex-col items-center rounded-md px-3 py-2 text-center"
-              style={{
-                background: `rgba(238,42,66,${(0.95 - i * 0.18).toFixed(2)})`,
-              }}
+              style={{ background: ['#D32238', '#B81E32', '#9A1B2A'][i] }}
             >
-              <span className="text-2xs font-medium uppercase tracking-widest text-white/85">{e.label}</span>
+              <span className="text-2xs font-medium uppercase tracking-widest text-white">{e.label}</span>
               <span className="fmp-kpi text-base leading-normal !text-white">
                 {e.valor}
               </span>

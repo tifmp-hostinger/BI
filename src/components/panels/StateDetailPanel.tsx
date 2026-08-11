@@ -81,7 +81,7 @@ export function StateDetailPanel({ uf, detail, onClose, totalNacional }: Props) 
           <h3 className="fmp-kpi mt-1 text-lg leading-normal">
             {name}
           </h3>
-          <p className="text-xs text-ink-3">
+          <p className="text-xs text-ink-2">
             {pctNacional !== null
               ? `${pctNacional}% de todas as matrículas do recorte`
               : 'Detalhamento das matrículas'}
@@ -305,7 +305,7 @@ export function StateDetailPanel({ uf, detail, onClose, totalNacional }: Props) 
                   <p className="mt-0.5 line-clamp-1 text-ink-3">
                     {a.curso}
                   </p>
-                  <div className="mt-1 flex items-center gap-2 text-sand">
+                  <div className="mt-1 flex items-center gap-2 text-ink-3">
                     <span>{a.cidade || '—'}</span>
                     <span className="h-1 w-1 rounded-full bg-sand" />
                     <span className="line-clamp-1">{a.situacao || '—'}</span>

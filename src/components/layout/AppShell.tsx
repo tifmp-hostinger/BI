@@ -55,7 +55,7 @@ export function AppShell({ title, subtitle, children }: Props) {
   }));
 
   return (
-    <div className="flex min-h-screen bg-base">
+    <div className="flex min-h-screen bg-canvas">
       <Sidebar
         items={items}
         open={sidebarOpen}

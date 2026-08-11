@@ -13,7 +13,10 @@ export function AtualizandoAviso({ visivel }: { visivel: boolean }) {
   return (
     <span
       role="status"
-      className="inline-flex items-center gap-1 text-2xs text-ink-3"
+      // Herda a cor do contexto: este aviso aparece tanto no hero escuro
+      // (4 painéis) quanto na barra clara do Growth — uma cor fixa de tinta
+      // ficava ilegível sobre o escuro.
+      className="inline-flex items-center gap-1 text-2xs text-current opacity-70"
       title="Os dados em tela vieram do cache local e estão sendo atualizados a partir do banco."
     >
       <RefreshCw className="h-3 w-3 animate-spin" />

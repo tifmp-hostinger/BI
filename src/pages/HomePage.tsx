@@ -143,7 +143,7 @@ export function HomePage() {
 
           <div className="relative flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
             <div className="max-w-2xl">
-              <span className="fmp-eyebrow text-fmp">
+              <span className="fmp-eyebrow text-fmp-300">
                 Inteligência institucional
               </span>
               <h1
@@ -178,7 +178,7 @@ export function HomePage() {
                     <ArrowUpRight className="h-3.5 w-3.5" />
                   </Link>
                 )}
-                <span className="inline-flex items-center gap-1.5 text-2xs font-medium text-cream/50">
+                <span className="inline-flex items-center gap-1.5 text-2xs font-medium text-cream/70">
                   <BarChart3 className="h-3 w-3" />
                   {disponiveis} {disponiveis === 1 ? 'disponível' : 'disponíveis'}
                   {emBreve > 0 && ` · ${emBreve} em breve`}
@@ -188,14 +188,14 @@ export function HomePage() {
 
             <div className="hidden shrink-0 flex-col items-end gap-2 md:flex">
               <div className="rounded-lg border border-cream/15 bg-cream/5 p-4 backdrop-blur">
-                <p className="inline-flex items-center gap-1.5 text-2xs uppercase tracking-widest text-cream/50">
+                <p className="inline-flex items-center gap-1.5 text-2xs uppercase tracking-widest text-cream/70">
                   <Zap className="h-3 w-3" />
                   Painéis prontos
                 </p>
                 <p className="fmp-kpi mt-1 text-lg leading-normal text-cream" style={{ color: 'inherit' }}>
                   {paineisProntos} de {Object.keys(EXTRATORES_RESUMO).length}
                 </p>
-                <p className="mt-1 text-2xs text-cream/50">
+                <p className="mt-1 text-2xs text-cream/70">
                   {sincronizadoEm
                     ? `Dados sincronizados ${formataDadosDe(sincronizadoEm)}`
                     : 'Carregando dados em segundo plano…'}
@@ -259,7 +259,7 @@ export function HomePage() {
                     </div>
 
                     <div className="relative mt-6 space-y-2">
-                      <p className="text-2xs font-semibold uppercase tracking-widest text-sand">
+                      <p className="text-2xs font-semibold uppercase tracking-widest text-ink-3">
                         {d.category}
                       </p>
                       <h3 className="fmp-kpi text-base leading-normal">
@@ -292,7 +292,7 @@ export function HomePage() {
                       <span
                         className={`flex h-8 w-8 items-center justify-center rounded-full transition-all ${
                           disabled
-                            ? 'bg-paper text-sand'
+                            ? 'bg-paper text-ink-3'
                             : 'bg-fmp text-white group-hover:-translate-y-0.5 group-hover:shadow-glow'
                         }`}
                       >

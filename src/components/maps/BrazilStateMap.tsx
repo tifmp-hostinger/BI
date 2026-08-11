@@ -275,7 +275,11 @@ function renderBubble({
     ? `background: radial-gradient(circle at 30% 25%, ${lighten(color)}, ${color});`
     : 'background: rgba(255,255,255,0.75);';
 
-  const fontColor = hasData ? '#ffffff' : '#8A8578';
+  // Texto ESCURO sobre a bolha: a rampa de cor vai de areia a vermelho, e
+  // com texto branco o contraste ficava entre 2,4:1 (estados de pouco
+  // volume) e 4,2:1 (o mais alto) — ilegível na maior parte do mapa. Em
+  // tinta escura toda a rampa fica entre 5,1:1 e 7,3:1.
+  const fontColor = hasData ? '#191818' : '#6E6B66';
   const fontSize = size > 46 ? 12 : size > 38 ? 11 : 10;
   const label = valorLabel || state.uf;
 
@@ -292,7 +296,7 @@ function renderBubble({
       <span style="font-size:${fontSize}px;font-weight:700;color:${fontColor};line-height:1;">${label}</span>
       ${
         hasData
-          ? `<span style="font-size:${Math.max(8, fontSize - 2)}px;color:rgba(255,255,255,0.75);font-weight:500;letter-spacing:0.06em;margin-top:1px;">${state.uf}</span>`
+          ? `<span style="font-size:${Math.max(9, fontSize - 2)}px;color:rgba(25,24,24,0.72);font-weight:600;letter-spacing:0.06em;margin-top:1px;">${state.uf}</span>`
           : ''
       }
     </div>

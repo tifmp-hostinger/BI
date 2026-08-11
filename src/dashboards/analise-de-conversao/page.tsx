@@ -105,7 +105,7 @@ export function AnaliseDeConversaoPage() {
                 Central de Dashboards
               </Link>
               <div className="mt-2">
-                <DataFreshness tabelas={FONTES_POR_DASHBOARD['analise-de-conversao']} ritmos={freshnessRitmos} />
+                <DataFreshness superficie="escura" tabelas={FONTES_POR_DASHBOARD['analise-de-conversao']} ritmos={freshnessRitmos} />
                 <AtualizandoAviso visivel={revalidando} />
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2">

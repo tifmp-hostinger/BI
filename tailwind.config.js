@@ -17,7 +17,12 @@ export default {
         serif: ['"Noto Serif"', 'Georgia', '"Times New Roman"', 'serif'],
       },
       colors: {
-        base: 'var(--fmp-cream)',
+        // Renomeada de 'base' para 'canvas': uma COR chamada "base" fazia o
+        // Tailwind gerar `.text-base { color: creme }`, que colidia com a
+        // utilitária de TAMANHO `text-base` e pintava de creme (sobre branco,
+        // 1.16:1 — invisível) todo texto que usasse text-base sem uma classe
+        // de cor explícita depois.
+        canvas: 'var(--fmp-cream)',
         fmp: {
           DEFAULT: '#EE2A42',
           light: '#FBD7DC',

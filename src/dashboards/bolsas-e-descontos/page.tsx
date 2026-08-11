@@ -111,7 +111,7 @@ export function BolsasEDescontosPage() {
                 Central de Dashboards
               </Link>
               <div className="mt-2">
-                <DataFreshness tabelas={FONTES_POR_DASHBOARD['bolsas-e-descontos']} ritmos={freshnessRitmos} />
+                <DataFreshness superficie="escura" tabelas={FONTES_POR_DASHBOARD['bolsas-e-descontos']} ritmos={freshnessRitmos} />
                 <AtualizandoAviso visivel={revalidando} />
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -626,7 +626,7 @@ export function BolsasEDescontosPage() {
                 >
                   Regras herdadas do Power BI
                 </p>
-                <p className="text-xs text-ink-3">
+                <p className="text-xs text-ink-2">
                   Os cálculos replicam o relatório original do Power BI,
                   incluindo regras históricas de contagem — os números seguem
                   comparáveis com o BI anterior.
