@@ -20,8 +20,7 @@ import { AppShell, CHAVE_ULTIMO_DASHBOARD } from '@/components/layout/AppShell';
 import { Badge } from '@/components/ui/Badge';
 import { useDashboards } from '@/hooks/useDashboards';
 import { ErrorState } from '@/components/ui/ErrorState';
-import { leMeta, leResumo } from '@/lib/datasetCache';
-import { EXTRATORES_RESUMO } from '@/lib/resumoDashboards';
+import { leMeta } from '@/lib/datasetCache';
 
 const ICONS: Record<string, LucideIcon> = {
   LayoutDashboard,
@@ -44,41 +43,46 @@ const ACCENT: Record<string, { chip: string; icon: string }> = {
   info: { chip: 'bg-info-light', icon: 'text-info' },
 };
 
-type ResumoCard = {
-  itens: { rotulo: string; valor: string }[];
-  /** Momento da gravação do cache do painel (epoch ms). */
-  dadosDe: number | null;
-};
-
 /**
- * Números-manchete por painel, lidos das entradas `resumo:`/`meta:` que o
- * aquecimento grava no IndexedDB — leitura de bytes, nunca do dataset.
- * Enquanto o aquecimento estiver rodando (primeiro login do dia), os cards
- * vão ganhando os números à medida que cada painel fica pronto: relê a cada
- * 4s até completar ou desistir em ~2 min.
+ * Quando o dado de cada painel foi baixado — lido da entrada `meta:` que o
+ * aquecimento grava no IndexedDB. É leitura de alguns bytes, nunca do
+ * dataset.
+ *
+ * Esta é a ÚNICA informação de dado que a Central exibe, e de propósito.
+ * Antes cada card trazia um "número-manchete" (matrículas, inscrições,
+ * investimento). Eram contagens do dataset INTEIRO, sem filtro nenhum, e por
+ * isso não batiam com o que o painel mostra ao abrir: Presidência abre no
+ * vestibular vigente, Bolsas filtrado por ano, Growth só em Graduação e desde
+ * out/2025. Só Presença Nacional coincidia, porque abre sem filtro. Um card
+ * certo e quatro divergentes é pior que nenhum: o usuário não tem como saber
+ * em qual confiar, e um número na porta de entrada que discorda do número lá
+ * dentro derruba a confiança no BI inteiro.
+ *
+ * O frescor, ao contrário, é verdade absoluta: não depende de filtro, de
+ * período nem de regra herdada. Enquanto o aquecimento roda (primeiro login
+ * do dia), os cards vão ganhando a data conforme cada painel fica pronto:
+ * relê a cada 4s até completar ou desistir em ~2 min.
  */
-function useResumosDashboards(): Record<string, ResumoCard> {
-  const slugs = useMemo(() => Object.keys(EXTRATORES_RESUMO), []);
-  const [resumos, setResumos] = useState<Record<string, ResumoCard>>({});
+function useFrescorDashboards(slugs: string[]): Record<string, number> {
+  const chave = slugs.join('|');
+  const [frescor, setFrescor] = useState<Record<string, number>>({});
 
   useEffect(() => {
+    const lista = chave ? chave.split('|') : [];
     let vivo = true;
     let tentativas = 0;
 
     const le = async () => {
       const pares = await Promise.all(
-        slugs.map(async (slug) => {
-          const [resumo, meta] = await Promise.all([leResumo(slug), leMeta(slug)]);
-          return [slug, resumo, meta] as const;
-        }),
+        lista.map(async (slug) => [slug, await leMeta(slug)] as const),
       );
       if (!vivo) return true;
-      const prontos: Record<string, ResumoCard> = {};
-      for (const [slug, resumo, meta] of pares) {
-        if (resumo) prontos[slug] = { itens: resumo.itens, dadosDe: meta?.gravadoEm ?? null };
+      const prontos: Record<string, number> = {};
+      for (const [slug, meta] of pares) {
+        if (meta?.gravadoEm) prontos[slug] = meta.gravadoEm;
       }
-      setResumos(prontos);
-      return Object.keys(prontos).length === slugs.length;
+      setFrescor(prontos);
+      return Object.keys(prontos).length === lista.length;
     };
 
     void le();
@@ -93,9 +97,9 @@ function useResumosDashboards(): Record<string, ResumoCard> {
       vivo = false;
       clearInterval(timer);
     };
-  }, [slugs]);
+  }, [chave]);
 
-  return resumos;
+  return frescor;
 }
 
 function formataDadosDe(ms: number): string {
@@ -113,7 +117,12 @@ function formataDadosDe(ms: number): string {
 
 export function HomePage() {
   const { data, error, refetch } = useDashboards();
-  const resumos = useResumosDashboards();
+
+  const slugsAtivos = useMemo(
+    () => data.filter((d) => d.is_active).map((d) => d.slug),
+    [data],
+  );
+  const frescor = useFrescorDashboards(slugsAtivos);
 
   const disponiveis = data.filter((d) => d.is_active).length;
   const emBreve = data.length - disponiveis;
@@ -127,10 +136,7 @@ export function HomePage() {
   }, []);
   const ultimoDashboard = data.find((d) => d.slug === ultimoSlug && d.is_active) ?? null;
 
-  const sincronizadoEm = Object.values(resumos)
-    .map((r) => r.dadosDe)
-    .filter((v): v is number => v !== null)
-    .sort((a, b) => b - a)[0];
+  const sincronizadoEm = Object.values(frescor).sort((a, b) => b - a)[0];
 
   return (
     <AppShell title="Central de Dashboards" subtitle="Selecione um painel para começar">
@@ -204,23 +210,23 @@ export function HomePage() {
               Dashboards disponíveis
             </h2>
             <p className="mt-0.5 text-xs text-ink-3">
-              Os números abaixo já estão carregados no seu navegador — os
-              painéis abrem na hora.
+              Os dados já estão carregados no seu navegador — os painéis abrem
+              na hora.
             </p>
           </div>
 
           {/*
             Sem esqueleto de carregamento nesta grade: o catálogo é estático
-            (ver useDashboards), então os cards existem no primeiro quadro.
-            Só os números-manchete chegam depois, do cache — e chegam dentro
-            de um espaço já reservado, sem mexer no card.
+            (ver useDashboards), então os cards existem no primeiro quadro. Só
+            a data do dado chega depois, do cache — e chega dentro de um
+            espaço já reservado, sem mexer no card.
           */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {data.map((d, i) => {
               const Icon = ICONS[d.icon] ?? LayoutDashboard;
               const accent = ACCENT[d.color] ?? ACCENT.fmp;
               const disabled = !d.is_active;
-              const resumo = resumos[d.slug];
+              const dadosDe = frescor[d.slug] ?? null;
               const ehUltimo = !disabled && d.slug === ultimoSlug;
 
               const CardBody = (
@@ -250,45 +256,24 @@ export function HomePage() {
                     <h3 className="fmp-kpi text-base leading-normal">
                       {d.title}
                     </h3>
-                    {/*
-                      ALTURA RESERVADA (min-h). Aqui mora a descrição até os
-                      números-manchete chegarem do cache, e os números depois.
-                      Sem a altura fixa, a troca mudava o tamanho do card e a
-                      grade inteira dava um pulo alguns segundos depois de a
-                      página abrir — a sensação exata de "ainda está
-                      carregando" que não pode existir. Com o espaço
-                      reservado, o número aparece com um fade no lugar que já
-                      era dele e nada mais se move.
-                    */}
-                    <div className="min-h-[3.5rem]">
-                      {resumo && resumo.itens.length > 0 ? (
-                        // Um item por linha, não em linha corrida: assim a
-                        // altura é previsível (são no máximo dois números) e
-                        // não depende de onde o texto resolve quebrar na
-                        // largura do card — é isso que mantém a reserva de
-                        // altura acima válida em qualquer resolução.
-                        <div className="animate-fade-in">
-                          {resumo.itens.map((item) => (
-                            <span key={item.rotulo} className="block truncate">
-                              <span className="fmp-kpi text-lg leading-normal">{item.valor}</span>{' '}
-                              <span className="text-2xs text-ink-3">{item.rotulo}</span>
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-xs leading-relaxed text-ink-3 line-clamp-2">
-                          {d.description}
-                        </p>
-                      )}
-                    </div>
+                    {/* ALTURA RESERVADA (min-h, 3 linhas): descrições de 1, 2
+                        e 3 linhas deixariam os cards com alturas diferentes e
+                        a grade visivelmente torta. */}
+                    <p className="min-h-[3.5rem] text-xs leading-relaxed text-ink-3 line-clamp-3">
+                      {d.description}
+                    </p>
                   </div>
 
+                  {/* A data do dado chega do cache alguns instantes depois de
+                      a página abrir. Ocupa o mesmo lugar e a mesma altura do
+                      texto que substitui, então nada se move quando ela
+                      aparece. */}
                   <div className="relative mt-5 flex items-center justify-between border-t border-line pt-4">
                     <span className="text-2xs text-ink-3">
                       {disabled
                         ? 'Aguardando ativação'
-                        : resumo?.dadosDe
-                          ? `Dados de ${formataDadosDe(resumo.dadosDe)}`
+                        : dadosDe
+                          ? `Dados de ${formataDadosDe(dadosDe)}`
                           : 'Acessar dashboard'}
                     </span>
                     <span
