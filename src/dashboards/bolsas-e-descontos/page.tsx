@@ -17,22 +17,20 @@ import {
   YAxis,
 } from 'recharts';
 import {
-  ArrowLeft,
   Award,
   GraduationCap,
   Percent,
-  RefreshCw,
   TrendingDown,
   Users,
   Wallet,
 } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
+import { BarraContexto } from '@/components/layout/BarraContexto';
+import { KpiDestaque, KpiDestaqueSkeleton } from '@/components/ui/KpiDestaque';
 import { StatCard, StatCardSkeleton, STAT_GRID_CLASSES, STAT_GRID_CONTAINER } from '@/components/ui/StatCard';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { ChartSkeleton } from '@/components/ui/Skeletons';
 import { ErrorState } from '@/components/ui/ErrorState';
-import { DataFreshness } from '@/components/ui/DataFreshness';
-import { AtualizandoAviso } from '@/components/ui/AtualizandoAviso';
 import { FONTES_POR_DASHBOARD } from '@/lib/dataFreshness';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CHART_TOOLTIP, CORES_CATEGORICAS, FMP_DARK, FMP_RED, NEUTRAL } from '@/lib/chartColors';
@@ -97,56 +95,16 @@ export function BolsasEDescontosPage() {
       subtitle="Performance e retenção de benefícios financeiros"
     >
       <div className="mx-auto max-w-7xl space-y-8 p-4 sm:p-6 lg:p-8">
-        {/* Hero */}
-        <section className="relative overflow-hidden rounded-lg hero-gradient p-6 text-cream shadow-card sm:p-8 animate-fade-in">
-          <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-fmp/20 blur-3xl" />
-
-          <div className="relative flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-            <div className="min-w-0">
-              <Link
-                to="/"
-                className="inline-flex items-center gap-1 text-2xs font-medium uppercase tracking-widest text-cream/60 transition hover:text-fmp no-underline"
-              >
-                <ArrowLeft className="h-3 w-3" />
-                Central de Dashboards
-              </Link>
-              <div className="mt-2">
-                <DataFreshness superficie="escura" tabelas={FONTES_POR_DASHBOARD['bolsas-e-descontos']} ritmos={freshnessRitmos} />
-                <AtualizandoAviso visivel={revalidando} />
-              </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium uppercase tracking-widest text-cream/85 ring-1 ring-inset ring-cream/15">
-                  <Percent className="h-3 w-3" />
-                  Financeiro
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium text-cream/85 ring-1 ring-inset ring-cream/15">
-                  <Award className="h-3 w-3" />
-                  Somente leitura
-                </span>
-              </div>
-              <h1
-                className="mt-3 text-2xl sm:text-3xl lg:text-4xl text-cream"
-                style={{ fontFamily: '"Noto Serif", Georgia, serif', fontStyle: 'italic', fontWeight: 500 }}
-              >
-                Bolsas e Descontos
-              </h1>
-              <p className="mt-2 max-w-xl text-sm leading-relaxed text-cream/70">
-                Performance e retenção de matrículas com benefícios financeiros.
-                Panorama geral de bolsas, descontos e faturamento, além da análise
-                de evasão relacionada a benefícios.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={refetch}
-              className="inline-flex items-center gap-1.5 rounded-pill bg-fmp px-3.5 py-2 text-2xs font-medium text-white transition hover:bg-fmp-dark no-underline"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${revalidando ? 'animate-spin' : ''}`} />
-              Atualizar
-            </button>
-          </div>
-        </section>
+        {/* Faixa de contexto — ver comentário em BarraContexto: o hero
+            escuro consumia 286px do topo repetindo o título da barra
+            superior e empurrando o primeiro número para 73% da tela. */}
+        <BarraContexto
+          descricao="Performance e retenção de matrículas com benefícios financeiros: panorama de bolsas, descontos e faturamento, além da evasão relacionada a benefícios. Os cálculos replicam o relatório original do Power BI, incluindo regras históricas de contagem."
+          tabelas={FONTES_POR_DASHBOARD['bolsas-e-descontos']}
+          ritmos={freshnessRitmos}
+          revalidando={revalidando}
+          onAtualizar={refetch}
+        />
 
         {/* Tabs */}
         <div className="flex items-center gap-1 rounded-md border border-line bg-white p-1 shadow-card w-fit">
@@ -200,20 +158,61 @@ export function BolsasEDescontosPage() {
         {/* Panorama Geral */}
         {tab === 'panorama' && (
           <>
-            {/* KPI cards */}
+            {/* Indicador principal + apoio.
+                A renúncia (original − líquido) é a pergunta que este painel
+                existe para responder — "quanto a FMP abre mão concedendo
+                benefícios" — e até aqui o usuário precisava subtrair de
+                cabeça dois cards. É derivada dos mesmos números já exibidos,
+                sem consulta nova. */}
             <section className={STAT_GRID_CONTAINER}>
-              <div className={STAT_GRID_CLASSES}>
-                {loading && Array.from({ length: 6 }).map((_, i) => <StatCardSkeleton key={i} index={i} />)}
-                {!loading && panorama && (
+              {/* 5 colunas: o destaque ocupa 2 colunas x 2 linhas e os seis
+                  cards de apoio preenchem exatamente o bloco 3x2 ao lado —
+                  sem sobra de espaço morto sob os números. */}
+              <div className="grid grid-cols-1 gap-4 @md:grid-cols-2 @4xl:grid-cols-5">
+                {loading && (
                   <>
-                    <StatCard index={0} label="Matrículas" value={fmtInt(panorama.kpis.matriculas)} hint="Alunos únicos (RA) matriculados no período. Este card reage só aos filtros de Período e Ano — Nível e Benefício não se aplicam a ele." icon={Users} color="fmp" highlight />
-                    <StatCard index={1} label="Bolsas" value={fmtInt(panorama.kpis.bolsas)} hint="Ocorrências de bolsa nas matrículas do recorte filtrado." icon={Award} color="fmp" />
-                    <StatCard index={2} label="Descontos" value={fmtInt(panorama.kpis.descontos)} hint="Ocorrências de desconto nas matrículas do recorte filtrado." icon={Percent} color="gray" />
-                    <StatCard index={3} label="Formados" value={fmtInt(panorama.kpis.formados)} icon={GraduationCap} color="gray" />
-                    <StatCard index={4} label="Faturamento original previsto" value={fmtBRLCompact(panorama.kpis.fatOriginalPrevisto)} exactValue={fmtBRL(panorama.kpis.fatOriginalPrevisto)} hint="Soma do valor original das mensalidades do recorte, antes de bolsas e descontos." icon={Wallet} color="fmp" />
-                    <StatCard index={5} label="Faturamento líquido previsto" value={fmtBRLCompact(panorama.kpis.fatDescontoPrevisto)} exactValue={fmtBRL(panorama.kpis.fatDescontoPrevisto)} hint="Faturamento previsto após aplicar bolsas e descontos." icon={Wallet} color="gray" />
+                    <KpiDestaqueSkeleton className="@md:col-span-2 @4xl:row-span-2" />
+                    {Array.from({ length: 6 }).map((_, i) => <StatCardSkeleton key={i} index={i} />)}
                   </>
                 )}
+                {!loading && panorama && (() => {
+                  const original = panorama.kpis.fatOriginalPrevisto;
+                  const liquido = panorama.kpis.fatDescontoPrevisto;
+                  const renuncia = original - liquido;
+                  const fatia = original > 0 ? renuncia / original : null;
+                  return (
+                    <>
+                      <KpiDestaque
+                        className="@md:col-span-2 @4xl:row-span-2"
+                        rotulo="Renúncia prevista em benefícios"
+                        valor={fmtBRLCompact(renuncia)}
+                        exato={fmtBRL(renuncia)}
+                        hint="Diferença entre o valor original das mensalidades e o valor líquido depois de bolsas e descontos — quanto a FMP deixa de faturar para conceder os benefícios do recorte filtrado. Indicador derivado, sem equivalente direto no relatório original."
+                        icon={TrendingDown}
+                        proporcao={fatia ?? undefined}
+                        proporcaoRotulo={
+                          fatia !== null
+                            ? `${Math.round(fatia * 100)}% do faturamento original de ${fmtBRLCompact(original)}`
+                            : undefined
+                        }
+                        apoio={
+                          <>
+                            Restam <strong className="font-semibold text-ink">{fmtBRLCompact(liquido)}</strong>{' '}
+                            de faturamento líquido previsto, distribuídos em{' '}
+                            <strong className="font-semibold text-ink">{fmtInt(panorama.kpis.matBeneFin)}</strong>{' '}
+                            matrículas com benefício.
+                          </>
+                        }
+                      />
+                      <StatCard index={0} label="Faturamento original previsto" value={fmtBRLCompact(original)} exactValue={fmtBRL(original)} hint="Soma do valor original das mensalidades do recorte, antes de bolsas e descontos." icon={Wallet} color="fmp" />
+                      <StatCard index={1} label="Faturamento líquido previsto" value={fmtBRLCompact(liquido)} exactValue={fmtBRL(liquido)} hint="Faturamento previsto após aplicar bolsas e descontos." icon={Wallet} color="gray" />
+                      <StatCard index={2} label="Matrículas" value={fmtInt(panorama.kpis.matriculas)} hint="Alunos únicos (RA) matriculados no período. Este card reage só aos filtros de Período e Ano — Nível e Benefício não se aplicam a ele." icon={Users} color="fmp" />
+                      <StatCard index={3} label="Bolsas" value={fmtInt(panorama.kpis.bolsas)} hint="Ocorrências de bolsa nas matrículas do recorte filtrado." icon={Award} color="fmp" />
+                      <StatCard index={4} label="Descontos" value={fmtInt(panorama.kpis.descontos)} hint="Ocorrências de desconto nas matrículas do recorte filtrado." icon={Percent} color="gray" />
+                      <StatCard index={5} label="Formados" value={fmtInt(panorama.kpis.formados)} icon={GraduationCap} color="gray" />
+                    </>
+                  );
+                })()}
               </div>
             </section>
 

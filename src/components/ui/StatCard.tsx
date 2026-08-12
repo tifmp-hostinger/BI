@@ -121,7 +121,17 @@ export function StatCard({
       <div className={`absolute inset-x-0 top-0 h-1 ${styles.bar}`} />
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="flex items-center gap-0.5 text-2xs font-semibold uppercase tracking-widest text-ink-3">
+          {/* min-h de 2 linhas: sem isso, rótulos de 1, 2 e 3 linhas empurram
+              o número para alturas diferentes e a grade fica visivelmente
+              torta. Reservar o espaço alinha todos os números na mesma
+              baseline. */}
+          {/* Texto corrido, não flex: como flex, o rótulo virava um item e o
+              "?" outro — em card estreito o rótulo tomava a largura toda e o
+              "?" era espremido por cima do ícone. Em texto corrido ele flui
+              junto e quebra linha com o rótulo.
+              min-h de 2 linhas: rótulos de 1, 2 e 3 linhas empurravam o
+              número para alturas diferentes e a grade ficava torta. */}
+          <p className="min-h-[2.2em] text-2xs font-semibold uppercase leading-tight tracking-widest text-ink-3">
             {label}
             {hint && <HintPopover hint={hint} label={label} />}
           </p>
