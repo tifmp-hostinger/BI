@@ -7,10 +7,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!--
+      Fonte carregada SEM bloquear a pintura.
+
+      Como <link rel="stylesheet"> comum, esta folha era render-blocking: o
+      navegador segurava a primeira pintura ate ela responder. Com o Google
+      Fonts alcancavel isso custa ~100ms e passa despercebido; numa rede que
+      bloqueia o dominio (proxy corporativo, filtro de conteudo) o navegador
+      so desiste depois do timeout de conexao — medimos 13 SEGUNDOS de tela
+      branca antes de qualquer coisa aparecer.
+
+      O truque do media="print": a folha e baixada com prioridade baixa e nao
+      se aplica a tela, entao nao bloqueia nada; quando termina, o onload a
+      promove para todas as midias. A URL ja pede display=swap, entao o texto
+      aparece na hora com a fonte de sistema e troca para a Outfit/Noto Serif
+      quando ela chega. O <noscript> cobre quem esta sem JavaScript.
+    -->
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Noto+Serif:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
     <title>FMP Analytics — Central de Dashboards</title>
     <!-- Configuracao de runtime: reescrito quando o container sobe, a partir das
          env vars. Script classico (nao module) para executar ANTES do bundle. -->
