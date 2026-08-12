@@ -12,14 +12,11 @@ import {
   YAxis,
 } from 'recharts';
 import {
-  ArrowLeft,
   BookOpen,
-  Building2,
   Compass,
   Filter,
   GraduationCap,
   MapPin,
-  RefreshCw,
   Sparkles,
   TrendingUp,
   Users,
@@ -27,12 +24,12 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
-import { StatCard, StatCardSkeleton, STAT_GRID_CLASSES, STAT_GRID_CONTAINER } from '@/components/ui/StatCard';
+import { BarraContexto } from '@/components/layout/BarraContexto';
+import { KpiDestaque, KpiDestaqueSkeleton } from '@/components/ui/KpiDestaque';
+import { StatCard, StatCardSkeleton, STAT_GRID_CONTAINER } from '@/components/ui/StatCard';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { ChartSkeleton } from '@/components/ui/Skeletons';
 import { ErrorState } from '@/components/ui/ErrorState';
-import { DataFreshness } from '@/components/ui/DataFreshness';
-import { AtualizandoAviso } from '@/components/ui/AtualizandoAviso';
 import { FONTES_POR_DASHBOARD, ritmoDoDataset } from '@/lib/dataFreshness';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BrazilStateMap } from '@/components/maps/BrazilStateMap';
@@ -139,61 +136,13 @@ export function PresencaNacionalPage() {
       subtitle="Distribuição de matrículas por estado"
     >
       <div className="mx-auto max-w-7xl space-y-8 p-4 sm:p-6 lg:p-8">
-        {/* Hero — dark editorial */}
-        <section className="relative overflow-hidden rounded-lg hero-gradient p-6 text-cream shadow-card sm:p-8 animate-fade-in">
-          <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-fmp/20 blur-3xl" />
-
-          <div className="relative flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-            <div className="min-w-0">
-              <Link
-                to="/"
-                className="inline-flex items-center gap-1 text-2xs font-medium uppercase tracking-widest text-cream/60 transition hover:text-fmp no-underline"
-              >
-                <ArrowLeft className="h-3 w-3" />
-                Central de Dashboards
-              </Link>
-              <div className="mt-2">
-                <DataFreshness superficie="escura" tabelas={FONTES_POR_DASHBOARD['presenca-nacional']} ritmos={freshnessRitmos} />
-                <AtualizandoAviso visivel={revalidando} />
-              </div>
-              {/* Sem pills numéricas aqui: Matrículas e Faturamento já são os
-                  StatCards logo abaixo — repetir o mesmo número duas vezes na
-                  mesma dobra só dividia a atenção. */}
-              {!loading && (
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium text-cream/85 ring-1 ring-inset ring-cream/15">
-                    <MapPin className="h-3 w-3" />
-                    {stats.ufsCount} UFs
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium text-cream/85 ring-1 ring-inset ring-cream/15">
-                    <Building2 className="h-3 w-3" />
-                    {stats.cidadesCount} cidades
-                  </span>
-                </div>
-              )}
-              <h1
-                className="fmp-display mt-3 text-2xl sm:text-3xl lg:text-4xl"
-                style={{ color: 'inherit' }}
-              >
-                Onde a FMP está presente
-              </h1>
-              <p className="mt-2 max-w-xl text-sm leading-relaxed text-cream/70">
-                Mapa das matrículas de Pós-graduação e Cursos Livres pelo
-                Brasil, somando todo o histórico. Clique em um estado para ver
-                cursos, cidades, situações e faturamento.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={refetch}
-              className="inline-flex items-center gap-1.5 self-start rounded-pill bg-fmp px-3.5 py-2 text-2xs font-medium text-white transition hover:bg-fmp-dark no-underline"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${revalidando ? 'animate-spin' : ''}`} />
-              Atualizar
-            </button>
-          </div>
-        </section>
+        <BarraContexto
+          descricao="Mapa das matrículas de Pós-graduação e Cursos Livres pelo Brasil, somando todo o histórico. Clique em um estado no mapa (ou numa barra do ranking) para ver cursos, cidades, situações e faturamento daquele estado."
+          tabelas={FONTES_POR_DASHBOARD['presenca-nacional']}
+          ritmos={freshnessRitmos}
+          revalidando={revalidando}
+          onAtualizar={refetch}
+        />
 
         {/* Filters */}
         <section className="relative z-20 flex flex-wrap items-center gap-3 rounded-md border border-line bg-white p-4 shadow-card animate-fade-in">
@@ -269,23 +218,45 @@ export function PresencaNacionalPage() {
         )}
 
         {/* KPI row */}
+        {/* Destaque + apoio. Nenhum número novo: o volume total vira o
+            indicador principal e as contagens de UFs e cidades — que antes
+            eram chips do hero — passam a card, para não se perderem. */}
         <section className={STAT_GRID_CONTAINER}>
-          <div className={STAT_GRID_CLASSES}>
-            {loading &&
-              Array.from({ length: 4 }).map((_, i) => (
-                <StatCardSkeleton key={i} index={i} />
-              ))}
+          <div className="grid grid-cols-1 gap-4 @md:grid-cols-2 @4xl:grid-cols-4">
+            {loading && (
+              <>
+                <KpiDestaqueSkeleton className="@md:col-span-2 @4xl:row-span-2" />
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <StatCardSkeleton key={i} index={i} />
+                ))}
+              </>
+            )}
             {!loading && (
               <>
-                <StatCard
-                  index={0}
-                  label="Total de matrículas"
-                  value={fmtInt(stats.total)}
-                  subtitle={`${fmtInt(stats.totalPos)} Pós + ${fmtInt(stats.totalLivres)} Livres`}
+                <KpiDestaque
+                  className="@md:col-span-2 @4xl:row-span-2"
+                  rotulo="Matrículas no Brasil"
+                  valor={fmtInt(stats.total)}
                   hint="Todas as matrículas do recorte filtrado, em qualquer situação, somando todo o histórico."
                   icon={Users}
+                  proporcao={stats.total > 0 ? stats.matriculados / stats.total : undefined}
+                  proporcaoRotulo={`${conversion}% com matrícula ativa`}
+                  apoio={
+                    <>
+                      <strong className="font-semibold text-ink">{fmtInt(stats.totalPos)}</strong> de
+                      Pós-graduação e{' '}
+                      <strong className="font-semibold text-ink">{fmtInt(stats.totalLivres)}</strong> de
+                      Cursos Livres.
+                    </>
+                  }
+                />
+                <StatCard
+                  index={0}
+                  label="Estados alcançados"
+                  value={fmtInt(stats.ufsCount)}
+                  subtitle={`${fmtInt(stats.cidadesCount)} cidades`}
+                  icon={MapPin}
                   color="fmp"
-                  highlight
                 />
                 <StatCard
                   index={1}

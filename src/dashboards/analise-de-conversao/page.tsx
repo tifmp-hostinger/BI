@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import {
   Bar,
   BarChart,
@@ -13,23 +12,15 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import {
-  ArrowLeft,
-  TrendingUp,
-  Users,
-  RefreshCw,
-  Radio,
-  Target,
-} from 'lucide-react';
+import { TrendingUp, Users, Radio } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
+import { BarraContexto } from '@/components/layout/BarraContexto';
 import { SectionCard } from '@/components/ui/SectionCard';
 import { ReorderableGrid, RItem } from '@/components/ui/ReorderableGrid';
 import { GaugeSemicircle } from '@/components/ui/GaugeSemicircle';
 import { StatCard, STAT_GRID_CLASSES, STAT_GRID_CONTAINER } from '@/components/ui/StatCard';
 import { ChartSkeleton, LoadingSteps } from '@/components/ui/Skeletons';
 import { ErrorState } from '@/components/ui/ErrorState';
-import { DataFreshness } from '@/components/ui/DataFreshness';
-import { AtualizandoAviso } from '@/components/ui/AtualizandoAviso';
 import { FONTES_POR_DASHBOARD } from '@/lib/dataFreshness';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
@@ -92,53 +83,15 @@ export function AnaliseDeConversaoPage() {
       subtitle="Funil comercial acadêmico completo - Graduação, Especializações, Mestrado e Cursos Livres"
     >
       <div className="mx-auto max-w-7xl space-y-8 p-4 sm:p-6 lg:p-8">
-        {/* Hero */}
-        <section className="relative overflow-hidden rounded-lg hero-gradient p-6 text-cream shadow-card sm:p-8 animate-fade-in">
-          <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-fmp/20 blur-3xl" />
-          <div className="relative flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-            <div className="min-w-0">
-              <Link
-                to="/"
-                className="inline-flex items-center gap-1 text-2xs font-medium uppercase tracking-widest text-cream/60 transition hover:text-fmp no-underline"
-              >
-                <ArrowLeft className="h-3 w-3" />
-                Central de Dashboards
-              </Link>
-              <div className="mt-2">
-                <DataFreshness superficie="escura" tabelas={FONTES_POR_DASHBOARD['analise-de-conversao']} ritmos={freshnessRitmos} />
-                <AtualizandoAviso visivel={revalidando} />
-              </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium uppercase tracking-widest text-cream/85 ring-1 ring-inset ring-cream/15">
-                  <Target className="h-3 w-3" />
-                  Comercial
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-cream/10 px-3 py-1 text-2xs font-medium text-cream/85 ring-1 ring-inset ring-cream/15">
-                  <TrendingUp className="h-3 w-3" />
-                  Somente leitura
-                </span>
-              </div>
-              <h1
-                className="fmp-display mt-3 text-2xl sm:text-3xl lg:text-4xl"
-                style={{ color: 'inherit' }}
-              >
-                Análise de Conversão
-              </h1>
-              <p className="mt-2 max-w-xl text-sm leading-relaxed text-cream/70">
-                Funil comercial completo: leads, inscrições e matrículas por
-                processo, com os mesmos números do relatório original.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={refetch}
-              className="inline-flex items-center gap-1.5 rounded-pill bg-fmp px-3.5 py-2 text-2xs font-medium text-white transition hover:bg-fmp-dark no-underline"
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${revalidando ? 'animate-spin' : ''}`} />
-              Atualizar
-            </button>
-          </div>
-        </section>
+        {/* Idem Presidência: a aba Geral já tem os quatro gauges de meta
+            como hierarquia; um destaque extra competiria com eles. */}
+        <BarraContexto
+          descricao="Funil comercial completo — leads, inscrições e matrículas por processo (Graduação, Especializações, Mestrado e Cursos Livres) —, com os mesmos números do relatório original do Power BI."
+          tabelas={FONTES_POR_DASHBOARD['analise-de-conversao']}
+          ritmos={freshnessRitmos}
+          revalidando={revalidando}
+          onAtualizar={refetch}
+        />
 
         {/* Tabs */}
         <div

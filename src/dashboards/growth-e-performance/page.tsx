@@ -8,6 +8,7 @@ import {
   DollarSign,
   Facebook,
   Filter,
+  HelpCircle,
   Map as MapIcon,
   Clock,
   PanelLeftClose,
@@ -23,7 +24,9 @@ import {
 } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { SectionCard } from '@/components/ui/SectionCard';
-import { StatCard, StatCardSkeleton, STAT_GRID_CLASSES, STAT_GRID_CONTAINER } from '@/components/ui/StatCard';
+import { StatCard, StatCardSkeleton, STAT_GRID_CONTAINER } from '@/components/ui/StatCard';
+import { KpiDestaque, KpiDestaqueSkeleton } from '@/components/ui/KpiDestaque';
+import { BalaoInfo } from '@/components/ui/BalaoInfo';
 import { ChartSkeleton, LoadingSteps } from '@/components/ui/Skeletons';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
@@ -43,6 +46,19 @@ import {
   SerieMensalView,
 } from './components/GrowthViews';
 import type { Fonte, GrowthFilters, GrowthView } from './types';
+
+/**
+ * Grade da faixa de KPIs deste painel — não usa STAT_GRID_CLASSES porque
+ * aqui existe um card-herói e a grade precisa fechar sem sobras.
+ *
+ * A coluna de conteúdo do Growth é a mais estreita do app (divide espaço com
+ * o painel de filtros e, a partir de xl, com o funil de 300px), por isso um
+ * degrau intermediário de 3 colunas: em 5 colunas o herói ocupa 2×2 e os
+ * seis cards de apoio fecham 3×2; em 3 colunas o herói ocupa a linha inteira
+ * e os seis caem em 3+3; em 2 colunas, 3 linhas de 2. Nenhuma sobra.
+ */
+const GRADE_KPI = 'grid grid-cols-1 gap-4 @sm:grid-cols-2 @2xl:grid-cols-3 @4xl:grid-cols-5';
+const HERO_SPAN = '@sm:col-span-2 @2xl:col-span-3 @4xl:col-span-2 @4xl:row-span-2';
 
 type TabId = 'campanhas' | 'mapa' | 'horarios' | 'series' | 'origem';
 
@@ -145,7 +161,17 @@ export function GrowthEPerformancePage() {
   const [dataFim, setDataFim] = useState<string | null>(hojeISO);
   const [periodoLetivo, setPeriodoLetivo] = useState<string[]>([]);
   const [fimDeSemana, setFimDeSemana] = useState<'Fim de Semana' | 'Dia de Semana' | null>(null);
-  const [painelAberto, setPainelAberto] = useState(true);
+  /**
+   * Em telas estreitas o painel de filtros deixa de ser coluna lateral e vira
+   * um bloco de largura inteira ACIMA do conteúdo. Aberto por padrão, ele
+   * ocupava sozinho a primeira tela no celular: o primeiro número só aparecia
+   * por volta dos 800px, muito abaixo da dobra. Recolhido, é uma barra de uma
+   * linha que ainda mostra o produto selecionado e abre com um toque.
+   * A partir de lg (coluna lateral de verdade), continua aberto.
+   */
+  const [painelAberto, setPainelAberto] = useState(
+    () => typeof window === 'undefined' || window.matchMedia('(min-width: 1024px)').matches,
+  );
 
   const viewsVisiveis = viewsDoProduto(produto);
   // Se a aba ativa não existe no produto atual (Mapa em Cursos Livres),
@@ -232,6 +258,20 @@ export function GrowthEPerformancePage() {
             </Link>
             <DataFreshness tabelas={FONTES_POR_DASHBOARD['growth-e-performance']} ritmos={freshnessRitmos} />
             <AtualizandoAviso visivel={revalidando} />
+            {/* Mesmo "?" de contexto que os outros painéis ganharam na
+                BarraContexto — aqui embutido na barra própria do Growth,
+                que já carrega os botões de fonte. */}
+            <BalaoInfo
+              rotuloAcao="O que este painel mostra"
+              gatilho={<HelpCircle className="h-3.5 w-3.5" strokeWidth={2.2} />}
+            >
+              <span className="block text-2xs leading-relaxed text-ink-2">
+                Quanto foi investido em mídia paga (Google e Meta) e o que esse
+                investimento devolveu em leads, matrículas e faturamento, por
+                produto. Período Letivo e Fim de Semana filtram apenas os leads
+                do CRM — o investimento não é filtrado por eles.
+              </span>
+            </BalaoInfo>
           </div>
           <div className="flex items-center gap-2">
             <span className="hidden text-xs text-ink-3 sm:inline">Olá, Equipe FMP</span>
@@ -286,10 +326,18 @@ export function GrowthEPerformancePage() {
           >
             <div className="rounded-md border border-line bg-white p-3 shadow-card lg:sticky lg:top-4">
               <div className="flex items-center justify-between">
-                {painelAberto && (
+                {painelAberto ? (
                   <span className="inline-flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-widest text-ink-3">
                     <Filter className="h-3 w-3" />
                     Filtros
+                  </span>
+                ) : (
+                  // Recolhido no celular: sem isso a barra não dizia qual
+                  // produto está selecionado — e produto é a navegação
+                  // principal deste painel. Em lg a coluna tem 40px, não cabe.
+                  <span className="inline-flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-widest text-ink-3 lg:hidden">
+                    <Filter className="h-3 w-3" />
+                    Filtros · {produto}
                   </span>
                 )}
                 <button
@@ -431,8 +479,9 @@ export function GrowthEPerformancePage() {
               {loading ? (
                 <>
                   <section className={STAT_GRID_CONTAINER}>
-                    <div className={STAT_GRID_CLASSES}>
-                      {Array.from({ length: 8 }).map((_, i) => (
+                    <div className={GRADE_KPI}>
+                      <KpiDestaqueSkeleton className={HERO_SPAN} />
+                      {Array.from({ length: 6 }).map((_, i) => (
                         <StatCardSkeleton key={i} index={i} />
                       ))}
                     </div>
@@ -497,8 +546,39 @@ export function GrowthEPerformancePage() {
                         reage ao colapsar/expandir o menu lateral, que muda a
                         largura do container sem mudar a viewport. */}
                     <section className={STAT_GRID_CONTAINER}>
-                      <div className={STAT_GRID_CLASSES}>
-                        <StatCard index={0} label="Investimento" value={fmtBRLCompact(media.investimento)} exactValue={exatoBRL(media.investimento)} hint={HINTS.investimento} icon={DollarSign} color="fmp" highlight />
+                      <div className={GRADE_KPI}>
+                        {/* Investimento promovido a card-herói: é o número que
+                            responde à pergunta da tela ("quanto colocamos e o
+                            que voltou") e era o único com `highlight`, uma
+                            distinção fraca demais no meio de oito cards
+                            iguais. O retorno vem na linha de leitura — todos
+                            números que já estavam nesta mesma faixa. */}
+                        <KpiDestaque
+                          className={HERO_SPAN}
+                          rotulo="Investimento em mídia paga"
+                          valor={fmtBRLCompact(media.investimento)}
+                          exato={exatoBRL(media.investimento)}
+                          hint={HINTS.investimento}
+                          icon={DollarSign}
+                          apoio={
+                            <>
+                              <span className="block">
+                                Retornou{' '}
+                                <strong className="font-semibold text-ink">
+                                  {fmtBRLCompact(negocio.faturamento)}
+                                </strong>{' '}
+                                em faturamento
+                                {negocio.roas !== null && (
+                                  <> — {fmtRatio(negocio.roas)} para cada R$ 1 investido</>
+                                )}
+                                .
+                              </span>
+                              <span className="mt-1 block text-ink-3">
+                                {fmtInt(media.leads)} leads · {fmtInt(negocio.matriculas)} matrículas no período
+                              </span>
+                            </>
+                          }
+                        />
                         <StatCard index={1} label="Ticket Médio" value={fmtOrDash(negocio.ticketMedio, fmtBRLCompact)} exactValue={exatoBRL(negocio.ticketMedio)} hint={HINTS.ticketMedio} icon={Wallet} color="fmp" />
                         {/* ROAS e "ROAS Mídia" eram dois cards quase iguais
                             sem distinção visível — viraram um card com o
