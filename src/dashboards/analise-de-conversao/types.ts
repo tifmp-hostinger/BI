@@ -145,8 +145,6 @@ export type FilterOptions = {
   codperletOptions: string[];
   anoOptions: number[];
   mesOptions: { numero: number; nome: string }[];
-  /** Período letivo vigente (maior índice do pletivo) — default do filtro. */
-  periodoVigente: string | null;
 };
 
 export type CalendarEntry = {

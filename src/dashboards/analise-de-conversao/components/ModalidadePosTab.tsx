@@ -53,6 +53,13 @@ export function ModalidadePosTab({ loading, data }: Props) {
 
   if (!data) return null;
 
+  // Slug sem espaço nem acento para os ids de gradiente SVG. Os ids eram
+  // montados com a modalidade crua ("Pós EAD"), gerando id="barCursoPós EAD"
+  // e fill="url(#barCursoPós EAD)": espaço não é válido em id de HTML nem
+  // dentro de url(), então a referência não resolvia e as barras ficavam sem
+  // preenchimento.
+  const idMod = data.modalidade === 'Pós EAD' ? 'ead' : 'presencial';
+
   const mapData: StateAgg[] = data.fatPorEstado.map((e) => ({
     uf: e.uf,
     total: Math.round(e.total),
@@ -88,7 +95,7 @@ export function ModalidadePosTab({ loading, data }: Props) {
             <ResponsiveContainer width="100%" height={Math.max(280, Math.min(data.fatPorCurso.length, 15) * 28)}>
               <BarChart data={data.fatPorCurso.slice(0, 15)} layout="vertical" margin={{ top: 4, right: 80, left: 0, bottom: 4 }}>
                 <defs>
-                  <linearGradient id={`barCurso${data.modalidade}`} x1="0" y1="0" x2="1" y2="0">
+                  <linearGradient id={`barCurso${idMod}`} x1="0" y1="0" x2="1" y2="0">
                     <stop offset="0%" stopColor={FMP_RED} stopOpacity={0.95} />
                     <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.85} />
                   </linearGradient>
@@ -97,7 +104,7 @@ export function ModalidadePosTab({ loading, data }: Props) {
                 <XAxis type="number" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
                 <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#3A3838' }} tickLine={false} axisLine={false} width={180} tickFormatter={(v: string) => truncateLabel(v, 24)} />
                 <Tooltip cursor={{ fill: 'rgba(238,42,66,0.05)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtBRLCompact(v as number), 'Faturamento']} />
-                <Bar dataKey="valor" fill={`url(#barCurso${data.modalidade})`} radius={[4, 8, 8, 4]} maxBarSize={24}>
+                <Bar dataKey="valor" fill={`url(#barCurso${idMod})`} radius={[4, 8, 8, 4]} maxBarSize={24}>
                   <LabelList dataKey="valor" position="right" formatter={(v: unknown) => fmtBRLCompact(v as number)} style={{ fontSize: 10, fill: '#3A3838', fontWeight: 700 }} />
                 </Bar>
               </BarChart>
@@ -114,7 +121,7 @@ export function ModalidadePosTab({ loading, data }: Props) {
             <ResponsiveContainer width="100%" height={Math.max(280, Math.min(data.topDescontosFat.length, 10) * 28)}>
               <BarChart data={data.topDescontosFat.slice(0, 10)} layout="vertical" margin={{ top: 4, right: 80, left: 0, bottom: 4 }}>
                 <defs>
-                  <linearGradient id={`barDesc${data.modalidade}`} x1="0" y1="0" x2="1" y2="0">
+                  <linearGradient id={`barDesc${idMod}`} x1="0" y1="0" x2="1" y2="0">
                     <stop offset="0%" stopColor={FMP_RED} stopOpacity={0.9} />
                     <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
                   </linearGradient>
@@ -123,7 +130,7 @@ export function ModalidadePosTab({ loading, data }: Props) {
                 <XAxis type="number" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
                 <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#3A3838' }} tickLine={false} axisLine={false} width={180} tickFormatter={(v: string) => truncateLabel(v, 24)} />
                 <Tooltip cursor={{ fill: 'rgba(238,42,66,0.05)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtBRLCompact(v as number), 'Faturamento']} />
-                <Bar dataKey="valor" fill={`url(#barDesc${data.modalidade})`} radius={[4, 8, 8, 4]} maxBarSize={24} />
+                <Bar dataKey="valor" fill={`url(#barDesc${idMod})`} radius={[4, 8, 8, 4]} maxBarSize={24} />
               </BarChart>
             </ResponsiveContainer>
           )}

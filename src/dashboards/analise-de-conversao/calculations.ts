@@ -140,16 +140,23 @@ export function buildFilterOptions(ds: DashboardDataset) {
     nome: c.mesNome,
   }));
 
-  // Período letivo VIGENTE (maior índice do pletivo) — mesma regra usada em
-  // computeGraduacaoData para as vagas. Exposto para a página pré-selecionar
-  // o filtro: sem ele, a aba Graduação somava matrículas de TODOS os
-  // períodos e dividia pelas vagas só do atual — o gauge "% da meta" abria
-  // inflado por padrão.
-  const periodoVigente =
-    [...ds.pletivo].sort((a, b) => (a.indice ?? 0) - (b.indice ?? 0)).slice(-1)[0]
-      ?.periodo_letivo ?? null;
-
-  return { codperletOptions, anoOptions, mesOptions, periodoVigente };
+  /*
+   * NÃO reintroduzir aqui um `periodoVigente` para pré-selecionar o filtro.
+   *
+   * Esse campo existiu, era calculado, tipado — e não tinha um único leitor.
+   * Ele é resíduo de uma tentativa anterior: pré-selecionar o período letivo
+   * vigente por padrão corrigia o gauge da Graduação (que soma matrículas de
+   * todos os períodos e divide pelas vagas só do atual), mas QUEBRAVA o gauge
+   * das Especializações, cujo cálculo não é por período letivo. A tentativa
+   * foi revertida e só o cálculo morto sobreviveu, dando a impressão de que
+   * um padrão estava aplicado quando não estava.
+   *
+   * O desalinhamento da Graduação continua real e está no relatório de
+   * revisão. Consertá-lo é acertar numerador e denominador dentro da própria
+   * aba — não voltar a mexer no filtro global, que é compartilhado com abas
+   * que têm outra regra.
+   */
+  return { codperletOptions, anoOptions, mesOptions };
 }
 
 function filterRubeusByDate(
@@ -216,9 +223,13 @@ function filterRubeusFull(
   const windows = pletivoWindows(ds, filters);
   if (windows.length > 0) {
     rows = rows.filter((r) => {
-      const d = parseFlexibleDate(r.momento_date);
-      if (!d) return false;
-      const iso = d.toISOString().slice(0, 10);
+      // toISODate (hora local), não toISOString (UTC): parseFlexibleDate
+      // devolve meia-noite LOCAL, e converter isso para UTC desloca o dia em
+      // qualquer fuso a leste de Greenwich — a borda da janela do período
+      // letivo passaria a incluir/excluir um dia errado. Em UTC-3 os dois
+      // davam o mesmo resultado; o resto do arquivo já usava toISODate.
+      const iso = toISODate(r.momento_date);
+      if (!iso) return false;
       return windows.some((w) => iso >= w.ini && iso <= w.fim);
     });
   }
@@ -245,6 +256,32 @@ function filterRubeusByAnoMes(
     });
   }
   return out;
+}
+
+/**
+ * Meta de faturamento das Especializações para o recorte selecionado.
+ *
+ * Antes, os dois pontos que calculavam isso (Geral e Especializações) faziam
+ * `const anoCorrente = filters.ano[0]` — o PRIMEIRO ano da seleção, que é a
+ * ordem de clique do usuário, não um critério. Com dois anos marcados, o
+ * faturamento somava os dois (é o que `filterBasePosByAnoMes` faz) e a meta
+ * somava um só: o gauge de "% da meta" aparecia praticamente dobrado. Agora a
+ * meta cobre exatamente os mesmos anos que o numerador.
+ */
+function somaMetaPos(
+  metaPos: DashboardDataset['metaPos'],
+  filters: ConversaoFilters,
+): number {
+  const anos = filters.ano.length > 0 ? filters.ano : [new Date().getFullYear()];
+  const anoSet = new Set(anos);
+  const mesSet = filters.mes.length > 0 ? new Set(filters.mes) : null;
+  let total = 0;
+  for (const meta of metaPos) {
+    if (!anoSet.has(meta.ano)) continue;
+    if (mesSet && !mesSet.has(meta.mes_numero)) continue;
+    total += Number(meta.meta);
+  }
+  return total;
 }
 
 export function computeGeralKpis(
@@ -308,30 +345,39 @@ export function computeGeralKpis(
     .reduce((s, r) => s + parseDecimal(r.faturadoliq), 0);
   const especFat = especFatEad + especFatPres;
 
-  let especMetaFat = 0;
-  if (filters.mes.length > 0) {
-    for (const m of filters.mes) {
-      for (const meta of ds.metaPos) {
-        if (meta.ano === anoCorrente && meta.mes_numero === m) {
-          especMetaFat += Number(meta.meta);
-        }
-      }
-    }
-  } else {
-    for (const meta of ds.metaPos) {
-      if (meta.ano === anoCorrente) especMetaFat += Number(meta.meta);
-    }
-  }
+  const especMetaFat = somaMetaPos(ds.metaPos, filters);
   const especPctMeta = especMetaFat > 0 ? especFat / especMetaFat : 0;
 
-  const mestMat = ds.matriculasMestrado.filter((r) => {
-    if (r.tipomatricula !== 'Nova Matricula' || r.situacao !== 'Matriculado') return false;
-    if (filters.ano.length > 0) {
-      const a = anoFromCodperletStr(normalizeCodperlet(r.codperlet));
-      if (a === null || !filters.ano.includes(a)) return false;
-    }
-    return true;
-  }).length;
+  // Mesma regra da aba Mestrado, que era mais criteriosa que esta: RA
+  // DISTINTO e descontando quem cancelou. Aqui contava LINHAS e mantinha o
+  // cancelado, então os dois gauges rotulados "Mestrado | Meta" — o do Geral
+  // e o da aba — mostravam números diferentes para a mesma métrica.
+  //
+  // O RM não atualiza a linha "Matriculado" ao cancelar: grava uma segunda
+  // linha para o mesmo RA com SITUACAO_CANCELADO_CURSO e a antiga permanece.
+  // Por isso o RA cancelado precisa ser levantado à parte.
+  const noAnoFiltrado = (codperlet: string | null) => {
+    if (filters.ano.length === 0) return true;
+    const a = anoFromCodperletStr(normalizeCodperlet(codperlet));
+    return a !== null && filters.ano.includes(a);
+  };
+  const mestCanceladosRas = new Set<string>();
+  for (const r of ds.matriculasMestrado) {
+    if (r.tipomatricula !== 'Nova Matricula' || r.situacao !== SITUACAO_CANCELADO_CURSO) continue;
+    if (!noAnoFiltrado(r.codperlet)) continue;
+    if (r.ra) mestCanceladosRas.add(r.ra);
+  }
+  const mestMat = new Set(
+    ds.matriculasMestrado
+      .filter(
+        (r) =>
+          r.tipomatricula === 'Nova Matricula' &&
+          r.situacao === 'Matriculado' &&
+          noAnoFiltrado(r.codperlet),
+      )
+      .map((r) => r.ra)
+      .filter((ra): ra is string => !!ra && !mestCanceladosRas.has(ra)),
+  ).size;
 
   const mestMeta = MEST_META;
   const mestPctMeta = mestMat / mestMeta;
@@ -464,8 +510,33 @@ function computeConvLeadsMat(
  * (Ano/Mês/faixa de datas). Sem filtro, mantém o calendário completo — evita
  * o gráfico "vazio com um espigão" quando o usuário filtra um período curto.
  */
+/**
+ * Meses do eixo, respeitando os filtros.
+ *
+ * CALENDAR é fixo (2024-2026, herdado da tabela `calendário` do Power BI),
+ * mas as opções do filtro Ano vêm dos dados vivos. Assim que a primeira linha
+ * de 2027 entrar — matrícula de vestibular 2027/1 abre ainda em 2026 — o ano
+ * fica selecionável e não existe nenhum mês dele no CALENDAR: todo gráfico
+ * "por mês" abriria vazio, sem erro e sem explicação. Os meses de um ano
+ * selecionado que o CALENDAR não cobre são gerados aqui na hora.
+ */
+function mesesDoAno(ano: number) {
+  return Array.from({ length: 12 }, (_, i) => ({
+    date: `${ano}-${String(i + 1).padStart(2, '0')}-01`,
+    ano,
+    mes: i + 1,
+    mesNome: CALENDAR[i].mesNome,
+    ordemFiscal: fiscalSortKey(ano, i + 1),
+  }));
+}
+
 function calendarForFilters(filters: ConversaoFilters) {
-  return CALENDAR.filter((c) => {
+  const anosFaltando = filters.ano.filter((a) => !CALENDAR.some((c) => c.ano === a));
+  const base =
+    anosFaltando.length > 0
+      ? [...CALENDAR, ...anosFaltando.flatMap(mesesDoAno)]
+      : CALENDAR;
+  return base.filter((c) => {
     if (filters.ano.length > 0 && !filters.ano.includes(c.ano)) return false;
     if (filters.mes.length > 0 && !filters.mes.includes(c.mes)) return false;
     const ym = c.ano * 100 + c.mes;
@@ -798,15 +869,18 @@ export function computeGraduacaoData(
   const matPre = matPreRas.size;
 
   const bolsistaRas = getSharedSets(ds).bolsistaRas;
-  const matBolsas = matRows.filter(
-    (r) =>
-      r.tipomatricula === 'Nova Matricula' &&
-      r.situacao === 'Matriculado' &&
-      r.aluno &&
-      r.ra &&
-      bolsistaRas.has(r.ra) &&
-      !matCancRas.has(r.ra),
-  ).length;
+  // RA distinto, não contagem de linhas: `matEfet` acima é um Set de RAs, e
+  // subtrair uma contagem de LINHAS dele fazia "Pagantes" ficar menor que o
+  // real sempre que o mesmo RA tivesse mais de uma linha — podendo até ficar
+  // negativo. Os dois lados da subtração agora contam a mesma coisa.
+  const matBolsasRas = new Set<string>();
+  for (const r of matRows) {
+    if (r.tipomatricula !== 'Nova Matricula' || r.situacao !== 'Matriculado') continue;
+    if (!r.aluno || !r.ra) continue;
+    if (!bolsistaRas.has(r.ra) || matCancRas.has(r.ra)) continue;
+    matBolsasRas.add(r.ra);
+  }
+  const matBolsas = matBolsasRas.size;
 
   const matPgt = matEfet - matBolsas;
 
@@ -1027,6 +1101,12 @@ export function computeMestradoData(
   const matQualificadasRas = new Set<string>();
   for (const r of ds.matriculasMestrado) {
     if (!r.ra || !r.aluno) continue;
+    // O recorte (Período Letivo / Ano) faltava AQUI e estava presente no
+    // denominador `mat`: o numerador varria a base inteira, então filtrar um
+    // período fazia o card exibir centenas por cento. No Power BI a medida
+    // respeita o contexto de filtro automaticamente — restaurar o recorte é
+    // voltar à paridade, não mudar a regra.
+    if (!pertenceAoRecorte(r.codperlet)) continue;
     const sit = (r.situacao ?? '').trim();
     if (sit !== 'Matriculado' && sit !== 'Matriculado- Pendente Contrato') continue;
     if (rubeusNames.has(r.aluno.trim())) matQualificadasRas.add(r.ra);
@@ -1158,21 +1238,7 @@ export function computeEspecializacoesData(
   // (valor original das bolsas vs faturado) não está disponível nos dados carregados.
   const descontoMedio = 0;
 
-  const anoCorrente = filters.ano.length > 0 ? filters.ano[0] : new Date().getFullYear();
-  let metaFat = 0;
-  if (filters.mes.length > 0) {
-    for (const m of filters.mes) {
-      for (const meta of ds.metaPos) {
-        if (meta.ano === anoCorrente && meta.mes_numero === m) {
-          metaFat += Number(meta.meta);
-        }
-      }
-    }
-  } else {
-    for (const meta of ds.metaPos) {
-      if (meta.ano === anoCorrente) metaFat += Number(meta.meta);
-    }
-  }
+  const metaFat = somaMetaPos(ds.metaPos, filters);
   const pctMeta = metaFat > 0 ? fat / metaFat : 0;
 
   const fatMensal: EspecializacoesMensalDatum[] = [];

@@ -58,8 +58,16 @@ export function GraduacaoTab({ loading, data }: Props) {
           <StatCard index={2} label="Matrículas efetivas" value={fmtInt(data.matEfet)} icon={GraduationCap} color="fmp" />
           <StatCard index={3} label="Vagas" value={fmtInt(data.vagas)} icon={TrendingUp} color="gray" />
           <StatCard index={4} label="Matrículas canceladas" value={fmtInt(data.matCanc)} icon={TrendingUp} color="gray" />
-          <StatCard index={5} label="% Leads → Inscrições" value={fmtPct(data.pctConvIxL)} hint="Inscrições ÷ leads do recorte filtrado: de cada 100 interessados, quantos se inscreveram." icon={TrendingUp} color="gray" />
-          <StatCard index={6} label="% Inscrições → Matrículas" value={fmtPct(data.pctConvMxI)} hint="Matrículas efetivas ÷ inscrições: de cada 100 inscritos, quantos se matricularam." icon={TrendingUp} color="gray" />
+          {/* Os dois hints abaixo descreviam um denominador que a fórmula não
+              usa. O divisor NÃO é o card "Inscrições" (contagem distinta de
+              CPF nas inscrições): é a contagem de LEADS do CRM cujo nome
+              consta na lista de inscritos — regra herdada do Power BI. São
+              números diferentes, e por isso a razão podia passar de 100% e
+              contradizer o card ao lado. Mesma decisão já tomada em Mestrado
+              e Cursos Livres: corrigir o rótulo para descrever a fórmula
+              real, não mexer na fórmula. */}
+          <StatCard index={5} label="% Leads → Inscrições" value={fmtPct(data.pctConvIxL)} hint="Leads do CRM que aparecem na lista de inscritos, divididos pelo total de leads do recorte. Não usa o número do card Inscrições (que conta CPF distinto), e sim o cruzamento por nome herdado do Power BI." icon={TrendingUp} color="gray" />
+          <StatCard index={6} label="% Inscrições → Matrículas" value={fmtPct(data.pctConvMxI)} hint="Matrículas efetivas divididas pelos leads que viraram inscrição (mesmo cruzamento por nome do card anterior) — não pelo card Inscrições. Por serem bases diferentes, o valor pode passar de 100%." icon={TrendingUp} color="gray" />
         </div>
       </section>
 

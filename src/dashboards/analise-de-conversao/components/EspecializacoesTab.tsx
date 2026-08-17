@@ -170,7 +170,11 @@ export function EspecializacoesTab({ loading, data }: Props) {
             )}
           </SectionCard>
 
-          <SectionCard title="Faturamento por Estrutura Academica (TCC)" subtitle="TCC vs Sem TCC" icon={GraduationCap}>
+          {/* Título corrigido: `fatPorTcc` conta MATRÍCULAS (comTcc/semTcc são
+              contagens de linhas), não reais. O nome "Faturamento" vinha do
+              card vizinho, esse sim em reais — lado a lado, os dois pareciam
+              a mesma unidade. O tooltip já formatava como inteiro. */}
+          <SectionCard title="Matrículas por Estrutura Acadêmica (TCC)" subtitle="TCC vs Sem TCC" icon={GraduationCap}>
             {data.fatPorTcc.length === 0 || data.fatPorTcc.every((d) => d.valor === 0) ? (
               <EmptyState title="Sem dados para os filtros selecionados" />
             ) : (

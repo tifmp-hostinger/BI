@@ -45,8 +45,22 @@ export function fiscalLabel(ano: number, mes: number): string {
   return `${ano} ${nome}`;
 }
 
+/**
+ * Ordem do eixo dos gráficos "por mês" — CRONOLÓGICA.
+ *
+ * Antes era `ano * 100 + (mes >= 11 ? mes - 10 : mes + 2)`, herdado da coluna
+ * de ordenação fiscal do Power BI (ano começando em novembro, que é onde a
+ * tabela `calendário` do modelo original começava). O deslocamento mexia no
+ * MÊS mas não no ANO, então novembro e dezembro caíam ANTES de janeiro do
+ * mesmo ano civil: o eixo lia "2025 novembro, 2025 dezembro, 2025 janeiro,
+ * 2025 fevereiro…". Em série temporal isso não é uma convenção fiscal, é um
+ * eixo fora de ordem — a linha sobe e desce em cima de uma sequência que não
+ * é a do tempo.
+ *
+ * Nenhum número muda com esta correção: só a posição dos pontos no eixo.
+ */
 export function fiscalSortKey(ano: number, mes: number): number {
-  return ano * 100 + (mes >= 11 ? mes - 10 : mes + 2);
+  return ano * 100 + mes;
 }
 
 /**
