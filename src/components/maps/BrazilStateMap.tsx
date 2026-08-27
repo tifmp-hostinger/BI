@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { BR_STATES, nameOf, type BrState } from '@/lib/brStates';
@@ -42,13 +42,46 @@ const MALHA_ESTILO = {
   fillOpacity: 1,
 } as const;
 
-/** Estado selecionado: a própria forma acende, não só a bolha. */
-const MALHA_ESTILO_SELECIONADO = {
+/**
+ * Passagem do mouse: vermelho CLARO. É um convite ("dá para clicar aqui"), e
+ * precisa ser distinguível do estado fixado quando os dois aparecem juntos —
+ * um em vermelho claro e o outro em vermelho forte se leem de relance; dois
+ * tons do mesmo vermelho, não.
+ */
+const MALHA_ESTILO_HOVER = {
   color: '#EE2A42',
-  weight: 1.6,
-  fillColor: '#FBD7DC',
+  weight: 1.4,
+  fillColor: '#FBD7DC', // fmp-light
   fillOpacity: 1,
 } as const;
+
+/** Estado fixado no clique: a própria forma acende, não só a bolha. */
+const MALHA_ESTILO_SELECIONADO = {
+  color: '#B81E32', // fmp-pressed
+  weight: 2.4,
+  fillColor: '#F9BAC2', // fmp-200
+  fillOpacity: 1,
+} as const;
+
+/**
+ * Estilo de uma UF a partir do estado atual. Seleção VENCE a passagem do
+ * mouse: passar por cima do estado já fixado não deve rebaixá-lo para o tom
+ * claro, que pareceria perda da seleção.
+ */
+function estiloDaUf(uf: string, selecionada: string | null, sobMouse: string | null) {
+  if (uf === selecionada) return { ...MALHA_ESTILO_SELECIONADO };
+  if (uf === sobMouse) return { ...MALHA_ESTILO_HOVER };
+  return { ...MALHA_ESTILO };
+}
+
+/**
+ * Ponteiro grosso (dedo) não tem "passar o mouse": o toque dispara mouseover e
+ * NUNCA o mouseout correspondente, o que deixaria um estado aceso para sempre
+ * ao lado do que foi realmente fixado — dois destaques, nenhum confiável.
+ */
+function ehToqueGrosso(): boolean {
+  return typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches;
+}
 
 /** Limites do Brasil: o enquadramento inicial mostra o país INTEIRO em
  * qualquer largura de tela — antes o zoom fixo 4 cortava o Nordeste no
@@ -104,12 +137,68 @@ export function BrazilStateMap({
   const mapRef = useRef<L.Map | null>(null);
   const layerRef = useRef<L.LayerGroup | null>(null);
   const malhaRef = useRef<L.GeoJSON | null>(null);
+  /** UF → polígono, para a bolha conseguir acender o estado embaixo dela. */
+  const poligonosRef = useRef(new Map<string, L.Path>());
+  /**
+   * UF sob o mouse. Em REF, não em estado do React: hover muda a cada
+   * movimento do mouse e como estado remontaria as 27 bolhas em cada um deles.
+   * O realce é aplicado direto no Leaflet (setStyle), que é o que ele já faz
+   * de melhor.
+   */
+  const sobMouseRef = useRef<string | null>(null);
+  /**
+   * Seleção espelhada em ref porque os handlers do Leaflet são criados UMA vez
+   * (na montagem) e precisam do valor atual para decidir a cor ao sair do
+   * mouse — uma closure sobre a prop enxergaria eternamente o valor inicial.
+   */
+  const selecionadoRef = useRef<string | null>(selectedUf);
+  selecionadoRef.current = selectedUf;
   // Callbacks em ref: as chamadoras passam funções inline (identidade nova a
   // cada render); como dependência de efeito elas DESTRUIRIAM e recriariam o
   // mapa inteiro em todo render (o cleanup do efeito de init chama
   // map.remove()) — perdendo zoom/pan do usuário e remontando a malha.
   const fnsRef = useRef({ secondaryLine, colorValue, onSelect });
   fnsRef.current = { secondaryLine, colorValue, onSelect };
+
+  /*
+   * Os três abaixo são useCallback com dependência VAZIA de propósito: lêem
+   * apenas refs, então a identidade estável é correta — e é o que permite que
+   * eles entrem nas dependências dos efeitos sem recriar o mapa a cada render
+   * (que é o problema descrito no comentário de fnsRef).
+   */
+
+  /** Repinta uma UF conforme seleção + mouse atuais. */
+  const pinta = useCallback((uf: string) => {
+    const poligono = poligonosRef.current.get(uf);
+    if (!poligono) return;
+    poligono.setStyle(estiloDaUf(uf, selecionadoRef.current, sobMouseRef.current));
+    // Sem isto a borda acesa fica por baixo dos vizinhos desenhados depois e o
+    // realce aparece cortado justamente nas divisas.
+    if (uf === selecionadoRef.current || uf === sobMouseRef.current) poligono.bringToFront();
+  }, []);
+
+  /** Entrou o mouse numa UF (pelo polígono ou pela bolha em cima dele). */
+  const entraMouse = useCallback(
+    (uf: string) => {
+      if (ehToqueGrosso()) return;
+      const anterior = sobMouseRef.current;
+      if (anterior === uf) return;
+      sobMouseRef.current = uf;
+      if (anterior) pinta(anterior);
+      pinta(uf);
+    },
+    [pinta],
+  );
+
+  const saiMouse = useCallback(
+    (uf: string) => {
+      if (ehToqueGrosso()) return;
+      if (sobMouseRef.current !== uf) return;
+      sobMouseRef.current = null;
+      pinta(uf);
+    },
+    [pinta],
+  );
 
   const byUf = useMemo(() => {
     const m = new Map<string, StateAgg>();
@@ -123,8 +212,7 @@ export function BrazilStateMap({
     // Toque grosso (celular/tablet): o arrasto de um dedo fica com a PÁGINA,
     // não com o mapa — antes o mapa em largura total sequestrava o scroll e o
     // usuário ficava preso dentro dele. Pinça continua dando zoom.
-    const toqueGrosso =
-      typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches;
+    const toqueGrosso = ehToqueGrosso();
 
     const map = L.map(containerRef.current, {
       minZoom: 3,
@@ -149,18 +237,23 @@ export function BrazilStateMap({
     // Silhueta dos estados a partir da malha embutida — ver lib/brasilMalha.ts
     // para o motivo de não haver mais camada de tiles (o basemap gratuito da
     // CARTO passou a exigir chave e quebrou o mapa em produção).
+    poligonosRef.current.clear();
     const malha = L.geoJSON(MALHA_UF, {
       style: () => ({ ...MALHA_ESTILO }),
-      // Clicar no ESTADO seleciona, não só na bolha: a área do polígono é
-      // muito maior que a bolha e é o que o usuário tenta acertar primeiro,
-      // sobretudo no toque.
       onEachFeature: (feature, camada) => {
         const uf = (feature.properties as PropsMalhaUf | undefined)?.uf;
         if (!uf) return;
+        poligonosRef.current.set(uf, camada as L.Path);
+
+        // Clicar no ESTADO fixa a seleção, não só na bolha: a área do polígono
+        // é muito maior que a bolha e é o que o usuário tenta acertar
+        // primeiro, sobretudo no toque.
         camada.on('click', (e) => {
           L.DomEvent.stopPropagation(e as unknown as Event);
           fnsRef.current.onSelect(uf);
         });
+        camada.on('mouseover', () => entraMouse(uf));
+        camada.on('mouseout', () => saiMouse(uf));
       },
     }).addTo(map);
     malhaRef.current = malha;
@@ -175,6 +268,18 @@ export function BrazilStateMap({
 
     map.on('click', () => fnsRef.current.onSelect(null));
 
+    // Cursor saiu do mapa: apaga o realce de passagem. Sem isto ele podia
+    // ficar preso aceso — as bolhas são recriadas quando a seleção muda, e a
+    // bolha destruída não dispara o mouseout dela. Ao clicar num estado e ir
+    // para o painel lateral, o estado por onde o mouse passou continuaria
+    // vermelho ao lado do que foi realmente fixado.
+    map.on('mouseout', () => {
+      const anterior = sobMouseRef.current;
+      if (!anterior) return;
+      sobMouseRef.current = null;
+      pinta(anterior);
+    });
+
     return () => {
       observador.disconnect();
       map.remove();
@@ -182,24 +287,16 @@ export function BrazilStateMap({
       layerRef.current = null;
       malhaRef.current = null;
     };
-    // Sem deps de callback: o mapa é criado UMA vez por montagem.
+    // O mapa é criado UMA vez por montagem: as únicas dependências são os
+    // handlers de mouse, e eles têm identidade estável (useCallback acima).
+  }, [entraMouse, saiMouse, pinta]);
 
-  }, []);
-
-  // Acende a forma do estado selecionado. Efeito próprio, separado do desenho
-  // das bolhas: selecionar não mexe nos dados, então repintar 27 polígonos é
-  // tudo o que precisa acontecer.
+  // Acende a forma do estado fixado. Efeito próprio, separado do desenho das
+  // bolhas: selecionar não mexe nos dados, então repintar os polígonos é tudo
+  // o que precisa acontecer.
   useEffect(() => {
-    const malha = malhaRef.current;
-    if (!malha) return;
-    malha.eachLayer((camada) => {
-      const uf = ((camada as L.GeoJSON).feature as { properties?: PropsMalhaUf } | undefined)
-        ?.properties?.uf;
-      (camada as L.Path).setStyle(
-        uf && uf === selectedUf ? { ...MALHA_ESTILO_SELECIONADO } : { ...MALHA_ESTILO },
-      );
-    });
-  }, [selectedUf]);
+    for (const uf of poligonosRef.current.keys()) pinta(uf);
+  }, [selectedUf, pinta]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -281,6 +378,12 @@ export function BrazilStateMap({
         fnsRef.current.onSelect(s.uf);
       });
 
+      // A bolha fica EM CIMA do estado e come o mouseover do polígono. Sem
+      // repassar, o miolo de cada estado — justamente onde o cursor vai —
+      // seria uma área morta que não acende nada.
+      marker.on('mouseover', () => entraMouse(s.uf));
+      marker.on('mouseout', () => saiMouse(s.uf));
+
       marker.addTo(layer);
     }
     // onSelect via fnsRef (identidade instável nas chamadoras).
@@ -290,7 +393,7 @@ export function BrazilStateMap({
     // estado não redesenhava as bolhas, então o anel só aparecia se por acaso
     // os dados mudassem junto. Redesenhar 27 divIcons é barato.
 
-  }, [byUf, data, metricLabel, metricFormat, selectedUf]);
+  }, [byUf, data, metricLabel, metricFormat, selectedUf, entraMouse, saiMouse]);
 
   return (
     <div
