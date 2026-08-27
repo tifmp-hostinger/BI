@@ -1,10 +1,28 @@
 <!doctype html>
-<html lang="en">
+<!--
+  lang="pt-BR" e translate="no": a aplicacao e inteiramente em portugues.
+
+  Vinha `lang="en"` (heranca do template). O Chrome detectava o conteudo como
+  portugues, via declarado ingles e, para quem tem "Sempre traduzir ingles"
+  ligado, TRADUZIA a pagina automaticamente a cada visita, sem perguntar.
+
+  Isso nao e cosmetico: o Google Tradutor nao pinta texto por cima, ele fatia
+  cada no de texto, embrulha em <font> e reposiciona os nos. As referencias de
+  DOM que o React guardou ficam obsoletas e o proximo re-render estoura com
+  "Failed to execute 'insertBefore' on 'Node': The node before which the new
+  node is to be inserted is not a child of this node" — o painel inteiro cai no
+  ErrorBoundary. Aparecia so para um usuario, justamente o que tinha a
+  traducao automatica ligada.
+-->
+<html lang="pt-BR" translate="no">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Trava a traducao mesmo se o usuario pedir manualmente: nao existe
+         traducao segura de uma arvore React viva (ver comentario acima). -->
+    <meta name="google" content="notranslate" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <!--
