@@ -13,6 +13,8 @@
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
+    /* A malha territorial do mapa e um .json importado (src/lib/brasilMalha.ts). */
+    "resolveJsonModule": true,
 
     /* Path alias — depth-invariant imports for src (@/foo === src/foo from any file) */
     "baseUrl": ".",

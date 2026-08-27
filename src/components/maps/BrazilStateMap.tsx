@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { BR_STATES, nameOf, type BrState } from '@/lib/brStates';
+import { MALHA_UF, type PropsMalhaUf } from '@/lib/brasilMalha';
 import type { StateAgg } from '@/services/matriculasService';
 
 type Props = {
@@ -29,6 +30,25 @@ type Props = {
 };
 
 const FMP_SAND = '#BFBAA4';
+
+/** Silhueta dos estados: contexto geográfico, nunca o dado. O valor continua
+ *  só nas bolhas — pintar os estados por intensidade duplicaria a mesma
+ *  métrica em duas codificações concorrentes (foi por isso que o mapa de calor
+ *  saiu daqui). */
+const MALHA_ESTILO = {
+  color: '#CFCCBF', // line-2
+  weight: 0.8,
+  fillColor: '#FFFFFF',
+  fillOpacity: 1,
+} as const;
+
+/** Estado selecionado: a própria forma acende, não só a bolha. */
+const MALHA_ESTILO_SELECIONADO = {
+  color: '#EE2A42',
+  weight: 1.6,
+  fillColor: '#FBD7DC',
+  fillOpacity: 1,
+} as const;
 
 /** Limites do Brasil: o enquadramento inicial mostra o país INTEIRO em
  * qualquer largura de tela — antes o zoom fixo 4 cortava o Nordeste no
@@ -83,11 +103,11 @@ export function BrazilStateMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const layerRef = useRef<L.LayerGroup | null>(null);
-  const selectedRef = useRef<string | null>(selectedUf);
+  const malhaRef = useRef<L.GeoJSON | null>(null);
   // Callbacks em ref: as chamadoras passam funções inline (identidade nova a
   // cada render); como dependência de efeito elas DESTRUIRIAM e recriariam o
   // mapa inteiro em todo render (o cleanup do efeito de init chama
-  // map.remove()) — perdendo zoom/pan do usuário e re-baixando tiles.
+  // map.remove()) — perdendo zoom/pan do usuário e remontando a malha.
   const fnsRef = useRef({ secondaryLine, colorValue, onSelect });
   fnsRef.current = { secondaryLine, colorValue, onSelect };
 
@@ -96,10 +116,6 @@ export function BrazilStateMap({
     for (const s of data) m.set(s.uf, s);
     return m;
   }, [data]);
-
-  useEffect(() => {
-    selectedRef.current = selectedUf;
-  }, [selectedUf]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -130,14 +146,28 @@ export function BrazilStateMap({
     });
     observador.observe(containerRef.current);
 
-    L.tileLayer(
-      'https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png',
-      { subdomains: 'abcd', maxZoom: 19 }
-    ).addTo(map);
+    // Silhueta dos estados a partir da malha embutida — ver lib/brasilMalha.ts
+    // para o motivo de não haver mais camada de tiles (o basemap gratuito da
+    // CARTO passou a exigir chave e quebrou o mapa em produção).
+    const malha = L.geoJSON(MALHA_UF, {
+      style: () => ({ ...MALHA_ESTILO }),
+      // Clicar no ESTADO seleciona, não só na bolha: a área do polígono é
+      // muito maior que a bolha e é o que o usuário tenta acertar primeiro,
+      // sobretudo no toque.
+      onEachFeature: (feature, camada) => {
+        const uf = (feature.properties as PropsMalhaUf | undefined)?.uf;
+        if (!uf) return;
+        camada.on('click', (e) => {
+          L.DomEvent.stopPropagation(e as unknown as Event);
+          fnsRef.current.onSelect(uf);
+        });
+      },
+    }).addTo(map);
+    malhaRef.current = malha;
 
     L.control
       .attribution({ position: 'bottomright', prefix: false })
-      .addAttribution('&copy; OpenStreetMap &middot; CARTO')
+      .addAttribution('Malha territorial: IBGE')
       .addTo(map);
 
     layerRef.current = L.layerGroup().addTo(map);
@@ -150,10 +180,26 @@ export function BrazilStateMap({
       map.remove();
       mapRef.current = null;
       layerRef.current = null;
+      malhaRef.current = null;
     };
     // Sem deps de callback: o mapa é criado UMA vez por montagem.
-     
+
   }, []);
+
+  // Acende a forma do estado selecionado. Efeito próprio, separado do desenho
+  // das bolhas: selecionar não mexe nos dados, então repintar 27 polígonos é
+  // tudo o que precisa acontecer.
+  useEffect(() => {
+    const malha = malhaRef.current;
+    if (!malha) return;
+    malha.eachLayer((camada) => {
+      const uf = ((camada as L.GeoJSON).feature as { properties?: PropsMalhaUf } | undefined)
+        ?.properties?.uf;
+      (camada as L.Path).setStyle(
+        uf && uf === selectedUf ? { ...MALHA_ESTILO_SELECIONADO } : { ...MALHA_ESTILO },
+      );
+    });
+  }, [selectedUf]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -191,7 +237,7 @@ export function BrazilStateMap({
         total === 0 ? 0 : Math.max(0.2, Math.min(1, Math.log10(1 + total) / Math.log10(1 + max)));
       const color = total === 0 ? FMP_SAND : interpolateSandToRed(intensity);
 
-      const isSelected = selectedRef.current === s.uf;
+      const isSelected = selectedUf === s.uf;
       const scale = total === 0 ? 0.35 : 0.4 + escala * 0.6;
       const size = Math.round(30 + scale * 30);
 
@@ -238,8 +284,13 @@ export function BrazilStateMap({
       marker.addTo(layer);
     }
     // onSelect via fnsRef (identidade instável nas chamadoras).
-     
-  }, [byUf, data, metricLabel, metricFormat]);
+    //
+    // `selectedUf` ENTRA nas dependências: o anel de seleção da bolha era lido
+    // de um ref, e este efeito só rodava quando os dados mudavam — clicar num
+    // estado não redesenhava as bolhas, então o anel só aparecia se por acaso
+    // os dados mudassem junto. Redesenhar 27 divIcons é barato.
+
+  }, [byUf, data, metricLabel, metricFormat, selectedUf]);
 
   return (
     <div

@@ -10,6 +10,13 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  // A malha territorial (src/lib/brasilMalhaUf.json, ~176 KB) entra no bundle
+  // como JSON.parse de uma string em vez de literal de objeto: o parser de JSON
+  // do V8 é bem mais rápido nesse volume que a avaliação de um literal com
+  // ~9 mil números, e o mapa monta sem travar a thread principal.
+  json: {
+    stringify: true,
+  },
   optimizeDeps: {
     exclude: ['lucide-react'],
   },

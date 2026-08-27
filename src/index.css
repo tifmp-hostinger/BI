@@ -198,7 +198,9 @@
   background: var(--fmp-cream);
 }
 
-.leaflet-tile-pane { filter: saturate(0.9) brightness(1.02); }
+/* Sem .leaflet-tile-pane: nao ha mais camada de tiles. O mapa desenha a malha
+   das UFs embutida no bundle (ver lib/brasilMalha.ts), ja na paleta do app —
+   o filtro existia para dessaturar o cinza da CARTO. */
 
 .leaflet-tooltip.cep-tooltip {
   background: var(--fmp-white);
