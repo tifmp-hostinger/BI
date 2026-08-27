@@ -19,14 +19,24 @@ import { SectionCard } from '@/components/ui/SectionCard';
 import { ReorderableGrid, RItem } from '@/components/ui/ReorderableGrid';
 import { StatCard, StatCardSkeleton, STAT_GRID_CLASSES, STAT_GRID_CONTAINER } from '@/components/ui/StatCard';
 import { GaugeSemicircle } from '@/components/ui/GaugeSemicircle';
+import { BarraProporcao } from '@/components/ui/BarraProporcao';
 import { ChartSkeleton } from '@/components/ui/Skeletons';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { fmtBRLCompact, fmtInt, fmtPct, truncateLabel } from '../formatters';
 import type { EspecializacoesData } from '../types';
 import { CHART_TOOLTIP, CORES_CATEGORICAS, FMP_DARK, FMP_RED, NEUTRAL } from '@/lib/chartColors';
+import { useEstiloVisualizacao } from '@/lib/estiloVisualizacao';
 
 const PIE_COLORS = CORES_CATEGORICAS;
 
+/** Rótulo de um painel da versão empilhada (estilo 'nova'). */
+function RotuloPainel({ children }: { children: string }) {
+  return (
+    <p className="mb-1 text-2xs font-semibold uppercase tracking-widest text-ink-3">
+      {children}
+    </p>
+  );
+}
 
 type Props = {
   loading: boolean;
@@ -35,6 +45,7 @@ type Props = {
 
 export function EspecializacoesTab({ loading, data }: Props) {
   const tooltip = CHART_TOOLTIP;
+  const estilo = useEstiloVisualizacao();
 
   if (loading) {
     return (
@@ -77,9 +88,47 @@ export function EspecializacoesTab({ loading, data }: Props) {
 
       <ReorderableGrid storageKey="conv-reorder-especializacoes" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <RItem rid="fat-mes">
-        <SectionCard title="Faturamento e Matrículas por Mês" subtitle="Colunas: faturamento | Linha: matrículas (mês fiscal)" icon={TrendingUp}>
+        <SectionCard
+          title="Faturamento e Matrículas por Mês"
+          subtitle={estilo === 'nova' ? 'Faturamento e matrículas mês a mês, lado a lado' : 'Colunas: faturamento | Linha: matrículas (mês fiscal)'}
+          icon={TrendingUp}
+        >
           {data.fatMensal.length === 0 || data.fatMensal.every((d) => d.fat === 0 && d.mat === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
+          ) : estilo === 'nova' ? (
+            /* R$ e contagem são grandezas incomparáveis: em dois eixos no
+               mesmo plano o cruzamento barra/linha era arbitrário. Dois
+               painéis no MESMO eixo X, tooltip sincronizado (syncId). */
+            <div>
+              <RotuloPainel>Faturamento</RotuloPainel>
+              <ResponsiveContainer width="100%" height={210}>
+                <ComposedChart data={data.fatMensal} syncId="espec-fat-mes" margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="barEspecFatNovo" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={FMP_RED} stopOpacity={0.9} />
+                      <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid vertical={false} stroke="#DEDCD4" />
+                  <XAxis dataKey="mesAno" hide />
+                  <YAxis width={62} tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
+                  <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtBRLCompact(v as number), 'Faturamento']} />
+                  <Bar dataKey="fat" fill="url(#barEspecFatNovo)" radius={[8, 8, 4, 4]} maxBarSize={36} />
+                </ComposedChart>
+              </ResponsiveContainer>
+              <div className="mt-3">
+                <RotuloPainel>Matrículas</RotuloPainel>
+                <ResponsiveContainer width="100%" height={130}>
+                  <ComposedChart data={data.fatMensal} syncId="espec-fat-mes" margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                    <CartesianGrid vertical={false} stroke="#DEDCD4" />
+                    <XAxis dataKey="mesAno" tick={{ fontSize: 9, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: string) => truncateLabel(v, 10)} interval="preserveStartEnd" />
+                    <YAxis width={62} tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
+                    <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtInt(v as number), 'Matrículas']} />
+                    <Line type="monotone" dataKey="mat" stroke={FMP_DARK} strokeWidth={2} dot={{ r: 2.5, fill: FMP_DARK }} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           ) : (
             <ResponsiveContainer width="100%" height={340}>
               <ComposedChart data={data.fatMensal} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
@@ -89,7 +138,7 @@ export function EspecializacoesTab({ loading, data }: Props) {
                     <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#DEDCD4" />
+                <CartesianGrid vertical={false} stroke="#DEDCD4" />
                 <XAxis dataKey="mesAno" tick={{ fontSize: 9, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: string) => truncateLabel(v, 10)} interval="preserveStartEnd" />
                 <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
                 <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
@@ -106,13 +155,48 @@ export function EspecializacoesTab({ loading, data }: Props) {
 
         </RItem>
         <RItem rid="fat-modalidade-mes">
-        <SectionCard title="Faturamento por Modalidade de Ensino" subtitle="EAD x Presencial mês a mês, com matrículas no eixo direito" icon={TrendingUp}>
+        <SectionCard
+          title="Faturamento por Modalidade de Ensino"
+          subtitle={estilo === 'nova' ? 'EAD x Presencial mês a mês, com matrículas abaixo' : 'EAD x Presencial mês a mês, com matrículas no eixo direito'}
+          icon={TrendingUp}
+        >
           {data.fatMensal.length === 0 || data.fatMensal.every((d) => d.fatEad === 0 && d.fatPres === 0 && d.mat === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
+          ) : estilo === 'nova' ? (
+            /* Antes: 3 séries em 2 eixos (R$ à esquerda, contagem tracejada à
+               direita — tracejado que ainda lia como "projeção"). Agora o
+               painel de cima compara EAD x Presencial em um único eixo de R$;
+               matrículas ganham o painel de baixo, no mesmo eixo X. */
+            <div>
+              <RotuloPainel>Faturamento por modalidade</RotuloPainel>
+              <ResponsiveContainer width="100%" height={210}>
+                <ComposedChart data={data.fatMensal} syncId="espec-fat-mod" margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                  <CartesianGrid vertical={false} stroke="#DEDCD4" />
+                  <XAxis dataKey="mesAno" hide />
+                  <YAxis width={62} tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
+                  <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown, name: unknown) => [fmtBRLCompact(v as number), name === 'EAD' ? 'EAD' : 'Presencial']} />
+                  <Legend verticalAlign="bottom" iconType="circle" formatter={(v: string) => <span className="text-xs text-ink-2">{v}</span>} />
+                  <Line type="monotone" dataKey="fatEad" name="EAD" stroke={FMP_RED} strokeWidth={2.5} dot={{ r: 3, fill: FMP_RED }} />
+                  <Line type="monotone" dataKey="fatPres" name="Presencial" stroke={NEUTRAL} strokeWidth={2.5} dot={{ r: 3, fill: NEUTRAL }} />
+                </ComposedChart>
+              </ResponsiveContainer>
+              <div className="mt-3">
+                <RotuloPainel>Matrículas</RotuloPainel>
+                <ResponsiveContainer width="100%" height={110}>
+                  <ComposedChart data={data.fatMensal} syncId="espec-fat-mod" margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                    <CartesianGrid vertical={false} stroke="#DEDCD4" />
+                    <XAxis dataKey="mesAno" tick={{ fontSize: 9, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: string) => truncateLabel(v, 10)} interval="preserveStartEnd" />
+                    <YAxis width={62} tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
+                    <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtInt(v as number), 'Matrículas']} />
+                    <Line type="monotone" dataKey="mat" stroke={FMP_DARK} strokeWidth={2} dot={{ r: 2.5, fill: FMP_DARK }} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           ) : (
             <ResponsiveContainer width="100%" height={340}>
               <ComposedChart data={data.fatMensal} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-                <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#DEDCD4" />
+                <CartesianGrid vertical={false} stroke="#DEDCD4" />
                 <XAxis dataKey="mesAno" tick={{ fontSize: 9, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: string) => truncateLabel(v, 10)} interval="preserveStartEnd" />
                 <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
                 <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
@@ -140,7 +224,7 @@ export function EspecializacoesTab({ loading, data }: Props) {
                     <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.85} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="4 4" horizontal={false} stroke="#DEDCD4" />
+                <CartesianGrid horizontal={false} stroke="#DEDCD4" />
                 <XAxis type="number" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
                 <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#3A3838' }} tickLine={false} axisLine={false} width={180} tickFormatter={(v: string) => truncateLabel(v, 24)} />
                 <Tooltip cursor={{ fill: 'rgba(238,42,66,0.05)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtBRLCompact(v as number), 'Faturamento']} />
@@ -158,6 +242,10 @@ export function EspecializacoesTab({ loading, data }: Props) {
           <SectionCard title="% Faturamento por Modalidade" subtitle="EAD vs Presencial" icon={TrendingUp}>
             {data.fatPorModalidade.length === 0 || data.fatPorModalidade.every((d) => d.valor === 0) ? (
               <EmptyState title="Sem dados para os filtros selecionados" />
+            ) : estilo === 'nova' ? (
+              /* Duas partes não precisam de círculo: a barra 100% responde
+                 "quanto de cada?" direto — mesmo padrão do painel de Bolsas. */
+              <BarraProporcao dados={data.fatPorModalidade} formatarValor={fmtBRLCompact} className="min-h-[200px]" />
             ) : (
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
@@ -177,6 +265,8 @@ export function EspecializacoesTab({ loading, data }: Props) {
           <SectionCard title="Matrículas por Estrutura Acadêmica (TCC)" subtitle="TCC vs Sem TCC" icon={GraduationCap}>
             {data.fatPorTcc.length === 0 || data.fatPorTcc.every((d) => d.valor === 0) ? (
               <EmptyState title="Sem dados para os filtros selecionados" />
+            ) : estilo === 'nova' ? (
+              <BarraProporcao dados={data.fatPorTcc} formatarValor={fmtInt} className="min-h-[200px]" />
             ) : (
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>

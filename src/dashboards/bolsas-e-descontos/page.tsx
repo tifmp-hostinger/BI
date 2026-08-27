@@ -35,6 +35,8 @@ import { FONTES_POR_DASHBOARD } from '@/lib/dataFreshness';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { CHART_TOOLTIP, CORES_CATEGORICAS, FMP_DARK, FMP_RED, NEUTRAL } from '@/lib/chartColors';
 import { useBolsasDescontosData } from './hooks/useBolsasDescontosData';
+import { useEstiloVisualizacao } from '@/lib/estiloVisualizacao';
+import { BarraProporcao } from '@/components/ui/BarraProporcao';
 import { BolsasFilterBar } from './components/BolsasFilterBar';
 import { fmtBRL, fmtBRLCompact, fmtInt, truncateLabel } from './formatters';
 import type { BolsasFilters } from './types';
@@ -44,6 +46,7 @@ const COLORS = CORES_CATEGORICAS;
 type Tab = 'panorama' | 'evasao';
 
 export function BolsasEDescontosPage() {
+  const estilo = useEstiloVisualizacao();
   const [tab, setTab] = useState<Tab>('panorama');
   const [filters, setFilters] = useState<BolsasFilters>({
     codperlet: [],
@@ -233,7 +236,7 @@ export function BolsasEDescontosPage() {
                           <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.85} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#DEDCD4" />
+                      <CartesianGrid vertical={false} stroke="#DEDCD4" />
                       <XAxis
                         dataKey="categoria"
                         tick={{ fontSize: 10, fill: '#6E6B66' }}
@@ -278,7 +281,7 @@ export function BolsasEDescontosPage() {
                           <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="4 4" horizontal={false} stroke="#DEDCD4" />
+                      <CartesianGrid horizontal={false} stroke="#DEDCD4" />
                       <XAxis
                         type="number"
                         tick={{ fontSize: 11, fill: '#6E6B66' }}
@@ -345,7 +348,7 @@ export function BolsasEDescontosPage() {
                           <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.85} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="4 4" horizontal={false} stroke="#DEDCD4" />
+                      <CartesianGrid horizontal={false} stroke="#DEDCD4" />
                       <XAxis
                         type="number"
                         tick={{ fontSize: 11, fill: '#6E6B66' }}
@@ -425,7 +428,7 @@ export function BolsasEDescontosPage() {
                       layout="vertical"
                       margin={{ top: 4, right: 48, left: 0, bottom: 4 }}
                     >
-                      <CartesianGrid strokeDasharray="4 4" horizontal={false} stroke="#DEDCD4" />
+                      <CartesianGrid horizontal={false} stroke="#DEDCD4" />
                       <XAxis
                         type="number"
                         tick={{ fontSize: 11, fill: '#6E6B66' }}
@@ -449,16 +452,10 @@ export function BolsasEDescontosPage() {
                         itemStyle={tt.itemStyle}
                         formatter={(v: unknown) => [`${fmtInt(v as number)} evasões`, 'Evasão']}
                       />
-                      <Bar dataKey="valor" radius={[4, 8, 8, 4]} maxBarSize={20}>
-                        {evasao.evasaoBeneficios.map((_, i) => (
-                          <Cell
-                            key={i}
-                            fill={`rgba(238,42,66,${Math.max(
-                              0.35,
-                              1 - (i * 0.65) / Math.max(1, evasao.evasaoBeneficios.length - 1),
-                            ).toFixed(2)})`}
-                          />
-                        ))}
+                      {/* Cor única: a posição já ordena e o comprimento já
+                          codifica o valor — a rampa de opacidade repetia isso
+                          e pintava os últimos de rosa-pálido. */}
+                      <Bar dataKey="valor" fill={FMP_RED} radius={[4, 8, 8, 4]} maxBarSize={20}>
                         <LabelList
                           dataKey="valor"
                           position="right"
@@ -472,7 +469,11 @@ export function BolsasEDescontosPage() {
               </SectionCard>
 
               {/* 2. Combined — Evasão por Ano */}
-              <SectionCard title="Evasão por Ano" subtitle="Colunas: matrículas com benefício | Linha: evasão" icon={TrendingDown}>
+              <SectionCard
+                title="Evasão por Ano"
+                subtitle={estilo === 'nova' ? 'Matrículas com benefício e evasões, na mesma escala' : 'Colunas: matrículas com benefício | Linha: evasão'}
+                icon={TrendingDown}
+              >
                 {loading ? (
                   <ChartSkeleton height={360} />
                 ) : !evasao || evasao.evasaoPorAno.length === 0 ? (
@@ -486,29 +487,42 @@ export function BolsasEDescontosPage() {
                           <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#DEDCD4" />
+                      <CartesianGrid vertical={false} stroke="#DEDCD4" />
                       <XAxis
                         dataKey="ano"
                         tick={{ fontSize: 11, fill: '#6E6B66' }}
                         tickLine={false}
                         axisLine={false}
                       />
-                      {/* Ticks na cor da própria série: sem isso não dava
-                          para saber qual eixo pertencia às colunas e qual à
-                          linha. */}
-                      <YAxis
-                        yAxisId="left"
-                        tick={{ fontSize: 11, fill: FMP_DARK }}
-                        tickLine={false}
-                        axisLine={false}
-                      />
-                      <YAxis
-                        yAxisId="right"
-                        orientation="right"
-                        tick={{ fontSize: 11, fill: '#8A8578' }}
-                        tickLine={false}
-                        axisLine={false}
-                      />
+                      {/* 'nova': UM eixo — as duas séries são contagens, e o
+                          segundo eixo fazia a distância barra/linha parecer
+                          significar algo. A linha de evasão fica baixa perto
+                          das colunas? É a proporção real. 'classica': dois
+                          eixos com tick na cor da série, como no BI. */}
+                      {estilo === 'nova' ? (
+                        <YAxis
+                          yAxisId="left"
+                          tick={{ fontSize: 11, fill: '#6E6B66' }}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                      ) : (
+                        <>
+                          <YAxis
+                            yAxisId="left"
+                            tick={{ fontSize: 11, fill: FMP_DARK }}
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <YAxis
+                            yAxisId="right"
+                            orientation="right"
+                            tick={{ fontSize: 11, fill: '#8A8578' }}
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                        </>
+                      )}
                       <Tooltip
                         contentStyle={tt.contentStyle}
                         labelStyle={tt.labelStyle}
@@ -538,12 +552,12 @@ export function BolsasEDescontosPage() {
                         maxBarSize={36}
                       />
                       <Line
-                        yAxisId="right"
+                        yAxisId={estilo === 'nova' ? 'left' : 'right'}
                         type="monotone"
                         dataKey="evasaoBolsas"
-                        stroke={NEUTRAL}
+                        stroke={estilo === 'nova' ? FMP_DARK : NEUTRAL}
                         strokeWidth={2.5}
-                        dot={{ r: 4, fill: NEUTRAL }}
+                        dot={{ r: 4, fill: estilo === 'nova' ? FMP_DARK : NEUTRAL }}
                       />
                     </ComposedChart>
                   </ResponsiveContainer>
@@ -646,47 +660,18 @@ export function BolsasEDescontosPage() {
 }
 
 /**
- * Barra de proporção Bolsas vs Descontos com percentuais explícitos — numa
- * "distribuição" de duas categorias, o % é a resposta que o usuário procura.
+ * Barra de proporção Bolsas vs Descontos — a forma nasceu aqui e foi
+ * generalizada em components/ui/BarraProporcao; este wrapper só acrescenta a
+ * nota de total do recorte.
  */
 function DistribuicaoProporcao({ dados }: { dados: { categoria: string; valor: number }[] }) {
   const total = dados.reduce((soma, d) => soma + d.valor, 0);
   return (
-    <div className="flex h-full min-h-[280px] flex-col justify-center gap-5">
-      <div className="flex h-9 w-full overflow-hidden rounded-pill">
-        {dados.map((d, i) => {
-          const pct = total > 0 ? (d.valor / total) * 100 : 0;
-          return (
-            <div
-              key={d.categoria}
-              style={{ width: `${pct}%`, background: COLORS[i % COLORS.length] }}
-              title={`${d.categoria}: ${fmtInt(d.valor)} (${Math.round(pct)}%)`}
-            />
-          );
-        })}
-      </div>
-      <ul className="space-y-2">
-        {dados.map((d, i) => {
-          const pct = total > 0 ? Math.round((d.valor / total) * 100) : 0;
-          return (
-            <li key={d.categoria} className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 text-ink-2">
-                <span
-                  className="h-2.5 w-2.5 rounded-full"
-                  style={{ background: COLORS[i % COLORS.length] }}
-                />
-                {d.categoria}
-              </span>
-              <span className="fmp-kpi text-base leading-normal">
-                {fmtInt(d.valor)} <span className="text-xs font-normal text-ink-3">({pct}%)</span>
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-      <p className="text-2xs text-ink-3">
-        {fmtInt(total)} benefícios no recorte filtrado.
-      </p>
-    </div>
+    <BarraProporcao
+      dados={dados}
+      formatarValor={fmtInt}
+      nota={`${fmtInt(total)} benefícios no recorte filtrado.`}
+      className="h-full min-h-[280px]"
+    />
   );
 }

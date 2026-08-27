@@ -23,6 +23,7 @@ import { fmtBRLCompact, fmtInt, fmtPct, truncateLabel } from '../formatters';
 import type { ModalidadePosData } from '../types';
 import type { StateAgg } from '@/services/matriculasService';
 import { CHART_TOOLTIP, CORES_CATEGORICAS, FMP_DARK, FMP_RED } from '@/lib/chartColors';
+import { useEstiloVisualizacao } from '@/lib/estiloVisualizacao';
 
 const PIE_COLORS = CORES_CATEGORICAS;
 
@@ -34,6 +35,7 @@ type Props = {
 
 export function ModalidadePosTab({ loading, data }: Props) {
   const tooltip = CHART_TOOLTIP;
+  const estilo = useEstiloVisualizacao();
   const [selectedUf, setSelectedUf] = useState<string | null>(null);
 
   if (loading) {
@@ -100,7 +102,7 @@ export function ModalidadePosTab({ loading, data }: Props) {
                     <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.85} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="4 4" horizontal={false} stroke="#DEDCD4" />
+                <CartesianGrid horizontal={false} stroke="#DEDCD4" />
                 <XAxis type="number" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
                 <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#3A3838' }} tickLine={false} axisLine={false} width={180} tickFormatter={(v: string) => truncateLabel(v, 24)} />
                 <Tooltip cursor={{ fill: 'rgba(238,42,66,0.05)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtBRLCompact(v as number), 'Faturamento']} />
@@ -126,7 +128,7 @@ export function ModalidadePosTab({ loading, data }: Props) {
                     <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="4 4" horizontal={false} stroke="#DEDCD4" />
+                <CartesianGrid horizontal={false} stroke="#DEDCD4" />
                 <XAxis type="number" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
                 <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#3A3838' }} tickLine={false} axisLine={false} width={180} tickFormatter={(v: string) => truncateLabel(v, 24)} />
                 <Tooltip cursor={{ fill: 'rgba(238,42,66,0.05)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtBRLCompact(v as number), 'Faturamento']} />
@@ -138,9 +140,34 @@ export function ModalidadePosTab({ loading, data }: Props) {
 
         </RItem>
         <RItem rid="planos-pgto">
-        <SectionCard title="Top 5 Planos de Pagamento" subtitle="Participação de cada plano na receita" icon={Wallet}>
+        <SectionCard
+          title="Top 5 Planos de Pagamento"
+          subtitle={estilo === 'nova' ? 'Os 5 planos com maior receita no recorte' : 'Participação de cada plano na receita'}
+          icon={Wallet}
+        >
           {data.top5PlanosPgto.length === 0 || data.top5PlanosPgto.every((d) => d.valor === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
+          ) : estilo === 'nova' ? (
+            /* Ranking, não parte-de-todo: o donut somava 100% DO TOP 5 (a
+               cauda fica de fora), então cada % parecia maior do que é.
+               "Top N" é barra, como os demais tops deste painel. */
+            <ResponsiveContainer width="100%" height={Math.max(220, data.top5PlanosPgto.length * 52)}>
+              <BarChart data={data.top5PlanosPgto} layout="vertical" margin={{ top: 4, right: 80, left: 0, bottom: 4 }}>
+                <defs>
+                  <linearGradient id={`barPlanos${idMod}`} x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor={FMP_RED} stopOpacity={0.95} />
+                    <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.85} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid horizontal={false} stroke="#DEDCD4" />
+                <XAxis type="number" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
+                <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#3A3838' }} tickLine={false} axisLine={false} width={150} tickFormatter={(v: string) => truncateLabel(v, 20)} />
+                <Tooltip cursor={{ fill: 'rgba(238,42,66,0.05)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtBRLCompact(v as number), 'Receita']} />
+                <Bar dataKey="valor" fill={`url(#barPlanos${idMod})`} radius={[4, 8, 8, 4]} maxBarSize={26}>
+                  <LabelList dataKey="valor" position="right" formatter={(v: unknown) => fmtBRLCompact(v as number)} style={{ fontSize: 11, fill: '#3A3838', fontWeight: 700 }} />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           ) : (
             <>
               <ResponsiveContainer width="100%" height={260}>

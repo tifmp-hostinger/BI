@@ -64,7 +64,7 @@ export function KpiDestaque({
             <BalaoInfo
               rotuloAcao={`O que é ${rotulo}?`}
               gatilho={<HelpCircle className="h-3 w-3" strokeWidth={2.4} />}
-              classeGatilho="cursor-help rounded-full p-1 text-fmp-pressed transition hover:text-fmp focus-visible:text-fmp focus-visible:outline-none"
+              classeGatilho="cursor-help rounded-full p-1.5 -m-0.5 text-fmp-pressed transition hover:text-fmp focus-visible:text-fmp"
             >
               <span className="block text-2xs font-normal normal-case leading-relaxed tracking-normal text-ink-2">
                 {hint}

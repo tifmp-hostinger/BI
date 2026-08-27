@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { AtualizandoAviso } from '@/components/ui/AtualizandoAviso';
 import { BalaoInfo } from '@/components/ui/BalaoInfo';
 import { DataFreshness } from '@/components/ui/DataFreshness';
+import { SeletorVisualizacao } from '@/components/ui/SeletorVisualizacao';
 import type { RitmoFonte } from '@/lib/dataFreshness';
 
 /**
@@ -53,14 +54,19 @@ export function BarraContexto({
         <span className="block text-2xs leading-relaxed text-ink-2">{descricao}</span>
       </BalaoInfo>
 
-      <button
-        type="button"
-        onClick={onAtualizar}
-        className="ml-auto inline-flex items-center gap-1.5 rounded-pill bg-fmp px-3.5 py-1.5 text-2xs font-medium text-white transition hover:bg-fmp-dark"
-      >
-        <RefreshCw className={`h-3.5 w-3.5 ${revalidando ? 'animate-spin' : ''}`} />
-        Atualizar
-      </button>
+      {/* Preferência GLOBAL (vale para todos os painéis de uma vez) — mora
+          aqui porque é onde os gráficos estão; ver lib/estiloVisualizacao. */}
+      <div className="ml-auto flex items-center gap-2">
+        <SeletorVisualizacao />
+        <button
+          type="button"
+          onClick={onAtualizar}
+          className="inline-flex items-center gap-1.5 rounded-pill bg-fmp px-3.5 py-1.5 text-2xs font-medium text-white transition hover:bg-fmp-dark"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${revalidando ? 'animate-spin' : ''}`} />
+          Atualizar
+        </button>
+      </div>
     </div>
   );
 }

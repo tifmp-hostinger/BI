@@ -2,7 +2,6 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
   ComposedChart,
   LabelList,
   Line,
@@ -81,10 +80,7 @@ export function CursosLivresTab({ loading, data }: Props) {
                     return [`${fmtInt(v as number)} leads (${pctTopo}% do maior canal)`, 'Canal'];
                   }}
                 />
-                <Bar dataKey="valor" radius={[4, 8, 8, 4]} maxBarSize={20}>
-                  {data.leadsPorCanal.slice(0, 12).map((_, i) => (
-                    <Cell key={i} fill={`rgba(238,42,66,${Math.max(0.35, 1 - (i * 0.65) / Math.max(1, Math.min(data.leadsPorCanal.length, 12) - 1)).toFixed(2)})`} />
-                  ))}
+                <Bar dataKey="valor" fill={FMP_RED} radius={[4, 8, 8, 4]} maxBarSize={20}>
                   <LabelList position="right" dataKey="valor" fill={FMP_DARK} stroke="none" fontSize={11} fontWeight={700} formatter={(v: unknown) => fmtInt(v as number)} />
                 </Bar>
               </BarChart>
@@ -106,7 +102,7 @@ export function CursosLivresTab({ loading, data }: Props) {
                     <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#DEDCD4" />
+                <CartesianGrid vertical={false} stroke="#DEDCD4" />
                 <XAxis dataKey="mesAno" tick={{ fontSize: 9, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: string) => truncateLabel(v, 10)} interval="preserveStartEnd" />
                 <YAxis tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
                 <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown, name: unknown) => { if (name === 'mat') return [fmtInt(v as number), 'Matrículas']; return [fmtInt(v as number), 'Leads']; }} />
@@ -131,7 +127,7 @@ export function CursosLivresTab({ loading, data }: Props) {
                     <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.85} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="4 4" horizontal={false} stroke="#DEDCD4" />
+                <CartesianGrid horizontal={false} stroke="#DEDCD4" />
                 <XAxis type="number" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
                 <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#3A3838' }} tickLine={false} axisLine={false} width={200} tickFormatter={(v: string) => truncateLabel(v, 28)} />
                 <Tooltip cursor={{ fill: 'rgba(238,42,66,0.05)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtBRLCompact(v as number), 'Faturamento']} />

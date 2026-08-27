@@ -371,7 +371,6 @@ export function PresencaNacionalPage() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid
-                    strokeDasharray="4 4"
                     vertical={false}
                     stroke="#DEDCD4"
                   />
@@ -502,7 +501,6 @@ export function PresencaNacionalPage() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid
-                    strokeDasharray="4 4"
                     horizontal={false}
                     stroke="#DEDCD4"
                   />
@@ -559,7 +557,6 @@ export function PresencaNacionalPage() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid
-                    strokeDasharray="4 4"
                     horizontal={false}
                     stroke="#DEDCD4"
                   />

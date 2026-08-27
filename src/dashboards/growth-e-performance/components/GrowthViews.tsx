@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   Bar,
+  BarChart,
   CartesianGrid,
   ComposedChart,
   Line,
@@ -16,6 +17,7 @@ import { BrazilStateMap } from '@/components/maps/BrazilStateMap';
 import type { StateAgg } from '@/services/matriculasService';
 import { fmtBRL, fmtBRLCompact, fmtInt, fmtIntCompact, fmtPct, truncateLabel } from '@/lib/formatters';
 import { CHART_TOOLTIP } from '@/lib/chartColors';
+import { useEstiloVisualizacao } from '@/lib/estiloVisualizacao';
 import type {
   CampanhaRow,
   HorarioDatum,
@@ -113,16 +115,16 @@ export function CampanhasView({ rows }: { rows: CampanhaRow[] }) {
                   {r.plataforma}
                 </span>
               </td>
-              <td className="px-3 py-2 text-right font-semibold text-ink" title={fmtInt(r.leads)}>
+              <td className="px-3 py-2 text-right font-semibold tabular-nums text-ink" title={fmtInt(r.leads)}>
                 {fmtInt(r.leads)}
               </td>
               <td
-                className="px-3 py-2 text-right"
+                className="px-3 py-2 text-right tabular-nums"
                 title={r.investimento.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
               >
                 {fmtBRLCompact(r.investimento)}
               </td>
-              <td className="px-3 py-2 text-right">{fmtInt(r.impressoes)}</td>
+              <td className="px-3 py-2 text-right tabular-nums">{fmtInt(r.impressoes)}</td>
             </tr>
           ))}
         </tbody>
@@ -130,14 +132,14 @@ export function CampanhasView({ rows }: { rows: CampanhaRow[] }) {
           <tr className="border-t-2 border-line font-semibold text-ink">
             <td className="px-3 py-2">Total ({ordenadas.length} campanha{ordenadas.length === 1 ? '' : 's'})</td>
             <td className="px-3 py-2" />
-            <td className="px-3 py-2 text-right">{fmtInt(ordenadas.reduce((s, r) => s + r.leads, 0))}</td>
+            <td className="px-3 py-2 text-right tabular-nums">{fmtInt(ordenadas.reduce((s, r) => s + r.leads, 0))}</td>
             <td
               className="px-3 py-2 text-right"
               title={fmtBRL(ordenadas.reduce((s, r) => s + r.investimento, 0))}
             >
               {fmtBRLCompact(ordenadas.reduce((s, r) => s + r.investimento, 0))}
             </td>
-            <td className="px-3 py-2 text-right">{fmtIntCompact(ordenadas.reduce((s, r) => s + r.impressoes, 0))}</td>
+            <td className="px-3 py-2 text-right tabular-nums">{fmtIntCompact(ordenadas.reduce((s, r) => s + r.impressoes, 0))}</td>
           </tr>
         </tfoot>
       </table>
@@ -195,10 +197,89 @@ export function MapaView({ data }: { data: MapaUfDatum[] }) {
   );
 }
 
+/**
+ * Rótulo de um painel da versão empilhada (ver comentário em HorariosView).
+ */
+function RotuloPainel({ children }: { children: string }) {
+  return (
+    <p className="mb-1 text-2xs font-semibold uppercase tracking-widest text-ink-3">
+      {children}
+    </p>
+  );
+}
+
 export function HorariosView({ data }: { data: HorarioDatum[] }) {
+  const estilo = useEstiloVisualizacao();
   if (data.every((d) => d.leads === 0)) {
     return <EmptyState title="Sem leads para os filtros selecionados" />;
   }
+
+  /*
+   * Versão NOVA: dois painéis empilhados no MESMO eixo X, em vez do eixo Y
+   * duplo. Com dois eixos, onde a linha de % cruzava as barras dependia só de
+   * como as escalas foram esticadas — o gráfico sugeria leituras que não
+   * estavam nos dados. `syncId` mantém o tooltip das duas metades andando
+   * junto, então a leitura conjunta ("14h tem muito lead E converte bem")
+   * continua a um hover de distância.
+   */
+  if (estilo === 'nova') {
+    const eixoX = (
+      <XAxis
+        dataKey="faixa"
+        tick={{ fontSize: 10, fill: '#6E6B66' }}
+        tickLine={false}
+        axisLine={false}
+        interval={0}
+        tickFormatter={(v: string) => `${parseInt(v, 10)}h`}
+      />
+    );
+    return (
+      <div>
+        <RotuloPainel>Quantidade de leads</RotuloPainel>
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={data} syncId="growth-horarios" margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+            <defs>
+              <linearGradient id="barHorarioNovo" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={FMP_RED} stopOpacity={0.9} />
+                <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid vertical={false} stroke="#DEDCD4" />
+            <XAxis dataKey="faixa" hide />
+            <YAxis width={40} tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
+            <Tooltip
+              contentStyle={TT.contentStyle}
+              labelStyle={TT.labelStyle}
+              itemStyle={TT.itemStyle}
+              labelFormatter={(v) => String(v)}
+              formatter={(v: unknown) => [fmtInt(v as number), 'Leads']}
+            />
+            <Bar dataKey="leads" fill="url(#barHorarioNovo)" radius={[8, 8, 4, 4]} maxBarSize={36} />
+          </BarChart>
+        </ResponsiveContainer>
+        <div className="mt-3">
+          <RotuloPainel>Taxa de conversão</RotuloPainel>
+          <ResponsiveContainer width="100%" height={130}>
+            <ComposedChart data={data} syncId="growth-horarios" margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke="#DEDCD4" />
+              {eixoX}
+              <YAxis width={40} tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtPct(v)} />
+              <Tooltip
+                contentStyle={TT.contentStyle}
+                labelStyle={TT.labelStyle}
+                itemStyle={TT.itemStyle}
+                formatter={(v: unknown) => [v === null ? '--' : fmtPct(v as number), 'Taxa de Conversão']}
+              />
+              {/* connectNulls={false}: faixa sem lead com status vira lacuna,
+                  não uma linha em 0% que pareceria "converteu zero". */}
+              <Line type="monotone" dataKey="taxaConv" stroke={FMP_DARK} strokeWidth={2} dot={{ r: 2.5, fill: FMP_DARK }} connectNulls={false} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <ResponsiveContainer width="100%" height={360}>
       <ComposedChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
@@ -208,7 +289,7 @@ export function HorariosView({ data }: { data: HorarioDatum[] }) {
             <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#DEDCD4" />
+        <CartesianGrid vertical={false} stroke="#DEDCD4" />
         {/* "00:00 - 02:00" -> "0h": 12 rótulos de até 3 caracteres cabem
             até em 320px sem o recharts pular ticks. */}
         <XAxis
@@ -373,13 +454,65 @@ export function OrigemView({ data }: { data: OrigemData }) {
 }
 
 export function SerieMensalView({ data, label }: { data: SerieMensalDatum[]; label: string }) {
+  const estilo = useEstiloVisualizacao();
   if (data.length === 0 || data.every((d) => d.valor === 0 && d.investimento === 0)) {
     return <EmptyState title="Sem dados para os filtros selecionados" />;
   }
+
+  const fmtMes = (v: string) => {
+    const [mes, ano] = v.split(' - ');
+    return ano ? `${mes.slice(0, 3).toLowerCase()}/${ano}` : truncateLabel(v, 12);
+  };
+
+  /*
+   * Versão NOVA: contagem e R$ são grandezas incomparáveis — em dois eixos no
+   * mesmo plano, o gráfico sugeria correlação visual arbitrária (o caso
+   * clássico de eixo duplo). Dois painéis empilhados com o mesmo eixo X e
+   * tooltip sincronizado contam a mesma história sem inventar cruzamentos.
+   */
+  if (estilo === 'nova') {
+    return (
+      <div>
+        <RotuloPainel>{label}</RotuloPainel>
+        <ResponsiveContainer width="100%" height={210}>
+          <ComposedChart data={data} syncId="growth-serie" margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+            <CartesianGrid vertical={false} stroke="#DEDCD4" />
+            <XAxis dataKey="mesAno" hide />
+            <YAxis width={62} tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtIntCompact(v)} />
+            <Tooltip
+              contentStyle={TT.contentStyle}
+              labelStyle={TT.labelStyle}
+              itemStyle={TT.itemStyle}
+              formatter={(v: unknown) => [fmtInt(v as number), label]}
+            />
+            <Line type="monotone" dataKey="valor" stroke={FMP_RED} strokeWidth={2.5} dot={{ r: 3, fill: FMP_RED }} />
+          </ComposedChart>
+        </ResponsiveContainer>
+        <div className="mt-3">
+          <RotuloPainel>Investimento</RotuloPainel>
+          <ResponsiveContainer width="100%" height={140}>
+            <ComposedChart data={data} syncId="growth-serie" margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke="#DEDCD4" />
+              <XAxis dataKey="mesAno" tick={{ fontSize: 10, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={fmtMes} />
+              <YAxis width={62} tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
+              <Tooltip
+                contentStyle={TT.contentStyle}
+                labelStyle={TT.labelStyle}
+                itemStyle={TT.itemStyle}
+                formatter={(v: unknown) => [fmtBRLCompact(v as number), 'Investimento']}
+              />
+              <Line type="monotone" dataKey="investimento" stroke={FMP_DARK} strokeWidth={2} dot={{ r: 2.5, fill: FMP_DARK }} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <ResponsiveContainer width="100%" height={360}>
       <ComposedChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-        <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#DEDCD4" />
+        <CartesianGrid vertical={false} stroke="#DEDCD4" />
         {/* "Outubro - 25" -> "out/25": com 6 caracteres praticamente todos
             os meses aparecem, em vez de só o primeiro e o último. */}
         <XAxis

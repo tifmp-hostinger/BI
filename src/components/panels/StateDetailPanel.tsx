@@ -2,6 +2,7 @@ import {
   Bar,
   BarChart,
   Cell,
+  LabelList,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -23,6 +24,7 @@ import type { StateDetail } from '@/services/matriculasService';
 import { nameOf, regionOf } from '@/lib/brStates';
 import { CHART_TOOLTIP, CORES_CATEGORICAS } from '@/lib/chartColors';
 import { fmtBRL, fmtBRLCompact, fmtInt, truncateLabel } from '@/lib/formatters';
+import { useEstiloVisualizacao } from '@/lib/estiloVisualizacao';
 
 type Props = {
   uf: string | null;
@@ -35,7 +37,52 @@ type Props = {
 const SITU_COLORS = CORES_CATEGORICAS;
 const tt = CHART_TOOLTIP;
 
+/**
+ * Situações como barra deitada (estilo 'nova'): o donut ciclava as 8 cores
+ * categóricas quando havia mais situações que cores (a 9ª repetia a 1ª) e
+ * comparava mal fatias parecidas. A barra aguenta qualquer quantidade.
+ */
+function SituacoesBarras({ dados }: { dados: { name: string; value: number }[] }) {
+  return (
+    <ResponsiveContainer width="100%" height={Math.max(140, dados.length * 30)}>
+      <BarChart data={dados} layout="vertical" margin={{ top: 4, right: 52, left: 0, bottom: 4 }}>
+        <defs>
+          <linearGradient id="barSituDet" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#EE2A42" stopOpacity={0.9} />
+            <stop offset="100%" stopColor="#B81E32" stopOpacity={0.85} />
+          </linearGradient>
+        </defs>
+        <XAxis type="number" hide />
+        <YAxis
+          type="category"
+          dataKey="name"
+          tick={{ fontSize: 10, fill: '#3A3838' }}
+          tickLine={false}
+          axisLine={false}
+          width={110}
+          tickFormatter={(v: string) => truncateLabel(v, 15)}
+        />
+        <Tooltip
+          cursor={{ fill: 'rgba(238,42,66,0.05)' }}
+          contentStyle={tt.contentStyle}
+          itemStyle={tt.itemStyle}
+          formatter={(v: unknown) => [`${v}`, 'matrículas']}
+        />
+        <Bar dataKey="value" fill="url(#barSituDet)" radius={[3, 6, 6, 3]} maxBarSize={16}>
+          <LabelList
+            dataKey="value"
+            position="right"
+            formatter={(v: unknown) => fmtInt(v as number)}
+            style={{ fontSize: 10, fill: '#3A3838', fontWeight: 700 }}
+          />
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
 export function StateDetailPanel({ uf, detail, onClose, totalNacional }: Props) {
+  const estilo = useEstiloVisualizacao();
   if (!uf || !detail) {
     return (
       <div className="flex h-full min-h-[400px] flex-col items-center justify-center rounded-md border border-dashed border-line bg-white p-8 text-center">
@@ -193,6 +240,10 @@ export function StateDetailPanel({ uf, detail, onClose, totalNacional }: Props) 
 
         {detail.situacoes.length > 0 && (
           <Section title="Situações de matrícula">
+            {estilo === 'nova' ? (
+              <SituacoesBarras dados={detail.situacoes} />
+            ) : (
+              <>
             <ResponsiveContainer width="100%" height={180}>
               <PieChart>
                 <Tooltip
@@ -238,6 +289,8 @@ export function StateDetailPanel({ uf, detail, onClose, totalNacional }: Props) 
                 </li>
               ))}
             </ul>
+              </>
+            )}
           </Section>
         )}
 

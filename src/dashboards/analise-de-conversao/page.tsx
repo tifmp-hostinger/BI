@@ -268,7 +268,7 @@ export function AnaliseDeConversaoPage() {
                               <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
                             </linearGradient>
                           </defs>
-                          <CartesianGrid strokeDasharray="4 4" horizontal={false} stroke="#DEDCD4" />
+                          <CartesianGrid horizontal={false} stroke="#DEDCD4" />
                           <XAxis
                             type="number"
                             tick={{ fontSize: 11, fill: '#6E6B66' }}
@@ -417,7 +417,7 @@ function LeadsComportamentoChart({
                 <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#DEDCD4" />
+            <CartesianGrid vertical={false} stroke="#DEDCD4" />
             <XAxis
               dataKey="mesAno"
               tick={{ fontSize: 9, fill: '#6E6B66' }}

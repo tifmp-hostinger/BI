@@ -32,6 +32,7 @@ import { ErrorState } from '@/components/ui/ErrorState';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { DataFreshness } from '@/components/ui/DataFreshness';
 import { AtualizandoAviso } from '@/components/ui/AtualizandoAviso';
+import { SeletorVisualizacao } from '@/components/ui/SeletorVisualizacao';
 import { FONTES_POR_DASHBOARD } from '@/lib/dataFreshness';
 import { MultiSelect } from '@/components/ui/MultiSelect';
 import { fmtBRLCompact, fmtInt, fmtPct, fmtRatio } from '@/lib/formatters';
@@ -306,6 +307,7 @@ export function GrowthEPerformancePage() {
               <Facebook className="h-3.5 w-3.5" />
               Meta
             </button>
+            <SeletorVisualizacao />
             <button
               type="button"
               onClick={refetch}

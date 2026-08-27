@@ -229,3 +229,25 @@
   border-color: var(--fmp-red) !important;
   color: var(--fmp-red) !important;
 }
+
+/* ---- Acessibilidade global ---- */
+
+/* Quem pediu menos movimento no sistema operacional recebe o app parado:
+   as animações de entrada re-tocam a cada troca de aba (os cards remontam)
+   e, sem esta regra, não havia como desligá-las. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Anel de foco padrão para navegação por teclado — vale para todo controle
+   que não define o próprio estado de foco. Só em :focus-visible, para não
+   aparecer em clique de mouse. */
+:focus-visible {
+  outline: 2px solid var(--fmp-red);
+  outline-offset: 2px;
+}

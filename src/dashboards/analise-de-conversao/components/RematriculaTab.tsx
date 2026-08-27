@@ -17,7 +17,50 @@ import { ChartSkeleton } from '@/components/ui/Skeletons';
 import { EmptyState } from '@/components/ui/EmptyState';
 import type { RematriculaData } from '../types';
 import { CHART_TOOLTIP, CORES_CATEGORICAS, FMP_DARK, FMP_RED, NEUTRAL } from '@/lib/chartColors';
+import { useEstiloVisualizacao } from '@/lib/estiloVisualizacao';
 
+/**
+ * Barras agrupadas num único eixo (estilo 'nova') para Reingresso e
+ * Rematrícula. As duas séries são CONTAGENS de matrículas — o desenho antigo
+ * as punha em dois eixos Y, então a distância vertical entre barra e linha não
+ * significava nada, mas parecia significar. Mesma unidade = mesmo eixo.
+ */
+function BarrasAgrupadas({
+  dados,
+  chaveA,
+  rotuloA,
+  chaveB,
+  rotuloB,
+  gradientId,
+}: {
+  dados: Array<Record<string, string | number>>;
+  chaveA: string;
+  rotuloA: string;
+  chaveB: string;
+  rotuloB: string;
+  gradientId: string;
+}) {
+  const tooltip = CHART_TOOLTIP;
+  return (
+    <ResponsiveContainer width="100%" height={360}>
+      <BarChart data={dados} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={FMP_RED} stopOpacity={0.9} />
+            <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid vertical={false} stroke="#DEDCD4" />
+        <XAxis dataKey="periodo" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
+        <YAxis tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
+        <Tooltip cursor={{ fill: 'rgba(238,42,66,0.05)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} />
+        <Legend verticalAlign="bottom" iconType="circle" formatter={(v: string) => <span className="text-xs text-ink-2">{v}</span>} />
+        <Bar dataKey={chaveA} name={rotuloA} fill={`url(#${gradientId})`} radius={[8, 8, 4, 4]} maxBarSize={36} />
+        <Bar dataKey={chaveB} name={rotuloB} fill={NEUTRAL} radius={[8, 8, 4, 4]} maxBarSize={36} />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
 
 type Props = {
   loading: boolean;
@@ -26,6 +69,7 @@ type Props = {
 
 export function RematriculaTab({ loading, data }: Props) {
   const tooltip = CHART_TOOLTIP;
+  const estilo = useEstiloVisualizacao();
 
   if (loading) {
     return (
@@ -61,7 +105,7 @@ export function RematriculaTab({ loading, data }: Props) {
           ) : (
             <ResponsiveContainer width="100%" height={360}>
               <BarChart data={data.evasaoPorPeriodo} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-                <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#DEDCD4" />
+                <CartesianGrid vertical={false} stroke="#DEDCD4" />
                 <XAxis dataKey="periodo" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
                 <Tooltip cursor={{ fill: 'rgba(238,42,66,0.05)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} />
@@ -79,11 +123,20 @@ export function RematriculaTab({ loading, data }: Props) {
         <RItem rid="reingresso">
         <SectionCard
           title="Reingresso - Comportamento"
-          subtitle="Colunas: Confirmadas | Linha: Aguardando"
+          subtitle={estilo === 'nova' ? 'Confirmadas x aguardando, por período letivo' : 'Colunas: Confirmadas | Linha: Aguardando'}
           icon={RefreshCw}
         >
           {reingressoEmpty ? (
             <EmptyState title="Sem dados de reingresso para os filtros selecionados" />
+          ) : estilo === 'nova' ? (
+            <BarrasAgrupadas
+              dados={data.reingressoPorPeriodo as unknown as Array<Record<string, string | number>>}
+              chaveA="reingressoConf"
+              rotuloA="Confirmadas"
+              chaveB="reingressoAguard"
+              rotuloB="Aguardando"
+              gradientId="barReingressoNovo"
+            />
           ) : (
             <ResponsiveContainer width="100%" height={360}>
               <ComposedChart data={data.reingressoPorPeriodo} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
@@ -93,7 +146,7 @@ export function RematriculaTab({ loading, data }: Props) {
                     <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#DEDCD4" />
+                <CartesianGrid vertical={false} stroke="#DEDCD4" />
                 <XAxis dataKey="periodo" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
                 <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
                 <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
@@ -110,11 +163,20 @@ export function RematriculaTab({ loading, data }: Props) {
         <RItem rid="rematricula">
         <SectionCard
           title="Rematrícula - Composição"
-          subtitle="Colunas: confirmadas | Linha: não realizadas"
+          subtitle={estilo === 'nova' ? 'Confirmadas x não realizadas, por período letivo' : 'Colunas: confirmadas | Linha: não realizadas'}
           icon={RotateCcw}
         >
           {rematEmpty ? (
             <EmptyState title="Sem dados de rematrícula para os filtros selecionados" />
+          ) : estilo === 'nova' ? (
+            <BarrasAgrupadas
+              dados={data.rematriculaPorPeriodo as unknown as Array<Record<string, string | number>>}
+              chaveA="rematConf"
+              rotuloA="Confirmada"
+              chaveB="rematNaoRealiz"
+              rotuloB="Não realizada"
+              gradientId="barRematNovo"
+            />
           ) : (
             <ResponsiveContainer width="100%" height={360}>
               <ComposedChart data={data.rematriculaPorPeriodo} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
@@ -124,7 +186,7 @@ export function RematriculaTab({ loading, data }: Props) {
                     <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#DEDCD4" />
+                <CartesianGrid vertical={false} stroke="#DEDCD4" />
                 <XAxis dataKey="periodo" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
                 <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
                 <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />

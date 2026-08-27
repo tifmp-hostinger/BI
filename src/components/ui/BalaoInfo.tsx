@@ -74,7 +74,7 @@ export function BalaoInfo({
         aria-expanded={aberto}
         aria-label={rotuloAcao}
         onClick={() => (aberto ? setAberto(false) : abre())}
-        className={classeGatilho ?? 'cursor-help rounded-full p-1 text-ink-3 transition hover:text-fmp focus-visible:text-fmp focus-visible:outline-none'}
+        className={classeGatilho ?? 'cursor-help rounded-full p-1.5 -m-0.5 text-ink-3 transition hover:text-fmp focus-visible:text-fmp'}
       >
         {gatilho}
       </button>

@@ -1,6 +1,7 @@
 import {
   Bar,
   BarChart,
+  CartesianGrid,
   Cell,
   LabelList,
   Pie,
@@ -20,6 +21,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { fmtInt, fmtPct, truncateLabel } from '../formatters';
 import type { MestradoData } from '../types';
 import { CHART_TOOLTIP, CORES_CATEGORICAS, FMP_DARK, FMP_RED } from '@/lib/chartColors';
+import { useEstiloVisualizacao } from '@/lib/estiloVisualizacao';
 import { MEST_META } from '../constants';
 
 const PIE_COLORS = CORES_CATEGORICAS;
@@ -32,6 +34,7 @@ type Props = {
 
 export function MestradoTab({ loading, data }: Props) {
   const tooltip = CHART_TOOLTIP;
+  const estilo = useEstiloVisualizacao();
 
   if (loading) {
     return (
@@ -101,6 +104,41 @@ export function MestradoTab({ loading, data }: Props) {
         <SectionCard title="Status das Inscrições" subtitle="Situação de cada inscrição no processo seletivo" icon={Users}>
           {data.statusInscricoes.length === 0 || data.statusInscricoes.every((d) => d.valor === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
+          ) : estilo === 'nova' ? (
+            /* O donut colore N status ciclando 8 cores (o 9º repetiria a cor
+               do 1º) e compara mal fatias parecidas. Barra deitada aguenta
+               qualquer quantidade de status e mantém o % no rótulo. */
+            (() => {
+              const total = data.statusInscricoes.reduce((s, x) => s + x.valor, 0);
+              return (
+                <ResponsiveContainer width="100%" height={Math.max(200, data.statusInscricoes.length * 40)}>
+                  <BarChart data={data.statusInscricoes} layout="vertical" margin={{ top: 4, right: 96, left: 0, bottom: 4 }}>
+                    <defs>
+                      <linearGradient id="barStatusMest" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor={FMP_RED} stopOpacity={0.95} />
+                        <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.85} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid horizontal={false} stroke="#DEDCD4" />
+                    <XAxis type="number" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
+                    <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#3A3838' }} tickLine={false} axisLine={false} width={130} tickFormatter={(v: string) => truncateLabel(v, 18)} />
+                    <Tooltip cursor={{ fill: 'rgba(238,42,66,0.05)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtInt(v as number), 'Inscrições']} />
+                    <Bar dataKey="valor" fill="url(#barStatusMest)" radius={[4, 8, 8, 4]} maxBarSize={22}>
+                      <LabelList
+                        dataKey="valor"
+                        position="right"
+                        formatter={(v: unknown) => {
+                          const n = v as number;
+                          const pct = total > 0 ? Math.round((n / total) * 100) : 0;
+                          return `${fmtInt(n)} (${pct}%)`;
+                        }}
+                        style={{ fontSize: 11, fill: '#3A3838', fontWeight: 700 }}
+                      />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              );
+            })()
           ) : (
             <>
               <ResponsiveContainer width="100%" height={280}>
@@ -151,10 +189,7 @@ export function MestradoTab({ loading, data }: Props) {
                     return [`${fmtInt(v as number)} leads (${pct}% do total)`, 'Canal'];
                   }}
                 />
-                <Bar dataKey="valor" radius={[4, 8, 8, 4]} maxBarSize={20}>
-                  {data.leadsPorCanal.slice(0, 12).map((_, i) => (
-                    <Cell key={i} fill={`rgba(238,42,66,${Math.max(0.35, 1 - (i * 0.65) / Math.max(1, Math.min(data.leadsPorCanal.length, 12) - 1)).toFixed(2)})`} />
-                  ))}
+                <Bar dataKey="valor" fill={FMP_RED} radius={[4, 8, 8, 4]} maxBarSize={20}>
                   <LabelList position="right" dataKey="valor" fill={FMP_DARK} stroke="none" fontSize={11} fontWeight={700} formatter={(v: unknown) => fmtInt(v as number)} />
                 </Bar>
               </BarChart>
