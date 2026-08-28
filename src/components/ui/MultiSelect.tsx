@@ -10,7 +10,7 @@ type Props = {
 };
 
 const btnClass =
-  'inline-flex items-center justify-between gap-1.5 rounded-md border border-line-2 bg-white px-3 py-1.5 text-2xs font-semibold text-ink-2 transition hover:border-fmp/50 focus:border-fmp focus:outline-none focus:ring-1 focus:ring-fmp/30 cursor-pointer';
+  'inline-flex items-center justify-between gap-1.5 rounded-md border border-line-2 bg-card px-3 py-1.5 text-2xs font-semibold text-ink-2 transition hover:border-fmp/50 focus:border-fmp focus:outline-none focus:ring-1 focus:ring-fmp/30 cursor-pointer';
 
 export function MultiSelect({
   label,
@@ -73,7 +73,7 @@ export function MultiSelect({
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 z-50 mt-1 max-h-64 min-w-full max-w-[min(20rem,90vw)] overflow-y-auto rounded-md border border-line bg-white py-1 shadow-lg">
+        <div className="absolute top-full left-0 z-50 mt-1 max-h-64 min-w-full max-w-[min(20rem,90vw)] overflow-y-auto rounded-md border border-line bg-card py-1 shadow-lg">
           <button
             type="button"
             onClick={() => onChange([])}

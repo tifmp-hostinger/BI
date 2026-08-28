@@ -56,7 +56,7 @@ export function SectionCard({
 
   return (
     <section
-      className={`rounded-md border border-line bg-white shadow-card animate-fade-in ${className}`}
+      className={`rounded-md border border-line bg-card shadow-card animate-fade-in ${className}`}
     >
       <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
         {header}
@@ -87,7 +87,7 @@ export function SectionCard({
             onClick={() => setExpanded(false)}
           >
             <div
-              className="flex max-h-full w-full max-w-6xl flex-col overflow-hidden rounded-md bg-white shadow-lg"
+              className="flex max-h-full w-full max-w-6xl flex-col overflow-hidden rounded-md bg-card shadow-lg"
               onClick={(e) => e.stopPropagation()}
             >
               <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">

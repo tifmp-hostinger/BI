@@ -36,9 +36,11 @@ const FMP_SAND = '#BFBAA4';
  *  métrica em duas codificações concorrentes (foi por isso que o mapa de calor
  *  saiu daqui). */
 const MALHA_ESTILO = {
-  color: '#CFCCBF', // line-2
-  weight: 0.8,
-  fillColor: '#FFFFFF',
+  // Terra DOIS degraus acima do "oceano" (ver .leaflet-container no
+  // index.css): no escuro a silhueta só existe se houver essa distância.
+  color: '#615B6C',
+  weight: 1,
+  fillColor: '#332F3C',
   fillOpacity: 1,
 } as const;
 
@@ -49,17 +51,17 @@ const MALHA_ESTILO = {
  * tons do mesmo vermelho, não.
  */
 const MALHA_ESTILO_HOVER = {
-  color: '#EE2A42',
+  color: '#FF4D63',
   weight: 1.4,
-  fillColor: '#FBD7DC', // fmp-light
+  fillColor: '#3A2226', // wash vermelho escuro
   fillOpacity: 1,
 } as const;
 
 /** Estado fixado no clique: a própria forma acende, não só a bolha. */
 const MALHA_ESTILO_SELECIONADO = {
-  color: '#B81E32', // fmp-pressed
+  color: '#FF6B7E',
   weight: 2.4,
-  fillColor: '#F9BAC2', // fmp-200
+  fillColor: '#55212B',
   fillOpacity: 1,
 } as const;
 
@@ -359,15 +361,15 @@ export function BrazilStateMap({
       // antes usava Inter e a paleta slate, destoando dos tooltips recharts.
       marker.bindTooltip(
         `<div style="font-family:Outfit,sans-serif;">
-          <div style="font-size:10px;color:#6E6B66;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;">${s.region}</div>
-          <div style="font-size:13px;font-weight:600;color:#191818;margin-top:2px;">${s.name} <span style="color:#6E6B66;font-weight:500;">(${s.uf})</span></div>
-          <div style="font-size:12px;color:#B81E32;margin-top:4px;font-weight:600;">${fmtMetric(total, metricFormat)} ${metricLabel}</div>
+          <div style="font-size:10px;color:#9B97A1;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;">${s.region}</div>
+          <div style="font-size:13px;font-weight:600;color:#F2EFEA;margin-top:2px;">${s.name} <span style="color:#9B97A1;font-weight:500;">(${s.uf})</span></div>
+          <div style="font-size:12px;color:#FF8B9A;margin-top:4px;font-weight:600;">${fmtMetric(total, metricFormat)} ${metricLabel}</div>
           ${
             agg
               ? linha2
-                ? `<div style="font-size:10px;color:#6E6B66;margin-top:2px;">${linha2}</div>`
+                ? `<div style="font-size:10px;color:#9B97A1;margin-top:2px;">${linha2}</div>`
                 : ''
-              : '<div style="font-size:10px;color:#6E6B66;margin-top:2px;">Sem dados</div>'
+              : '<div style="font-size:10px;color:#9B97A1;margin-top:2px;">Sem dados</div>'
           }
         </div>`,
         { direction: 'top', offset: [0, -6], className: 'cep-tooltip' }
@@ -427,13 +429,14 @@ function renderBubble({
 
   const bg = hasData
     ? `background: radial-gradient(circle at 30% 25%, ${lighten(color)}, ${color});`
-    : 'background: rgba(255,255,255,0.75);';
+    : 'background: rgba(255,255,255,0.06);';
 
   // Texto ESCURO sobre a bolha: a rampa de cor vai de areia a vermelho, e
   // com texto branco o contraste ficava entre 2,4:1 (estados de pouco
   // volume) e 4,2:1 (o mais alto) — ilegível na maior parte do mapa. Em
   // tinta escura toda a rampa fica entre 5,1:1 e 7,3:1.
-  const fontColor = hasData ? '#191818' : '#6E6B66';
+  // Com dado a bolha continua CLARA (rampa areia→vermelho): texto escuro nela.
+  const fontColor = hasData ? '#191818' : '#9B97A1';
   const fontSize = size > 46 ? 12 : size > 38 ? 11 : 10;
   const label = valorLabel || state.uf;
 

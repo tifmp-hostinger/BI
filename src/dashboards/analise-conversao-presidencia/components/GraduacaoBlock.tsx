@@ -49,7 +49,7 @@ export function GraduacaoBlock({
       subtitle={subtitle}
       icon={GraduationCap}
       actions={
-        <label className="flex items-center gap-2 rounded-pill border border-line bg-white px-3 py-1.5 text-2xs font-semibold text-ink-2">
+        <label className="flex items-center gap-2 rounded-pill border border-line bg-card px-3 py-1.5 text-2xs font-semibold text-ink-2">
           <span className="text-ink-3">Período</span>
           <select
             value={periodo}

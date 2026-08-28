@@ -9,7 +9,7 @@ type Props = {
 export function ModulePlaceholder({ title, description }: Props) {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center px-6 text-center animate-fade-in">
-      <div className="rounded-md border border-line bg-white p-4 shadow-card">
+      <div className="rounded-md border border-line bg-card p-4 shadow-card">
         <div className="rounded-sm bg-fmp-muted p-4">
           <Wrench className="h-8 w-8 text-fmp" strokeWidth={2} />
         </div>

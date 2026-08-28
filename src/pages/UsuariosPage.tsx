@@ -42,14 +42,14 @@ function AvisoSenha({
         Copie agora e repasse ao usuário — esta senha não poderá ser vista novamente.
       </p>
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        <code className="rounded-sm bg-white px-2 py-1 text-xs text-ink">{codusuario}</code>
-        <code className="rounded-sm bg-white px-2 py-1 text-xs font-semibold text-ink">
+        <code className="rounded-sm bg-card px-2 py-1 text-xs text-ink">{codusuario}</code>
+        <code className="rounded-sm bg-card px-2 py-1 text-xs font-semibold text-ink">
           {senha}
         </code>
         <button
           type="button"
           onClick={() => void navigator.clipboard?.writeText(senha)}
-          className="rounded-pill border border-warning-dark/30 px-3 py-1 text-2xs text-warning-dark hover:bg-white"
+          className="rounded-pill border border-warning-dark/30 px-3 py-1 text-2xs text-warning-dark hover:bg-card"
         >
           Copiar senha
         </button>

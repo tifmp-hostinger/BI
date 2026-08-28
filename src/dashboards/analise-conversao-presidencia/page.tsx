@@ -182,7 +182,7 @@ export function AnaliseConversaoPresidenciaPage() {
         <section className="rounded-md border border-dashed border-fmp/30 bg-fmp-muted p-5 animate-fade-in">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
-              <div className="rounded-sm bg-white p-2 text-fmp shadow-card">
+              <div className="rounded-sm bg-card p-2 text-fmp shadow-card">
                 <Target className="h-4 w-4" />
               </div>
               <div>

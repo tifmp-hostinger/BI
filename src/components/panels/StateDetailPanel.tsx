@@ -56,14 +56,14 @@ function SituacoesBarras({ dados }: { dados: { name: string; value: number }[] }
         <YAxis
           type="category"
           dataKey="name"
-          tick={{ fontSize: 10, fill: '#3A3838' }}
+          tick={{ fontSize: 10, fill: '#D7D4CE' }}
           tickLine={false}
           axisLine={false}
           width={110}
           tickFormatter={(v: string) => truncateLabel(v, 15)}
         />
         <Tooltip
-          cursor={{ fill: 'rgba(238,42,66,0.05)' }}
+          cursor={{ fill: 'rgba(255,77,99,0.10)' }}
           contentStyle={tt.contentStyle}
           itemStyle={tt.itemStyle}
           formatter={(v: unknown) => [`${v}`, 'matrículas']}
@@ -73,7 +73,7 @@ function SituacoesBarras({ dados }: { dados: { name: string; value: number }[] }
             dataKey="value"
             position="right"
             formatter={(v: unknown) => fmtInt(v as number)}
-            style={{ fontSize: 10, fill: '#3A3838', fontWeight: 700 }}
+            style={{ fontSize: 10, fill: '#D7D4CE', fontWeight: 700 }}
           />
         </Bar>
       </BarChart>
@@ -85,7 +85,7 @@ export function StateDetailPanel({ uf, detail, onClose, totalNacional }: Props) 
   const estilo = useEstiloVisualizacao();
   if (!uf || !detail) {
     return (
-      <div className="flex h-full min-h-[400px] flex-col items-center justify-center rounded-md border border-dashed border-line bg-white p-8 text-center">
+      <div className="flex h-full min-h-[400px] flex-col items-center justify-center rounded-md border border-dashed border-line bg-card p-8 text-center">
         <div className="relative">
           <div className="absolute inset-0 animate-pulse-ring rounded-full bg-fmp/20" />
           <div className="relative rounded-full bg-fmp-muted p-4 text-fmp">
@@ -114,7 +114,7 @@ export function StateDetailPanel({ uf, detail, onClose, totalNacional }: Props) 
   return (
     <div
       key={uf}
-      className="relative overflow-hidden rounded-md border border-line bg-white shadow-card animate-slide-right"
+      className="relative overflow-hidden rounded-md border border-line bg-card shadow-card animate-slide-right"
     >
       <div className="absolute inset-x-0 top-0 h-1 bg-fmp" />
 
@@ -199,7 +199,7 @@ export function StateDetailPanel({ uf, detail, onClose, totalNacional }: Props) 
                         {c.value}
                       </span>
                     </div>
-                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-pill bg-white">
+                    <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-pill bg-card">
                       <div
                         className="h-full rounded-pill bg-fmp transition-all duration-500"
                         style={{ width: `${pct}%` }}
@@ -311,19 +311,19 @@ export function StateDetailPanel({ uf, detail, onClose, totalNacional }: Props) 
                 <XAxis
                   type="number"
                   hide
-                  tick={{ fontSize: 10, fill: '#6E6B66' }}
+                  tick={{ fontSize: 10, fill: '#9B97A1' }}
                 />
                 <YAxis
                   type="category"
                   dataKey="name"
-                  tick={{ fontSize: 10, fill: '#3A3838' }}
+                  tick={{ fontSize: 10, fill: '#D7D4CE' }}
                   tickLine={false}
                   axisLine={false}
                   width={100}
                   tickFormatter={(v: string) => truncateLabel(v, 14)}
                 />
                 <Tooltip
-                  cursor={{ fill: 'rgba(238,42,66,0.05)' }}
+                  cursor={{ fill: 'rgba(255,77,99,0.10)' }}
                   contentStyle={tt.contentStyle}
                   itemStyle={tt.itemStyle}
                   formatter={(v: unknown) => [`${v}`, 'matrículas']}

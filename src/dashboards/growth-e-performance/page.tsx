@@ -289,7 +289,7 @@ export function GrowthEPerformancePage() {
               title={googleOn ? 'Remover filtro do Google' : 'Ver somente Google'}
               onClick={() => setGoogleOn((v) => !v)}
               className={`inline-flex items-center gap-1.5 rounded-pill px-3 py-1.5 text-2xs font-semibold transition ${
-                googleOn ? 'bg-fmp text-white shadow-glow' : 'border border-line bg-white text-ink-2 hover:bg-paper'
+                googleOn ? 'bg-fmp text-white shadow-glow' : 'border border-line bg-card text-ink-2 hover:bg-paper'
               }`}
             >
               <Chrome className="h-3.5 w-3.5" />
@@ -301,7 +301,7 @@ export function GrowthEPerformancePage() {
               title={metaOn ? 'Remover filtro do Meta' : 'Ver somente Meta'}
               onClick={() => setMetaOn((v) => !v)}
               className={`inline-flex items-center gap-1.5 rounded-pill px-3 py-1.5 text-2xs font-semibold transition ${
-                metaOn ? 'bg-fmp text-white shadow-glow' : 'border border-line bg-white text-ink-2 hover:bg-paper'
+                metaOn ? 'bg-fmp text-white shadow-glow' : 'border border-line bg-card text-ink-2 hover:bg-paper'
               }`}
             >
               <Facebook className="h-3.5 w-3.5" />
@@ -326,7 +326,7 @@ export function GrowthEPerformancePage() {
           <aside
             className={`flex-shrink-0 ${painelAberto ? 'w-full lg:w-56' : 'w-full lg:w-10'}`}
           >
-            <div className="rounded-md border border-line bg-white p-3 shadow-card lg:sticky lg:top-4">
+            <div className="rounded-md border border-line bg-card p-3 shadow-card lg:sticky lg:top-4">
               <div className="flex items-center justify-between">
                 {painelAberto ? (
                   <span className="inline-flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-widest text-ink-3">
@@ -615,7 +615,7 @@ export function GrowthEPerformancePage() {
                     <div
                       role="tablist"
                       aria-label="Visões do dashboard"
-                      className="flex max-w-full items-center gap-1 overflow-x-auto rounded-md border border-line bg-white p-1 shadow-card sm:w-fit"
+                      className="flex max-w-full items-center gap-1 overflow-x-auto rounded-md border border-line bg-card p-1 shadow-card sm:w-fit"
                     >
                       {viewsVisiveis.map((v) => (
                         <button
@@ -674,7 +674,7 @@ export function GrowthEPerformancePage() {
                                   aria-pressed={viewAtiva === opcao}
                                   onClick={() => setView(opcao)}
                                   className={`rounded-pill px-2.5 py-1 text-2xs font-semibold transition ${
-                                    viewAtiva === opcao ? 'bg-fmp text-white' : 'text-ink-2 hover:bg-white'
+                                    viewAtiva === opcao ? 'bg-fmp text-white' : 'text-ink-2 hover:bg-card'
                                   }`}
                                 >
                                   {opcao === 'matriculas' ? 'Matrículas' : 'Leads'}

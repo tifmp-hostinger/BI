@@ -39,7 +39,7 @@ export function GraduacaoTab({ loading, data }: Props) {
             {Array.from({ length: 7 }).map((_, i) => <StatCardSkeleton key={i} index={i} />)}
           </div>
         </section>
-        <div className="h-56 animate-pulse rounded-md border border-line bg-white shadow-card" />
+        <div className="h-56 animate-pulse rounded-md border border-line bg-card shadow-card" />
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {Array.from({ length: 4 }).map((_, i) => <ChartSkeleton key={i} height={320} />)}
         </section>
@@ -71,7 +71,7 @@ export function GraduacaoTab({ loading, data }: Props) {
         </div>
       </section>
 
-      <div className="flex flex-col items-center rounded-md border border-line bg-white p-6 shadow-card animate-fade-in">
+      <div className="flex flex-col items-center rounded-md border border-line bg-card p-6 shadow-card animate-fade-in">
         <GaugeSemicircle
           value={data.pctMeta}
           label="Graduação | Meta"
@@ -95,9 +95,9 @@ export function GraduacaoTab({ loading, data }: Props) {
                     <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="categoria" tick={{ fontSize: 12, fill: '#3A3838' }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
-                <Tooltip cursor={{ fill: 'rgba(238,42,66,0.05)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtInt(v as number), 'Matrículas']} />
+                <XAxis dataKey="categoria" tick={{ fontSize: 12, fill: '#D7D4CE' }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
+                <Tooltip cursor={{ fill: 'rgba(255,77,99,0.10)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtInt(v as number), 'Matrículas']} />
                 <Bar dataKey="valor" fill="url(#barPgtBolsa)" radius={[8, 8, 4, 4]} maxBarSize={80} />
               </BarChart>
             </ResponsiveContainer>
@@ -135,9 +135,9 @@ export function GraduacaoTab({ loading, data }: Props) {
                     <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
                   </linearGradient>
                 </defs>
-                <XAxis type="number" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtInt(v)} />
-                <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#3A3838' }} tickLine={false} axisLine={false} width={180} tickFormatter={(v: string) => truncateLabel(v, 26)} />
-                <Tooltip cursor={{ fill: 'rgba(238,42,66,0.05)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [`${fmtInt(v as number)} inscrições`, 'Processo']} />
+                <XAxis type="number" tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtInt(v)} />
+                <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#D7D4CE' }} tickLine={false} axisLine={false} width={180} tickFormatter={(v: string) => truncateLabel(v, 26)} />
+                <Tooltip cursor={{ fill: 'rgba(255,77,99,0.10)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [`${fmtInt(v as number)} inscrições`, 'Processo']} />
                 <Bar dataKey="valor" fill="url(#barProcGrad)" radius={[4, 8, 8, 4]} maxBarSize={24} />
               </BarChart>
             </ResponsiveContainer>
@@ -158,9 +158,9 @@ export function GraduacaoTab({ loading, data }: Props) {
                     <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
                   </linearGradient>
                 </defs>
-                <XAxis type="number" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtInt(v)} />
-                <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#3A3838' }} tickLine={false} axisLine={false} width={180} tickFormatter={(v: string) => truncateLabel(v, 26)} />
-                <Tooltip cursor={{ fill: 'rgba(238,42,66,0.05)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [`${fmtInt(v as number)} matrículas`, 'Ingresso']} />
+                <XAxis type="number" tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtInt(v)} />
+                <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#D7D4CE' }} tickLine={false} axisLine={false} width={180} tickFormatter={(v: string) => truncateLabel(v, 26)} />
+                <Tooltip cursor={{ fill: 'rgba(255,77,99,0.10)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [`${fmtInt(v as number)} matrículas`, 'Ingresso']} />
                 <Bar dataKey="valor" fill="url(#barIngresso)" radius={[4, 8, 8, 4]} maxBarSize={24} />
               </BarChart>
             </ResponsiveContainer>
@@ -181,9 +181,9 @@ export function GraduacaoTab({ loading, data }: Props) {
                   <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="data" tick={{ fontSize: 9, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: string) => v.slice(8) + '/' + v.slice(5, 7)} interval={Math.max(0, Math.floor(data.matPorDia.length / 12))} />
-              <YAxis tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
-              <Tooltip cursor={{ fill: 'rgba(238,42,66,0.05)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [`${fmtInt(v as number)} matrículas`, 'Dia']} />
+              <XAxis dataKey="data" tick={{ fontSize: 9, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: string) => v.slice(8) + '/' + v.slice(5, 7)} interval={Math.max(0, Math.floor(data.matPorDia.length / 12))} />
+              <YAxis tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
+              <Tooltip cursor={{ fill: 'rgba(255,77,99,0.10)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [`${fmtInt(v as number)} matrículas`, 'Dia']} />
               <Bar dataKey="valor" fill="url(#barDia)" radius={[4, 4, 2, 2]} maxBarSize={28} />
             </BarChart>
           </ResponsiveContainer>

@@ -49,7 +49,7 @@ export function FunnelPanel({ media, negocio }: { media: MediaMetrics; negocio: 
   return (
     // @container: no desktop este painel vive numa coluna FIXA de 300px — a
     // grade interna precisa reagir à largura real do painel, não à viewport.
-    <div className="@container rounded-md border border-line bg-white p-5 shadow-card animate-fade-in">
+    <div className="@container rounded-md border border-line bg-card p-5 shadow-card animate-fade-in">
       <h3 className="fmp-kpi mb-1 text-sm leading-normal">
         Funil de Captação
       </h3>

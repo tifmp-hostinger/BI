@@ -10,14 +10,18 @@
  * categorias lado a lado num pie/donut, não usar em funil.
  */
 export const CORES_CATEGORICAS = [
-  '#2a78d6', // azul
-  '#eb6834', // laranja
-  '#1baf7a', // verde-água
-  '#eda100', // amarelo
-  '#e87ba4', // magenta
-  '#008300', // verde
-  '#4a3aa7', // violeta
-  '#e34948', // vermelho
+  // Passos CLAREADOS para o fundo escuro (tema SaaS): os originais foram
+  // validados sobre card branco; sobre #17151A os mais escuros (verde #008300,
+  // violeta #4a3aa7) caíam abaixo do contraste útil. Mesmos matizes, mesma
+  // ordem fixa — cor continua seguindo a entidade.
+  '#5B9BE8', // azul
+  '#F0824E', // laranja
+  '#2FC48E', // verde-água
+  '#F5B33E', // amarelo
+  '#F095B8', // magenta
+  '#4CBB4C', // verde
+  '#8A78E0', // violeta
+  '#F0616F', // vermelho
 ] as const;
 
 export function corCategorica(indice: number): string {
@@ -29,8 +33,9 @@ export function corCategorica(indice: number): string {
  * localmente em 5 arquivos (com FMP_DARK apontando na verdade para o token
  * fmp.pressed) — um único ponto evita que os dashboards derivem entre si.
  */
-export const FMP_RED = '#EE2A42';
-export const FMP_DARK = '#B81E32';
+// Vermelhos de série clareados para o escuro; NEUTRAL (areia) já é claro.
+export const FMP_RED = '#FF4D63';
+export const FMP_DARK = '#E23B52';
 export const NEUTRAL = '#BFBAA4';
 
 /**
@@ -39,18 +44,18 @@ export const NEUTRAL = '#BFBAA4';
  */
 export const CHART_TOOLTIP = {
   contentStyle: {
-    background: 'rgba(255,255,255,0.98)',
-    border: '1px solid #DEDCD4',
+    background: 'rgba(29,26,32,0.98)',
+    border: '1px solid #3A3641',
     borderRadius: 12,
-    boxShadow: '0 18px 40px rgba(25,24,24,0.12)',
+    boxShadow: '0 18px 40px rgba(0,0,0,0.55)',
     padding: 10,
     fontSize: 12,
   },
   labelStyle: {
-    color: '#191818',
+    color: '#F2EFEA',
     fontWeight: 600,
     marginBottom: 4,
     fontSize: 12,
   },
-  itemStyle: { color: '#3A3838', fontSize: 12 },
+  itemStyle: { color: '#C9C5BE', fontSize: 12 },
 } as const;

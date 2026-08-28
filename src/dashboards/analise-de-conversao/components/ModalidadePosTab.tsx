@@ -102,12 +102,12 @@ export function ModalidadePosTab({ loading, data }: Props) {
                     <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.85} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid horizontal={false} stroke="#DEDCD4" />
-                <XAxis type="number" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
-                <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#3A3838' }} tickLine={false} axisLine={false} width={180} tickFormatter={(v: string) => truncateLabel(v, 24)} />
-                <Tooltip cursor={{ fill: 'rgba(238,42,66,0.05)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtBRLCompact(v as number), 'Faturamento']} />
+                <CartesianGrid horizontal={false} stroke="#2B2830" />
+                <XAxis type="number" tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
+                <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#D7D4CE' }} tickLine={false} axisLine={false} width={180} tickFormatter={(v: string) => truncateLabel(v, 24)} />
+                <Tooltip cursor={{ fill: 'rgba(255,77,99,0.10)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtBRLCompact(v as number), 'Faturamento']} />
                 <Bar dataKey="valor" fill={`url(#barCurso${idMod})`} radius={[4, 8, 8, 4]} maxBarSize={24}>
-                  <LabelList dataKey="valor" position="right" formatter={(v: unknown) => fmtBRLCompact(v as number)} style={{ fontSize: 10, fill: '#3A3838', fontWeight: 700 }} />
+                  <LabelList dataKey="valor" position="right" formatter={(v: unknown) => fmtBRLCompact(v as number)} style={{ fontSize: 10, fill: '#D7D4CE', fontWeight: 700 }} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -128,10 +128,10 @@ export function ModalidadePosTab({ loading, data }: Props) {
                     <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid horizontal={false} stroke="#DEDCD4" />
-                <XAxis type="number" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
-                <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#3A3838' }} tickLine={false} axisLine={false} width={180} tickFormatter={(v: string) => truncateLabel(v, 24)} />
-                <Tooltip cursor={{ fill: 'rgba(238,42,66,0.05)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtBRLCompact(v as number), 'Faturamento']} />
+                <CartesianGrid horizontal={false} stroke="#2B2830" />
+                <XAxis type="number" tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
+                <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#D7D4CE' }} tickLine={false} axisLine={false} width={180} tickFormatter={(v: string) => truncateLabel(v, 24)} />
+                <Tooltip cursor={{ fill: 'rgba(255,77,99,0.10)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtBRLCompact(v as number), 'Faturamento']} />
                 <Bar dataKey="valor" fill={`url(#barDesc${idMod})`} radius={[4, 8, 8, 4]} maxBarSize={24} />
               </BarChart>
             </ResponsiveContainer>
@@ -159,12 +159,12 @@ export function ModalidadePosTab({ loading, data }: Props) {
                     <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.85} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid horizontal={false} stroke="#DEDCD4" />
-                <XAxis type="number" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
-                <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#3A3838' }} tickLine={false} axisLine={false} width={150} tickFormatter={(v: string) => truncateLabel(v, 20)} />
-                <Tooltip cursor={{ fill: 'rgba(238,42,66,0.05)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtBRLCompact(v as number), 'Receita']} />
+                <CartesianGrid horizontal={false} stroke="#2B2830" />
+                <XAxis type="number" tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
+                <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#D7D4CE' }} tickLine={false} axisLine={false} width={150} tickFormatter={(v: string) => truncateLabel(v, 20)} />
+                <Tooltip cursor={{ fill: 'rgba(255,77,99,0.10)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtBRLCompact(v as number), 'Receita']} />
                 <Bar dataKey="valor" fill={`url(#barPlanos${idMod})`} radius={[4, 8, 8, 4]} maxBarSize={26}>
-                  <LabelList dataKey="valor" position="right" formatter={(v: unknown) => fmtBRLCompact(v as number)} style={{ fontSize: 11, fill: '#3A3838', fontWeight: 700 }} />
+                  <LabelList dataKey="valor" position="right" formatter={(v: unknown) => fmtBRLCompact(v as number)} style={{ fontSize: 11, fill: '#D7D4CE', fontWeight: 700 }} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>

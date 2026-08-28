@@ -33,7 +33,7 @@ export function BarraContexto({
   onAtualizar: () => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border border-line bg-white px-4 py-2.5 shadow-card animate-fade-in">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border border-line bg-card px-4 py-2.5 shadow-card animate-fade-in">
       <Link
         to="/"
         className="inline-flex items-center gap-1 text-2xs font-semibold uppercase tracking-widest text-ink-3 transition hover:text-fmp no-underline"

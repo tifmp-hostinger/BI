@@ -14,7 +14,7 @@ export function SeletorVisualizacao() {
 
   const base =
     'inline-flex items-center gap-1 rounded-pill px-2.5 py-1 text-2xs font-semibold transition';
-  const ativo = 'bg-ink text-white';
+  const ativo = 'bg-fmp text-white shadow-glow';
   const inativo = 'text-ink-3 hover:bg-paper hover:text-ink-2';
 
   return (
@@ -22,7 +22,7 @@ export function SeletorVisualizacao() {
       role="group"
       aria-label="Estilo dos gráficos"
       title="Alguns gráficos foram redesenhados. Os números são os mesmos nas duas versões — muda só a forma de apresentar."
-      className="inline-flex items-center gap-0.5 rounded-pill border border-line bg-white p-0.5"
+      className="inline-flex items-center gap-0.5 rounded-pill border border-line bg-card p-0.5"
     >
       <button
         type="button"

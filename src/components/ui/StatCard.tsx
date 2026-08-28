@@ -113,7 +113,7 @@ export function StatCard({
 
   return (
     <div
-      className={`@container relative overflow-hidden rounded-md border border-line bg-white p-5 shadow-card transition-all duration-200 hover:shadow-card-hover animate-slide-up ${
+      className={`@container relative overflow-hidden rounded-md border border-line bg-card p-5 shadow-card transition-all duration-200 hover:shadow-card-hover animate-slide-up ${
         highlight ? 'ring-1 ring-fmp/30' : ''
       }`}
       style={{ animationDelay: `${index * 60}ms` }}
@@ -167,7 +167,7 @@ export function StatCard({
 export function StatCardSkeleton({ index = 0 }: { index?: number }) {
   return (
     <div
-      className="relative animate-slide-up overflow-hidden rounded-md border border-line bg-white p-5 shadow-card"
+      className="relative animate-slide-up overflow-hidden rounded-md border border-line bg-card p-5 shadow-card"
       style={{ animationDelay: `${index * 60}ms` }}
     >
       <div className="absolute inset-x-0 top-0 h-1 overflow-hidden bg-paper">
@@ -176,14 +176,14 @@ export function StatCardSkeleton({ index = 0 }: { index?: number }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-2">
           <div className="relative h-2 w-20 overflow-hidden rounded bg-paper">
-            <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/70 to-transparent" />
+            <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/10 to-transparent" />
           </div>
           <div className="relative h-7 w-24 overflow-hidden rounded bg-paper">
-            <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/70 to-transparent" />
+            <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/10 to-transparent" />
           </div>
         </div>
         <div className="relative h-10 w-10 overflow-hidden rounded-sm bg-paper">
-          <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/70 to-transparent" />
+          <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/10 to-transparent" />
         </div>
       </div>
     </div>

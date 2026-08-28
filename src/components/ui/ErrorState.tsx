@@ -13,7 +13,7 @@ export function ErrorState({
 }: Props) {
   return (
     <div className="flex flex-col items-center justify-center rounded-md border border-dashed border-fmp/30 bg-fmp-muted p-8 text-center animate-fade-in">
-      <div className="rounded-full bg-white p-3 shadow-card">
+      <div className="rounded-full bg-card p-3 shadow-card">
         <AlertTriangle className="h-6 w-6 text-fmp" />
       </div>
       <h3 className="mt-4 text-sm font-semibold text-fmp-dark">{title}</h3>

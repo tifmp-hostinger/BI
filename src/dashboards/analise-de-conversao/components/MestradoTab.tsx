@@ -44,7 +44,7 @@ export function MestradoTab({ loading, data }: Props) {
             {Array.from({ length: 5 }).map((_, i) => <StatCardSkeleton key={i} index={i} />)}
           </div>
         </section>
-        <div className="h-56 animate-pulse rounded-md border border-line bg-white shadow-card" />
+        <div className="h-56 animate-pulse rounded-md border border-line bg-card shadow-card" />
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {Array.from({ length: 3 }).map((_, i) => <ChartSkeleton key={i} height={360} />)}
         </section>
@@ -66,7 +66,7 @@ export function MestradoTab({ loading, data }: Props) {
         </div>
       </section>
 
-      <div className="flex flex-col items-center rounded-md border border-line bg-white p-6 shadow-card animate-fade-in">
+      <div className="flex flex-col items-center rounded-md border border-line bg-card p-6 shadow-card animate-fade-in">
         <GaugeSemicircle
           value={data.pctMeta}
           label="Mestrado | Meta"
@@ -90,9 +90,9 @@ export function MestradoTab({ loading, data }: Props) {
                     <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
                   </linearGradient>
                 </defs>
-                <XAxis type="number" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtInt(v)} />
-                <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#3A3838' }} tickLine={false} axisLine={false} width={160} tickFormatter={(v: string) => truncateLabel(v, 22)} />
-                <Tooltip cursor={{ fill: 'rgba(238,42,66,0.05)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [`${fmtInt(v as number)} inscrições`, 'Processo']} />
+                <XAxis type="number" tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtInt(v)} />
+                <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#D7D4CE' }} tickLine={false} axisLine={false} width={160} tickFormatter={(v: string) => truncateLabel(v, 22)} />
+                <Tooltip cursor={{ fill: 'rgba(255,77,99,0.10)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [`${fmtInt(v as number)} inscrições`, 'Processo']} />
                 <Bar dataKey="valor" fill="url(#barProcMest)" radius={[4, 8, 8, 4]} maxBarSize={28} />
               </BarChart>
             </ResponsiveContainer>
@@ -119,10 +119,10 @@ export function MestradoTab({ loading, data }: Props) {
                         <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.85} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid horizontal={false} stroke="#DEDCD4" />
-                    <XAxis type="number" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
-                    <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#3A3838' }} tickLine={false} axisLine={false} width={130} tickFormatter={(v: string) => truncateLabel(v, 18)} />
-                    <Tooltip cursor={{ fill: 'rgba(238,42,66,0.05)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtInt(v as number), 'Inscrições']} />
+                    <CartesianGrid horizontal={false} stroke="#2B2830" />
+                    <XAxis type="number" tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
+                    <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#D7D4CE' }} tickLine={false} axisLine={false} width={130} tickFormatter={(v: string) => truncateLabel(v, 18)} />
+                    <Tooltip cursor={{ fill: 'rgba(255,77,99,0.10)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtInt(v as number), 'Inscrições']} />
                     <Bar dataKey="valor" fill="url(#barStatusMest)" radius={[4, 8, 8, 4]} maxBarSize={22}>
                       <LabelList
                         dataKey="valor"
@@ -132,7 +132,7 @@ export function MestradoTab({ loading, data }: Props) {
                           const pct = total > 0 ? Math.round((n / total) * 100) : 0;
                           return `${fmtInt(n)} (${pct}%)`;
                         }}
-                        style={{ fontSize: 11, fill: '#3A3838', fontWeight: 700 }}
+                        style={{ fontSize: 11, fill: '#D7D4CE', fontWeight: 700 }}
                       />
                     </Bar>
                   </BarChart>
@@ -176,10 +176,10 @@ export function MestradoTab({ loading, data }: Props) {
           ) : (
             <ResponsiveContainer width="100%" height={Math.max(300, Math.min(data.leadsPorCanal.length, 12) * 32)}>
               <BarChart data={data.leadsPorCanal.slice(0, 12)} layout="vertical" margin={{ top: 4, right: 48, left: 0, bottom: 4 }}>
-                <XAxis type="number" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtInt(v)} />
-                <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#3A3838' }} tickLine={false} axisLine={false} width={130} tickFormatter={(v: string) => truncateLabel(v, 20)} />
+                <XAxis type="number" tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtInt(v)} />
+                <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#D7D4CE' }} tickLine={false} axisLine={false} width={130} tickFormatter={(v: string) => truncateLabel(v, 20)} />
                 <Tooltip
-                  cursor={{ fill: 'rgba(238,42,66,0.05)' }}
+                  cursor={{ fill: 'rgba(255,77,99,0.10)' }}
                   contentStyle={tooltip.contentStyle}
                   labelStyle={tooltip.labelStyle}
                   itemStyle={tooltip.itemStyle}

@@ -50,10 +50,10 @@ function BarrasAgrupadas({
             <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
           </linearGradient>
         </defs>
-        <CartesianGrid vertical={false} stroke="#DEDCD4" />
-        <XAxis dataKey="periodo" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
-        <YAxis tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
-        <Tooltip cursor={{ fill: 'rgba(238,42,66,0.05)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} />
+        <CartesianGrid vertical={false} stroke="#2B2830" />
+        <XAxis dataKey="periodo" tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
+        <YAxis tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
+        <Tooltip cursor={{ fill: 'rgba(255,77,99,0.10)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} />
         <Legend verticalAlign="bottom" iconType="circle" formatter={(v: string) => <span className="text-xs text-ink-2">{v}</span>} />
         <Bar dataKey={chaveA} name={rotuloA} fill={`url(#${gradientId})`} radius={[8, 8, 4, 4]} maxBarSize={36} />
         <Bar dataKey={chaveB} name={rotuloB} fill={NEUTRAL} radius={[8, 8, 4, 4]} maxBarSize={36} />
@@ -105,10 +105,10 @@ export function RematriculaTab({ loading, data }: Props) {
           ) : (
             <ResponsiveContainer width="100%" height={360}>
               <BarChart data={data.evasaoPorPeriodo} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-                <CartesianGrid vertical={false} stroke="#DEDCD4" />
-                <XAxis dataKey="periodo" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
-                <Tooltip cursor={{ fill: 'rgba(238,42,66,0.05)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} />
+                <CartesianGrid vertical={false} stroke="#2B2830" />
+                <XAxis dataKey="periodo" tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
+                <Tooltip cursor={{ fill: 'rgba(255,77,99,0.10)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} />
                 <Legend verticalAlign="bottom" iconType="circle" formatter={(v: string) => { const labels: Record<string, string> = { evJubilado: 'Jubilado', evEvadido: 'Evadido', evCancelado: 'Cancelado', evTransferido: 'Transferido' }; return <span className="text-xs text-ink-2">{labels[v] ?? v}</span>; }} />
                 <Bar dataKey="evCancelado" name="Cancelado" stackId="a" fill={FMP_RED} radius={[0, 0, 0, 0]} maxBarSize={48} />
                 <Bar dataKey="evEvadido" name="Evadido" stackId="a" fill={CORES_CATEGORICAS[1]} radius={[0, 0, 0, 0]} maxBarSize={48} />
@@ -146,10 +146,10 @@ export function RematriculaTab({ loading, data }: Props) {
                     <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid vertical={false} stroke="#DEDCD4" />
-                <XAxis dataKey="periodo" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
-                <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
-                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
+                <CartesianGrid vertical={false} stroke="#2B2830" />
+                <XAxis dataKey="periodo" tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
+                <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
+                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
                 <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} />
                 <Legend verticalAlign="bottom" iconType="circle" formatter={(v: string) => { const labels: Record<string, string> = { reingressoConf: 'Confirmadas', reingressoAguard: 'Aguardando' }; return <span className="text-xs text-ink-2">{labels[v] ?? v}</span>; }} />
                 <Bar yAxisId="left" dataKey="reingressoConf" name="Confirmadas" fill="url(#barReingresso)" radius={[8, 8, 4, 4]} maxBarSize={48} />
@@ -186,10 +186,10 @@ export function RematriculaTab({ loading, data }: Props) {
                     <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid vertical={false} stroke="#DEDCD4" />
-                <XAxis dataKey="periodo" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
-                <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
-                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
+                <CartesianGrid vertical={false} stroke="#2B2830" />
+                <XAxis dataKey="periodo" tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
+                <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
+                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
                 <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} />
                 <Legend verticalAlign="bottom" iconType="circle" formatter={(v: string) => { const labels: Record<string, string> = { rematConf: 'Confirmada', rematNaoRealiz: 'Não realizada' }; return <span className="text-xs text-ink-2">{labels[v] ?? v}</span>; }} />
                 <Bar yAxisId="left" dataKey="rematConf" name="Confirmada" fill="url(#barRemat)" radius={[8, 8, 4, 4]} maxBarSize={48} />

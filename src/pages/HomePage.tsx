@@ -152,7 +152,7 @@ export function HomePage() {
           último painel vem do localStorage. Nada nesta faixa espera rede, e
           nada aparece depois empurrando o resto para baixo.
         */}
-        <section className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-md border border-line bg-white px-4 py-3 shadow-card animate-fade-in">
+        <section className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-md border border-line bg-card px-4 py-3 shadow-card animate-fade-in">
           {ultimoDashboard ? (
             <Link
               to={`/dashboards/${ultimoDashboard.slug}`}
@@ -289,7 +289,7 @@ export function HomePage() {
                 </>
               );
 
-              const baseClass = `group relative overflow-hidden rounded-md border bg-white p-5 shadow-card transition-all duration-200 animate-slide-up ${
+              const baseClass = `group relative overflow-hidden rounded-md border bg-card p-5 shadow-card transition-all duration-200 animate-slide-up ${
                 ehUltimo ? 'border-fmp/40 ring-1 ring-fmp/20' : 'border-line'
               }`;
 

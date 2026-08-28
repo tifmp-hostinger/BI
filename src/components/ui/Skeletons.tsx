@@ -7,7 +7,7 @@
 function Shimmer({ className = '' }: { className?: string }) {
   return (
     <div className={`relative overflow-hidden bg-paper ${className}`}>
-      <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/70 to-transparent" />
+      <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/10 to-transparent" />
     </div>
   );
 }
@@ -16,7 +16,7 @@ const ALTURAS_BARRAS = [45, 70, 35, 85, 55, 95, 40, 75, 60, 30, 80, 50];
 
 export function ChartSkeleton({ height = 260 }: { height?: number }) {
   return (
-    <div className="w-full rounded-md border border-line bg-white p-4" style={{ height }}>
+    <div className="w-full rounded-md border border-line bg-card p-4" style={{ height }}>
       <Shimmer className="h-3 w-1/3 rounded" />
       {/* Barras de altura variável: lembra a silhueta de um gráfico, então o
           usuário já entende o que vai aparecer ali. */}
@@ -37,7 +37,7 @@ export function TableSkeleton({ rows = 5 }: { rows?: number }) {
       {Array.from({ length: rows }).map((_, i) => (
         <div
           key={i}
-          className="flex animate-fade-in items-center gap-3 rounded-md border border-line bg-white p-3"
+          className="flex animate-fade-in items-center gap-3 rounded-md border border-line bg-card p-3"
           style={{ animationDelay: `${i * 60}ms` }}
         >
           <Shimmer className="h-9 w-9 rounded-sm" />
@@ -79,7 +79,7 @@ export function FullPageLoader({ mensagem }: { mensagem?: string }) {
  */
 export function LoadingSteps({ mensagem }: { mensagem: string }) {
   return (
-    <div className="animate-fade-in rounded-md border border-line bg-white p-4 shadow-card">
+    <div className="animate-fade-in rounded-md border border-line bg-card p-4 shadow-card">
       <div className="flex items-center gap-3">
         <div className="relative flex h-5 w-5 flex-shrink-0 items-center justify-center">
           <span className="absolute inset-0 animate-pulse-ring rounded-full bg-fmp/25" />

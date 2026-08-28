@@ -97,7 +97,7 @@ export function AnaliseDeConversaoPage() {
         <div
           role="tablist"
           aria-label="Abas do dashboard"
-          className="flex max-w-full items-center gap-1 overflow-x-auto rounded-md border border-line bg-white p-1 shadow-card sm:w-fit sm:flex-wrap sm:overflow-visible"
+          className="flex max-w-full items-center gap-1 overflow-x-auto rounded-md border border-line bg-card p-1 shadow-card sm:w-fit sm:flex-wrap sm:overflow-visible"
         >
           {TABS.map((t) => (
             <button
@@ -147,7 +147,7 @@ export function AnaliseDeConversaoPage() {
               <section className={STAT_GRID_CONTAINER}>
                 <div className={STAT_GRID_CLASSES}>
                   {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="h-56 animate-pulse rounded-md border border-line bg-white shadow-card" />
+                    <div key={i} className="h-56 animate-pulse rounded-md border border-line bg-card shadow-card" />
                   ))}
                 </div>
               </section>
@@ -268,10 +268,10 @@ export function AnaliseDeConversaoPage() {
                               <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
                             </linearGradient>
                           </defs>
-                          <CartesianGrid horizontal={false} stroke="#DEDCD4" />
+                          <CartesianGrid horizontal={false} stroke="#2B2830" />
                           <XAxis
                             type="number"
-                            tick={{ fontSize: 11, fill: '#6E6B66' }}
+                            tick={{ fontSize: 11, fill: '#9B97A1' }}
                             tickLine={false}
                             axisLine={false}
                             tickFormatter={(v: number) => fmtInt(v)}
@@ -279,14 +279,14 @@ export function AnaliseDeConversaoPage() {
                           <YAxis
                             type="category"
                             dataKey="categoria"
-                            tick={{ fontSize: 10, fill: '#3A3838' }}
+                            tick={{ fontSize: 10, fill: '#D7D4CE' }}
                             tickLine={false}
                             axisLine={false}
                             width={180}
                             tickFormatter={(v: string) => truncateLabel(v, 26)}
                           />
                           <Tooltip
-                            cursor={{ fill: 'rgba(238,42,66,0.05)' }}
+                            cursor={{ fill: 'rgba(255,77,99,0.10)' }}
                             contentStyle={tt.contentStyle}
                             labelStyle={tt.labelStyle}
                             itemStyle={tt.itemStyle}
@@ -301,7 +301,7 @@ export function AnaliseDeConversaoPage() {
                               dataKey="valor"
                               position="right"
                               formatter={(v: unknown) => fmtInt(v as number)}
-                              style={{ fontSize: 10, fill: '#3A3838', fontWeight: 600 }}
+                              style={{ fontSize: 10, fill: '#D7D4CE', fontWeight: 600 }}
                             />
                           </Bar>
                         </BarChart>
@@ -370,7 +370,7 @@ function GaugeCard({
   obsFinalizado?: boolean;
 }) {
   return (
-    <div className="flex flex-col items-center rounded-md border border-line bg-white p-6 shadow-card animate-fade-in">
+    <div className="flex flex-col items-center rounded-md border border-line bg-card p-6 shadow-card animate-fade-in">
       <GaugeSemicircle
         value={value}
         label={label}
@@ -417,16 +417,16 @@ function LeadsComportamentoChart({
                 <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
               </linearGradient>
             </defs>
-            <CartesianGrid vertical={false} stroke="#DEDCD4" />
+            <CartesianGrid vertical={false} stroke="#2B2830" />
             <XAxis
               dataKey="mesAno"
-              tick={{ fontSize: 9, fill: '#6E6B66' }}
+              tick={{ fontSize: 9, fill: '#9B97A1' }}
               tickLine={false}
               axisLine={false}
               tickFormatter={(v: string) => truncateLabel(v, 10)}
               interval="preserveStartEnd"
             />
-            <YAxis tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
+            <YAxis tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
             <Tooltip contentStyle={tt.contentStyle} labelStyle={tt.labelStyle} itemStyle={tt.itemStyle} />
             <Legend
               verticalAlign="bottom"

@@ -29,7 +29,7 @@ export function BlockCard({
 }: Props) {
   return (
     <section
-      className={`@container relative overflow-hidden rounded-md border border-line bg-white shadow-card transition-shadow duration-200 hover:shadow-card-hover animate-fade-in ${className}`}
+      className={`@container relative overflow-hidden rounded-md border border-line bg-card shadow-card transition-shadow duration-200 hover:shadow-card-hover animate-fade-in ${className}`}
     >
       <div className="absolute inset-x-0 top-0 h-1 bg-fmp" />
       <header className="flex flex-wrap items-start justify-between gap-4 px-5 pb-3 pt-5">

@@ -53,9 +53,9 @@ export function KpiDestaque({
 
   return (
     <div
-      className={`@container relative flex flex-col justify-between overflow-hidden rounded-md border border-fmp/30 bg-white p-5 shadow-card ring-1 ring-fmp/10 transition-all duration-200 hover:shadow-card-hover animate-slide-up ${className}`}
+      className={`@container relative flex flex-col justify-between overflow-hidden rounded-md border border-fmp/30 bg-card p-5 shadow-card ring-1 ring-fmp/10 transition-all duration-200 hover:shadow-card-hover animate-slide-up ${className}`}
     >
-      <div className="absolute inset-x-0 top-0 h-1 bg-fmp" />
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-fmp via-[#FF3B55] to-[#FF7A45]" />
 
       <div className="flex items-start justify-between gap-3">
         <p className="text-2xs font-semibold uppercase leading-tight tracking-widest text-fmp-pressed">
@@ -108,19 +108,19 @@ export function KpiDestaque({
 export function KpiDestaqueSkeleton({ className = '' }: { className?: string }) {
   return (
     <div
-      className={`relative flex flex-col justify-between overflow-hidden rounded-md border border-line bg-white p-5 shadow-card ${className}`}
+      className={`relative flex flex-col justify-between overflow-hidden rounded-md border border-line bg-card p-5 shadow-card ${className}`}
     >
       <div className="absolute inset-x-0 top-0 h-1 overflow-hidden bg-paper">
         <div className="h-full w-1/3 animate-shimmer bg-gradient-to-r from-transparent via-fmp/50 to-transparent" />
       </div>
       <div className="relative h-2 w-32 overflow-hidden rounded bg-paper">
-        <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/70 to-transparent" />
+        <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       </div>
       <div className="relative mt-4 h-12 w-48 overflow-hidden rounded bg-paper">
-        <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/70 to-transparent" />
+        <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       </div>
       <div className="relative mt-4 h-2 w-full overflow-hidden rounded bg-paper">
-        <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/70 to-transparent" />
+        <div className="absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       </div>
     </div>
   );

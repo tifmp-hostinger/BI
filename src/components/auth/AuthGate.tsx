@@ -56,7 +56,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
         <form
           onSubmit={handleSubmit}
-          className="rounded-md border border-line bg-white p-8 shadow-card"
+          className="rounded-md border border-line bg-card p-8 shadow-card"
         >
           <h1 className="text-base font-semibold text-ink">Central de Dashboards</h1>
           <p className="mt-1 text-xs text-ink-3">

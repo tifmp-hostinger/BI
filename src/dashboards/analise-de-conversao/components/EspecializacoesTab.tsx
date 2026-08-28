@@ -55,7 +55,7 @@ export function EspecializacoesTab({ loading, data }: Props) {
             {Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} index={i} />)}
           </div>
         </section>
-        <div className="h-56 animate-pulse rounded-md border border-line bg-white shadow-card" />
+        <div className="h-56 animate-pulse rounded-md border border-line bg-card shadow-card" />
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {Array.from({ length: 4 }).map((_, i) => <ChartSkeleton key={i} height={320} />)}
         </section>
@@ -76,7 +76,7 @@ export function EspecializacoesTab({ loading, data }: Props) {
         </div>
       </section>
 
-      <div className="flex flex-col items-center rounded-md border border-line bg-white p-6 shadow-card animate-fade-in">
+      <div className="flex flex-col items-center rounded-md border border-line bg-card p-6 shadow-card animate-fade-in">
         <GaugeSemicircle
           value={data.pctMeta}
           label="Especializações | Meta"
@@ -109,9 +109,9 @@ export function EspecializacoesTab({ loading, data }: Props) {
                       <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid vertical={false} stroke="#DEDCD4" />
+                  <CartesianGrid vertical={false} stroke="#2B2830" />
                   <XAxis dataKey="mesAno" hide />
-                  <YAxis width={62} tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
+                  <YAxis width={62} tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
                   <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtBRLCompact(v as number), 'Faturamento']} />
                   <Bar dataKey="fat" fill="url(#barEspecFatNovo)" radius={[8, 8, 4, 4]} maxBarSize={36} />
                 </ComposedChart>
@@ -120,9 +120,9 @@ export function EspecializacoesTab({ loading, data }: Props) {
                 <RotuloPainel>Matrículas</RotuloPainel>
                 <ResponsiveContainer width="100%" height={130}>
                   <ComposedChart data={data.fatMensal} syncId="espec-fat-mes" margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-                    <CartesianGrid vertical={false} stroke="#DEDCD4" />
-                    <XAxis dataKey="mesAno" tick={{ fontSize: 9, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: string) => truncateLabel(v, 10)} interval="preserveStartEnd" />
-                    <YAxis width={62} tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
+                    <CartesianGrid vertical={false} stroke="#2B2830" />
+                    <XAxis dataKey="mesAno" tick={{ fontSize: 9, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: string) => truncateLabel(v, 10)} interval="preserveStartEnd" />
+                    <YAxis width={62} tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
                     <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtInt(v as number), 'Matrículas']} />
                     <Line type="monotone" dataKey="mat" stroke={FMP_DARK} strokeWidth={2} dot={{ r: 2.5, fill: FMP_DARK }} />
                   </ComposedChart>
@@ -138,14 +138,14 @@ export function EspecializacoesTab({ loading, data }: Props) {
                     <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid vertical={false} stroke="#DEDCD4" />
-                <XAxis dataKey="mesAno" tick={{ fontSize: 9, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: string) => truncateLabel(v, 10)} interval="preserveStartEnd" />
-                <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
-                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
+                <CartesianGrid vertical={false} stroke="#2B2830" />
+                <XAxis dataKey="mesAno" tick={{ fontSize: 9, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: string) => truncateLabel(v, 10)} interval="preserveStartEnd" />
+                <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
+                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
                 <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown, name: unknown) => { if (name === 'mat') return [fmtInt(v as number), 'Matrículas']; return [fmtBRLCompact(v as number), 'Faturamento']; }} />
                 <Legend verticalAlign="bottom" iconType="circle" formatter={(v: string) => { const labels: Record<string, string> = { fat: 'Faturamento', mat: 'Matrículas' }; return <span className="text-xs text-ink-2">{labels[v] ?? v}</span>; }} />
                 <Bar yAxisId="left" dataKey="fat" fill="url(#barEspecFat)" radius={[8, 8, 4, 4]} maxBarSize={36}>
-                  <LabelList dataKey="fat" position="top" formatter={(v: unknown) => fmtBRLCompact(v as number)} style={{ fontSize: 10, fill: '#3A3838', fontWeight: 600 }} />
+                  <LabelList dataKey="fat" position="top" formatter={(v: unknown) => fmtBRLCompact(v as number)} style={{ fontSize: 10, fill: '#D7D4CE', fontWeight: 600 }} />
                 </Bar>
                 <Line yAxisId="right" type="monotone" dataKey="mat" stroke={NEUTRAL} strokeWidth={2.5} dot={{ r: 3, fill: NEUTRAL }} />
               </ComposedChart>
@@ -171,9 +171,9 @@ export function EspecializacoesTab({ loading, data }: Props) {
               <RotuloPainel>Faturamento por modalidade</RotuloPainel>
               <ResponsiveContainer width="100%" height={210}>
                 <ComposedChart data={data.fatMensal} syncId="espec-fat-mod" margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-                  <CartesianGrid vertical={false} stroke="#DEDCD4" />
+                  <CartesianGrid vertical={false} stroke="#2B2830" />
                   <XAxis dataKey="mesAno" hide />
-                  <YAxis width={62} tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
+                  <YAxis width={62} tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
                   <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown, name: unknown) => [fmtBRLCompact(v as number), name === 'EAD' ? 'EAD' : 'Presencial']} />
                   <Legend verticalAlign="bottom" iconType="circle" formatter={(v: string) => <span className="text-xs text-ink-2">{v}</span>} />
                   <Line type="monotone" dataKey="fatEad" name="EAD" stroke={FMP_RED} strokeWidth={2.5} dot={{ r: 3, fill: FMP_RED }} />
@@ -184,9 +184,9 @@ export function EspecializacoesTab({ loading, data }: Props) {
                 <RotuloPainel>Matrículas</RotuloPainel>
                 <ResponsiveContainer width="100%" height={110}>
                   <ComposedChart data={data.fatMensal} syncId="espec-fat-mod" margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-                    <CartesianGrid vertical={false} stroke="#DEDCD4" />
-                    <XAxis dataKey="mesAno" tick={{ fontSize: 9, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: string) => truncateLabel(v, 10)} interval="preserveStartEnd" />
-                    <YAxis width={62} tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
+                    <CartesianGrid vertical={false} stroke="#2B2830" />
+                    <XAxis dataKey="mesAno" tick={{ fontSize: 9, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: string) => truncateLabel(v, 10)} interval="preserveStartEnd" />
+                    <YAxis width={62} tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
                     <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtInt(v as number), 'Matrículas']} />
                     <Line type="monotone" dataKey="mat" stroke={FMP_DARK} strokeWidth={2} dot={{ r: 2.5, fill: FMP_DARK }} />
                   </ComposedChart>
@@ -196,10 +196,10 @@ export function EspecializacoesTab({ loading, data }: Props) {
           ) : (
             <ResponsiveContainer width="100%" height={340}>
               <ComposedChart data={data.fatMensal} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-                <CartesianGrid vertical={false} stroke="#DEDCD4" />
-                <XAxis dataKey="mesAno" tick={{ fontSize: 9, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: string) => truncateLabel(v, 10)} interval="preserveStartEnd" />
-                <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
-                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
+                <CartesianGrid vertical={false} stroke="#2B2830" />
+                <XAxis dataKey="mesAno" tick={{ fontSize: 9, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: string) => truncateLabel(v, 10)} interval="preserveStartEnd" />
+                <YAxis yAxisId="left" tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
+                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
                 <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown, name: unknown) => { if (name === 'mat') return [fmtInt(v as number), 'Matrículas']; return [fmtBRLCompact(v as number), 'Faturamento']; }} />
                 <Legend verticalAlign="bottom" iconType="circle" formatter={(v: string) => { const labels: Record<string, string> = { fatEad: 'EAD', fatPres: 'Presencial', mat: 'Matrículas' }; return <span className="text-xs text-ink-2">{labels[v] ?? v}</span>; }} />
                 <Line yAxisId="left" type="monotone" dataKey="fatEad" name="EAD" stroke={FMP_RED} strokeWidth={2.5} dot={{ r: 3, fill: FMP_RED }} />
@@ -224,12 +224,12 @@ export function EspecializacoesTab({ loading, data }: Props) {
                     <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.85} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid horizontal={false} stroke="#DEDCD4" />
-                <XAxis type="number" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
-                <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#3A3838' }} tickLine={false} axisLine={false} width={180} tickFormatter={(v: string) => truncateLabel(v, 24)} />
-                <Tooltip cursor={{ fill: 'rgba(238,42,66,0.05)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtBRLCompact(v as number), 'Faturamento']} />
+                <CartesianGrid horizontal={false} stroke="#2B2830" />
+                <XAxis type="number" tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
+                <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#D7D4CE' }} tickLine={false} axisLine={false} width={180} tickFormatter={(v: string) => truncateLabel(v, 24)} />
+                <Tooltip cursor={{ fill: 'rgba(255,77,99,0.10)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtBRLCompact(v as number), 'Faturamento']} />
                 <Bar dataKey="valor" fill="url(#barCursoEspec)" radius={[4, 8, 8, 4]} maxBarSize={28}>
-                  <LabelList dataKey="valor" position="right" formatter={(v: unknown) => fmtBRLCompact(v as number)} style={{ fontSize: 11, fill: '#3A3838', fontWeight: 700 }} />
+                  <LabelList dataKey="valor" position="right" formatter={(v: unknown) => fmtBRLCompact(v as number)} style={{ fontSize: 11, fill: '#D7D4CE', fontWeight: 700 }} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>

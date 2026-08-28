@@ -226,7 +226,7 @@ export function HorariosView({ data }: { data: HorarioDatum[] }) {
     const eixoX = (
       <XAxis
         dataKey="faixa"
-        tick={{ fontSize: 10, fill: '#6E6B66' }}
+        tick={{ fontSize: 10, fill: '#9B97A1' }}
         tickLine={false}
         axisLine={false}
         interval={0}
@@ -244,9 +244,9 @@ export function HorariosView({ data }: { data: HorarioDatum[] }) {
                 <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
               </linearGradient>
             </defs>
-            <CartesianGrid vertical={false} stroke="#DEDCD4" />
+            <CartesianGrid vertical={false} stroke="#2B2830" />
             <XAxis dataKey="faixa" hide />
-            <YAxis width={40} tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
+            <YAxis width={40} tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
             <Tooltip
               contentStyle={TT.contentStyle}
               labelStyle={TT.labelStyle}
@@ -261,9 +261,9 @@ export function HorariosView({ data }: { data: HorarioDatum[] }) {
           <RotuloPainel>Taxa de conversão</RotuloPainel>
           <ResponsiveContainer width="100%" height={130}>
             <ComposedChart data={data} syncId="growth-horarios" margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-              <CartesianGrid vertical={false} stroke="#DEDCD4" />
+              <CartesianGrid vertical={false} stroke="#2B2830" />
               {eixoX}
-              <YAxis width={40} tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtPct(v)} />
+              <YAxis width={40} tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtPct(v)} />
               <Tooltip
                 contentStyle={TT.contentStyle}
                 labelStyle={TT.labelStyle}
@@ -289,22 +289,22 @@ export function HorariosView({ data }: { data: HorarioDatum[] }) {
             <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
           </linearGradient>
         </defs>
-        <CartesianGrid vertical={false} stroke="#DEDCD4" />
+        <CartesianGrid vertical={false} stroke="#2B2830" />
         {/* "00:00 - 02:00" -> "0h": 12 rótulos de até 3 caracteres cabem
             até em 320px sem o recharts pular ticks. */}
         <XAxis
           dataKey="faixa"
-          tick={{ fontSize: 10, fill: '#6E6B66' }}
+          tick={{ fontSize: 10, fill: '#9B97A1' }}
           tickLine={false}
           axisLine={false}
           interval={0}
           tickFormatter={(v: string) => `${parseInt(v, 10)}h`}
         />
-        <YAxis yAxisId="left" width={40} tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
+        <YAxis yAxisId="left" width={40} tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
         <YAxis
           yAxisId="right"
           orientation="right"
-          tick={{ fontSize: 11, fill: '#6E6B66' }}
+          tick={{ fontSize: 11, fill: '#9B97A1' }}
           tickLine={false}
           axisLine={false}
           tickFormatter={(v: number) => fmtPct(v)}
@@ -476,9 +476,9 @@ export function SerieMensalView({ data, label }: { data: SerieMensalDatum[]; lab
         <RotuloPainel>{label}</RotuloPainel>
         <ResponsiveContainer width="100%" height={210}>
           <ComposedChart data={data} syncId="growth-serie" margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-            <CartesianGrid vertical={false} stroke="#DEDCD4" />
+            <CartesianGrid vertical={false} stroke="#2B2830" />
             <XAxis dataKey="mesAno" hide />
-            <YAxis width={62} tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtIntCompact(v)} />
+            <YAxis width={62} tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtIntCompact(v)} />
             <Tooltip
               contentStyle={TT.contentStyle}
               labelStyle={TT.labelStyle}
@@ -492,9 +492,9 @@ export function SerieMensalView({ data, label }: { data: SerieMensalDatum[]; lab
           <RotuloPainel>Investimento</RotuloPainel>
           <ResponsiveContainer width="100%" height={140}>
             <ComposedChart data={data} syncId="growth-serie" margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-              <CartesianGrid vertical={false} stroke="#DEDCD4" />
-              <XAxis dataKey="mesAno" tick={{ fontSize: 10, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={fmtMes} />
-              <YAxis width={62} tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
+              <CartesianGrid vertical={false} stroke="#2B2830" />
+              <XAxis dataKey="mesAno" tick={{ fontSize: 10, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={fmtMes} />
+              <YAxis width={62} tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
               <Tooltip
                 contentStyle={TT.contentStyle}
                 labelStyle={TT.labelStyle}
@@ -512,12 +512,12 @@ export function SerieMensalView({ data, label }: { data: SerieMensalDatum[]; lab
   return (
     <ResponsiveContainer width="100%" height={360}>
       <ComposedChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-        <CartesianGrid vertical={false} stroke="#DEDCD4" />
+        <CartesianGrid vertical={false} stroke="#2B2830" />
         {/* "Outubro - 25" -> "out/25": com 6 caracteres praticamente todos
             os meses aparecem, em vez de só o primeiro e o último. */}
         <XAxis
           dataKey="mesAno"
-          tick={{ fontSize: 10, fill: '#6E6B66' }}
+          tick={{ fontSize: 10, fill: '#9B97A1' }}
           tickLine={false}
           axisLine={false}
           tickFormatter={(v: string) => {
@@ -525,11 +525,11 @@ export function SerieMensalView({ data, label }: { data: SerieMensalDatum[]; lab
             return ano ? `${mes.slice(0, 3).toLowerCase()}/${ano}` : truncateLabel(v, 12);
           }}
         />
-        <YAxis yAxisId="left" width={44} tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtIntCompact(v)} />
+        <YAxis yAxisId="left" width={44} tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtIntCompact(v)} />
         <YAxis
           yAxisId="right"
           orientation="right"
-          tick={{ fontSize: 11, fill: '#6E6B66' }}
+          tick={{ fontSize: 11, fill: '#9B97A1' }}
           tickLine={false}
           axisLine={false}
           tickFormatter={(v: number) => fmtBRLCompact(v)}

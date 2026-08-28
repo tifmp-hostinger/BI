@@ -83,7 +83,7 @@ export function BalaoInfo({
           <div
             ref={balaoRef}
             role="note"
-            className="fixed z-[120] max-h-[60vh] overflow-y-auto rounded-md border border-line bg-white p-3 text-left shadow-lg animate-fade-in"
+            className="fixed z-[120] max-h-[60vh] overflow-y-auto rounded-md border border-line bg-card p-3 text-left shadow-lg animate-fade-in"
             style={{ top: pos.top, left: pos.left, width: `min(${LARGURA}px, calc(100vw - 16px))` }}
           >
             {children}

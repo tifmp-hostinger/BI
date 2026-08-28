@@ -8,30 +8,33 @@
 /* @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400;1,500;1,600;1,700&display=swap'); */
 
 :root {
-  /* ---- Paleta da marca ---- */
+  /* ---- Paleta da marca — TEMA ESCURO (branch visual-saas) ----
+     Os nomes semânticos não mudam: --fmp-black continua sendo "texto
+     principal" (agora claro), --fmp-cream continua sendo "fundo da página"
+     (agora carvão). Componentes que falam nos tokens atravessam sem edição. */
   --fmp-red:        #EE2A42; /* ÚNICO vermelho da marca — ações, acentos */
-  --fmp-red-hover:  #D32238; /* somente estado hover */
-  --fmp-red-press:  #B81E32; /* somente estado pressed */
-  --fmp-black:      #191818; /* texto principal / preto institucional */
-  --fmp-cream:      #EFEEEA; /* fundo padrão da página */
-  --fmp-white:      #FFFFFF; /* cards / superfícies elevadas */
-  --fmp-sand:       #BFBAA4; /* neutro quente */
+  --fmp-red-hover:  #FF3B55; /* hover clareia (estamos no escuro) */
+  --fmp-red-press:  #C81F35;
+  --fmp-black:      #F2EFEA; /* texto principal sobre o escuro */
+  --fmp-cream:      #121014; /* fundo da página: carvão quente */
+  --fmp-white:      #17151A; /* cards / superfícies elevadas */
+  --fmp-sand:       #BFBAA4; /* neutro quente — segue legível no escuro */
 
   /* ---- Neutros de apoio ---- */
-  --fmp-paper:      #F6F5F1; /* card aninhado sobre creme */
-  --fmp-ink-2:      #3A3838; /* texto secundário */
-  --fmp-ink-3:      #6E6B66; /* texto suave / legendas */
-  --fmp-line:       #DEDCD4; /* hairline / borda */
-  --fmp-line-2:     #CFCCBF; /* borda mais forte (botão secundário) */
+  --fmp-paper:      #1D1A20; /* superfície aninhada sobre o carvão */
+  --fmp-ink-2:      #C9C5BE;
+  --fmp-ink-3:      #97929B;
+  --fmp-line:       #2B2830;
+  --fmp-line-2:     #3A3641;
 
   /* ---- Washes de UI (NÃO são cores de marca) ---- */
-  --fmp-red-100:    #FBD7DC;              /* linha selecionada */
-  --fmp-red-tint:   rgba(238,42,66,0.08); /* wash vermelho faint */
+  --fmp-red-100:    #552833;              /* linha selecionada */
+  --fmp-red-tint:   rgba(238,42,66,0.14); /* wash vermelho faint */
 
   /* ---- Superfícies escuras ("prestígio") ---- */
   --fmp-dark:       #000000; /* fundo escuro */
-  --fmp-dark-2:     #191818; /* painel sobre escuro */
-  --fmp-dark-3:     #2A2728; /* superfície elevada no escuro */
+  --fmp-dark-2:     #0C0B0E; /* menu lateral: mais fundo que os cards */
+  --fmp-dark-3:     #26232B; /* superfície elevada no escuro */
   --fmp-on-dark:    #EFEEEA; /* texto sobre escuro */
   --fmp-on-dark-2:  #BFBAA4; /* texto secundário sobre escuro */
 
@@ -87,8 +90,8 @@
    ===================================================================== */
 body { background: var(--bg); color: var(--fg1); font-family: var(--font-sans); font-size: var(--text-base); line-height: 1.55; -webkit-font-smoothing: antialiased; }
 
-/* Título hero / de página — a "voz" da marca */
-.fmp-display { font-family: var(--font-display); font-style: italic; font-weight: var(--w-medium); font-size: var(--text-4xl); line-height: 1.04; letter-spacing: -.01em; color: var(--fg1); }
+/* Título hero / de página */
+.fmp-display { font-family: var(--font-sans); font-style: normal; font-weight: 800; font-size: var(--text-4xl); line-height: 1.04; letter-spacing: -.02em; color: var(--fg1); }
 .fmp-display .accent { color: var(--fmp-red); }
 
 /* Títulos de UI */
@@ -96,10 +99,11 @@ body { background: var(--bg); color: var(--fg1); font-family: var(--font-sans); 
 .fmp-h3 { font-family: var(--font-sans); font-weight: 600; font-size: var(--text-xl); }
 
 /* Eyebrow / overline */
-.fmp-eyebrow { font-family: var(--font-sans); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .16em; color: var(--fmp-red); }
+.fmp-eyebrow { font-family: var(--font-sans); font-weight: 600; font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .16em; color: #FF6B7E; }
 
-/* KPI / número grande */
-.fmp-kpi { font-family: var(--font-display); font-style: italic; font-weight: 600; font-size: var(--text-4xl); color: var(--fg1); line-height: 1; }
+/* KPI / número grande — no tema SaaS o número é sans pesada e tabular:
+   varre e compara melhor que a serif itálica, e lê "produto". */
+.fmp-kpi { font-family: var(--font-sans); font-style: normal; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; font-size: var(--text-4xl); color: var(--fg1); line-height: 1; }
 .fmp-kpi-label { font-family: var(--font-sans); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: .12em; color: var(--fmp-ink-3); }
 
 /* Card */

@@ -145,7 +145,7 @@ export function PresencaNacionalPage() {
         />
 
         {/* Filters */}
-        <section className="relative z-20 flex flex-wrap items-center gap-3 rounded-md border border-line bg-white p-4 shadow-card animate-fade-in">
+        <section className="relative z-20 flex flex-wrap items-center gap-3 rounded-md border border-line bg-card p-4 shadow-card animate-fade-in">
           <div className="flex items-center gap-2 text-xs font-medium text-ink-2">
             <Filter className="h-4 w-4 text-fmp" />
             Fonte:
@@ -372,21 +372,21 @@ export function PresencaNacionalPage() {
                   </defs>
                   <CartesianGrid
                     vertical={false}
-                    stroke="#DEDCD4"
+                    stroke="#2B2830"
                   />
                   <XAxis
                     dataKey="uf"
-                    tick={{ fontSize: 11, fill: '#6E6B66' }}
+                    tick={{ fontSize: 11, fill: '#9B97A1' }}
                     tickLine={false}
                     axisLine={false}
                   />
                   <YAxis
-                    tick={{ fontSize: 11, fill: '#6E6B66' }}
+                    tick={{ fontSize: 11, fill: '#9B97A1' }}
                     tickLine={false}
                     axisLine={false}
                   />
                   <Tooltip
-                    cursor={{ fill: 'rgba(238,42,66,0.05)' }}
+                    cursor={{ fill: 'rgba(255,77,99,0.10)' }}
                     contentStyle={tt.contentStyle}
                     labelStyle={tt.labelStyle}
                     itemStyle={tt.itemStyle}
@@ -502,25 +502,25 @@ export function PresencaNacionalPage() {
                   </defs>
                   <CartesianGrid
                     horizontal={false}
-                    stroke="#DEDCD4"
+                    stroke="#2B2830"
                   />
                   <XAxis
                     type="number"
-                    tick={{ fontSize: 11, fill: '#6E6B66' }}
+                    tick={{ fontSize: 11, fill: '#9B97A1' }}
                     tickLine={false}
                     axisLine={false}
                   />
                   <YAxis
                     type="category"
                     dataKey="name"
-                    tick={{ fontSize: 11, fill: '#3A3838' }}
+                    tick={{ fontSize: 11, fill: '#D7D4CE' }}
                     tickLine={false}
                     axisLine={false}
                     width={100}
                     tickFormatter={(v: string) => truncateLabel(v, 14)}
                   />
                   <Tooltip
-                    cursor={{ fill: 'rgba(238,42,66,0.05)' }}
+                    cursor={{ fill: 'rgba(255,77,99,0.10)' }}
                     contentStyle={tt.contentStyle}
                     labelStyle={tt.labelStyle}
                     itemStyle={tt.itemStyle}
@@ -558,25 +558,25 @@ export function PresencaNacionalPage() {
                   </defs>
                   <CartesianGrid
                     horizontal={false}
-                    stroke="#DEDCD4"
+                    stroke="#2B2830"
                   />
                   <XAxis
                     type="number"
-                    tick={{ fontSize: 11, fill: '#6E6B66' }}
+                    tick={{ fontSize: 11, fill: '#9B97A1' }}
                     tickLine={false}
                     axisLine={false}
                   />
                   <YAxis
                     type="category"
                     dataKey="name"
-                    tick={{ fontSize: 11, fill: '#3A3838' }}
+                    tick={{ fontSize: 11, fill: '#D7D4CE' }}
                     tickLine={false}
                     axisLine={false}
                     width={100}
                     tickFormatter={(v: string) => truncateLabel(v, 14)}
                   />
                   <Tooltip
-                    cursor={{ fill: 'rgba(238,42,66,0.05)' }}
+                    cursor={{ fill: 'rgba(255,77,99,0.10)' }}
                     contentStyle={tt.contentStyle}
                     labelStyle={tt.labelStyle}
                     itemStyle={tt.itemStyle}
@@ -597,7 +597,7 @@ export function PresencaNacionalPage() {
         <section className="rounded-md border border-dashed border-fmp/30 bg-fmp-muted p-5 animate-fade-in">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
-              <div className="rounded-sm bg-white p-2 text-fmp shadow-card">
+              <div className="rounded-sm bg-card p-2 text-fmp shadow-card">
                 <Sparkles className="h-4 w-4" />
               </div>
               <div>

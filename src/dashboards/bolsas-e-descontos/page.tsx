@@ -110,7 +110,7 @@ export function BolsasEDescontosPage() {
         />
 
         {/* Tabs */}
-        <div className="flex items-center gap-1 rounded-md border border-line bg-white p-1 shadow-card w-fit">
+        <div className="flex items-center gap-1 rounded-md border border-line bg-card p-1 shadow-card w-fit">
           <button
             type="button"
             onClick={() => setTab('panorama')}
@@ -236,10 +236,10 @@ export function BolsasEDescontosPage() {
                           <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.85} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid vertical={false} stroke="#DEDCD4" />
+                      <CartesianGrid vertical={false} stroke="#2B2830" />
                       <XAxis
                         dataKey="categoria"
-                        tick={{ fontSize: 10, fill: '#6E6B66' }}
+                        tick={{ fontSize: 10, fill: '#9B97A1' }}
                         tickLine={false}
                         axisLine={false}
                         tickFormatter={(v: string) => truncateLabel(v, 12)}
@@ -248,9 +248,9 @@ export function BolsasEDescontosPage() {
                         textAnchor="end"
                         height={72}
                       />
-                      <YAxis tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
                       <Tooltip
-                        cursor={{ fill: 'rgba(238,42,66,0.05)' }}
+                        cursor={{ fill: 'rgba(255,77,99,0.10)' }}
                         contentStyle={tt.contentStyle}
                         labelStyle={tt.labelStyle}
                         itemStyle={tt.itemStyle}
@@ -281,10 +281,10 @@ export function BolsasEDescontosPage() {
                           <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid horizontal={false} stroke="#DEDCD4" />
+                      <CartesianGrid horizontal={false} stroke="#2B2830" />
                       <XAxis
                         type="number"
-                        tick={{ fontSize: 11, fill: '#6E6B66' }}
+                        tick={{ fontSize: 11, fill: '#9B97A1' }}
                         tickLine={false}
                         axisLine={false}
                         tickFormatter={(v: number) => fmtInt(v)}
@@ -292,14 +292,14 @@ export function BolsasEDescontosPage() {
                       <YAxis
                         type="category"
                         dataKey="categoria"
-                        tick={{ fontSize: 10, fill: '#3A3838' }}
+                        tick={{ fontSize: 10, fill: '#D7D4CE' }}
                         tickLine={false}
                         axisLine={false}
                         width={120}
                         tickFormatter={(v: string) => truncateLabel(v, 18)}
                       />
                       <Tooltip
-                        cursor={{ fill: 'rgba(238,42,66,0.05)' }}
+                        cursor={{ fill: 'rgba(255,77,99,0.10)' }}
                         contentStyle={tt.contentStyle}
                         labelStyle={tt.labelStyle}
                         itemStyle={tt.itemStyle}
@@ -310,7 +310,7 @@ export function BolsasEDescontosPage() {
                           dataKey="valor"
                           position="right"
                           formatter={(v: unknown) => fmtInt(v as number)}
-                          style={{ fontSize: 10, fill: '#3A3838', fontWeight: 600 }}
+                          style={{ fontSize: 10, fill: '#D7D4CE', fontWeight: 600 }}
                         />
                       </Bar>
                     </BarChart>
@@ -348,10 +348,10 @@ export function BolsasEDescontosPage() {
                           <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.85} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid horizontal={false} stroke="#DEDCD4" />
+                      <CartesianGrid horizontal={false} stroke="#2B2830" />
                       <XAxis
                         type="number"
-                        tick={{ fontSize: 11, fill: '#6E6B66' }}
+                        tick={{ fontSize: 11, fill: '#9B97A1' }}
                         tickLine={false}
                         axisLine={false}
                         tickFormatter={(v: number) => fmtBRLCompact(v)}
@@ -359,14 +359,14 @@ export function BolsasEDescontosPage() {
                       <YAxis
                         type="category"
                         dataKey="categoria"
-                        tick={{ fontSize: 10, fill: '#3A3838' }}
+                        tick={{ fontSize: 10, fill: '#D7D4CE' }}
                         tickLine={false}
                         axisLine={false}
                         width={110}
                         tickFormatter={(v: string) => truncateLabel(v, 16)}
                       />
                       <Tooltip
-                        cursor={{ fill: 'rgba(238,42,66,0.05)' }}
+                        cursor={{ fill: 'rgba(255,77,99,0.10)' }}
                         contentStyle={tt.contentStyle}
                         labelStyle={tt.labelStyle}
                         itemStyle={tt.itemStyle}
@@ -377,7 +377,7 @@ export function BolsasEDescontosPage() {
                           dataKey="valor"
                           position="right"
                           formatter={(v: unknown) => fmtBRLCompact(v as number)}
-                          style={{ fontSize: 11, fill: '#3A3838', fontWeight: 700 }}
+                          style={{ fontSize: 11, fill: '#D7D4CE', fontWeight: 700 }}
                         />
                       </Bar>
                     </BarChart>
@@ -428,10 +428,10 @@ export function BolsasEDescontosPage() {
                       layout="vertical"
                       margin={{ top: 4, right: 48, left: 0, bottom: 4 }}
                     >
-                      <CartesianGrid horizontal={false} stroke="#DEDCD4" />
+                      <CartesianGrid horizontal={false} stroke="#2B2830" />
                       <XAxis
                         type="number"
-                        tick={{ fontSize: 11, fill: '#6E6B66' }}
+                        tick={{ fontSize: 11, fill: '#9B97A1' }}
                         tickLine={false}
                         axisLine={false}
                         tickFormatter={(v: number) => fmtInt(v)}
@@ -439,14 +439,14 @@ export function BolsasEDescontosPage() {
                       <YAxis
                         type="category"
                         dataKey="categoria"
-                        tick={{ fontSize: 10, fill: '#3A3838' }}
+                        tick={{ fontSize: 10, fill: '#D7D4CE' }}
                         tickLine={false}
                         axisLine={false}
                         width={120}
                         tickFormatter={(v: string) => truncateLabel(v, 18)}
                       />
                       <Tooltip
-                        cursor={{ fill: 'rgba(238,42,66,0.05)' }}
+                        cursor={{ fill: 'rgba(255,77,99,0.10)' }}
                         contentStyle={tt.contentStyle}
                         labelStyle={tt.labelStyle}
                         itemStyle={tt.itemStyle}
@@ -487,10 +487,10 @@ export function BolsasEDescontosPage() {
                           <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid vertical={false} stroke="#DEDCD4" />
+                      <CartesianGrid vertical={false} stroke="#2B2830" />
                       <XAxis
                         dataKey="ano"
-                        tick={{ fontSize: 11, fill: '#6E6B66' }}
+                        tick={{ fontSize: 11, fill: '#9B97A1' }}
                         tickLine={false}
                         axisLine={false}
                       />
@@ -502,7 +502,7 @@ export function BolsasEDescontosPage() {
                       {estilo === 'nova' ? (
                         <YAxis
                           yAxisId="left"
-                          tick={{ fontSize: 11, fill: '#6E6B66' }}
+                          tick={{ fontSize: 11, fill: '#9B97A1' }}
                           tickLine={false}
                           axisLine={false}
                         />
@@ -517,7 +517,7 @@ export function BolsasEDescontosPage() {
                           <YAxis
                             yAxisId="right"
                             orientation="right"
-                            tick={{ fontSize: 11, fill: '#8A8578' }}
+                            tick={{ fontSize: 11, fill: '#9B97A1' }}
                             tickLine={false}
                             axisLine={false}
                           />
@@ -629,7 +629,7 @@ export function BolsasEDescontosPage() {
         <section className="rounded-md border border-dashed border-fmp/30 bg-fmp-muted p-5 animate-fade-in">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
-              <div className="rounded-sm bg-white p-2 text-fmp shadow-card">
+              <div className="rounded-sm bg-card p-2 text-fmp shadow-card">
                 <Award className="h-4 w-4" />
               </div>
               <div>

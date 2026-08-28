@@ -17,65 +17,70 @@ export default {
         serif: ['"Noto Serif"', 'Georgia', '"Times New Roman"', 'serif'],
       },
       colors: {
-        // Renomeada de 'base' para 'canvas': uma COR chamada "base" fazia o
-        // Tailwind gerar `.text-base { color: creme }`, que colidia com a
-        // utilitária de TAMANHO `text-base` e pintava de creme (sobre branco,
-        // 1.16:1 — invisível) todo texto que usasse text-base sem uma classe
-        // de cor explícita depois.
+        // TEMA ESCURO "SaaS" (branch visual-saas): os NOMES dos tokens não
+        // mudam — só os valores. `ink` vira texto claro, `paper` vira
+        // superfície escura, e todo componente que já falava em tokens
+        // atravessa a reforma sem edição.
         canvas: 'var(--fmp-cream)',
+        // Cartões: bg-white foi trocado por bg-card nos componentes — não dá
+        // para reapontar `white`, porque text-white (botões) e white/10
+        // (overlays do menu) precisam continuar brancos de verdade.
+        card: '#17151A',
         fmp: {
           DEFAULT: '#EE2A42',
-          light: '#FBD7DC',
-          dark: '#D32238',
-          pressed: '#B81E32',
-          muted: 'rgba(238,42,66,0.08)',
-          50: '#FBD7DC',
-          100: '#FBD7DC',
-          200: '#F9BAC2',
+          light: '#43222A',
+          dark: '#FF3B55',
+          pressed: '#C81F35',
+          muted: 'rgba(238,42,66,0.14)',
+          50: '#3A1F26',
+          100: '#43222A',
+          200: '#552833',
           300: '#F08E9A',
           400: '#EE2A42',
           500: '#EE2A42',
-          600: '#D32238',
+          600: '#FF3B55',
           700: '#B81E32',
           800: '#9A1B2A',
           900: '#7B1621',
         },
         ink: {
-          DEFAULT: '#191818',
-          2: '#3A3838',
-          3: '#6E6B66',
+          DEFAULT: '#F2EFEA',
+          2: '#C9C5BE',
+          3: '#97929B',
         },
         cream: '#EFEEEA',
-        paper: '#F6F5F1',
+        paper: '#1D1A20',
         sand: '#BFBAA4',
+        // *-light são FUNDOS de chip (agora tingidos escuros) e *-dark são o
+        // TEXTO sobre esses chips (agora claros) — os papéis se mantêm.
         success: {
-          DEFAULT: '#16A34A',
-          light: '#DCFCE7',
-          dark: '#166534',
+          DEFAULT: '#2ECC71',
+          light: '#16301F',
+          dark: '#7FD8A4',
         },
         warning: {
-          DEFAULT: '#D97706',
-          light: '#FEF3C7',
-          dark: '#92400E',
+          DEFAULT: '#F0A32E',
+          light: '#33270E',
+          dark: '#E8B95C',
         },
         danger: {
-          DEFAULT: '#EE2A42',
-          light: '#FBD7DC',
-          dark: '#B81E32',
+          DEFAULT: '#FF4D63',
+          light: '#43222A',
+          dark: '#FF8B9A',
         },
         info: {
-          DEFAULT: '#0EA5E9',
-          light: '#E0F2FE',
-          dark: '#075985',
+          DEFAULT: '#38BDF8',
+          light: '#122C3D',
+          dark: '#7CC5EE',
         },
         dark: {
           DEFAULT: '#000000',
-          2: '#191818',
-          3: '#2A2728',
+          2: '#0C0B0E',
+          3: '#26232B',
         },
         line: {
-          DEFAULT: '#DEDCD4',
-          2: '#CFCCBF',
+          DEFAULT: '#2B2830',
+          2: '#3A3641',
         },
       },
       fontSize: {
@@ -89,13 +94,15 @@ export default {
         pill: '999px',
       },
       boxShadow: {
-        card: '0 1px 2px rgba(25,24,24,.06), 0 1px 3px rgba(25,24,24,.05)',
+        // Elevação escura: um fio de luz no topo (inset) + sombra profunda —
+        // é o que separa cartão de fundo quando ambos são escuros.
+        card: 'inset 0 1px 0 rgba(255,255,255,.04), 0 8px 24px rgba(0,0,0,.45)',
         'card-hover':
-          '0 4px 12px rgba(25,24,24,.08), 0 2px 4px rgba(25,24,24,.05)',
-        'glow': '0 4px 12px rgba(238,42,66,.18)',
-        soft: '0 1px 2px rgba(25,24,24,.06), 0 1px 3px rgba(25,24,24,.05)',
-        md: '0 4px 12px rgba(25,24,24,.08), 0 2px 4px rgba(25,24,24,.05)',
-        lg: '0 18px 40px rgba(25,24,24,.12), 0 6px 14px rgba(25,24,24,.07)',
+          'inset 0 1px 0 rgba(255,255,255,.06), 0 12px 32px rgba(0,0,0,.55)',
+        'glow': '0 0 20px rgba(238,42,66,.35)',
+        soft: 'inset 0 1px 0 rgba(255,255,255,.04), 0 8px 24px rgba(0,0,0,.45)',
+        md: '0 12px 32px rgba(0,0,0,.5)',
+        lg: '0 24px 56px rgba(0,0,0,.6)',
       },
       keyframes: {
         'fade-in': {

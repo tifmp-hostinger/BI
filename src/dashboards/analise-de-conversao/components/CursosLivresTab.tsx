@@ -68,10 +68,10 @@ export function CursosLivresTab({ loading, data }: Props) {
           ) : (
             <ResponsiveContainer width="100%" height={Math.max(300, Math.min(data.leadsPorCanal.length, 12) * 32)}>
               <BarChart data={data.leadsPorCanal.slice(0, 12)} layout="vertical" margin={{ top: 4, right: 48, left: 0, bottom: 4 }}>
-                <XAxis type="number" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtInt(v)} />
-                <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#3A3838' }} tickLine={false} axisLine={false} width={130} tickFormatter={(v: string) => truncateLabel(v, 20)} />
+                <XAxis type="number" tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtInt(v)} />
+                <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#D7D4CE' }} tickLine={false} axisLine={false} width={130} tickFormatter={(v: string) => truncateLabel(v, 20)} />
                 <Tooltip
-                  cursor={{ fill: 'rgba(238,42,66,0.05)' }}
+                  cursor={{ fill: 'rgba(255,77,99,0.10)' }}
                   contentStyle={tooltip.contentStyle}
                   labelStyle={tooltip.labelStyle}
                   itemStyle={tooltip.itemStyle}
@@ -102,9 +102,9 @@ export function CursosLivresTab({ loading, data }: Props) {
                     <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.75} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid vertical={false} stroke="#DEDCD4" />
-                <XAxis dataKey="mesAno" tick={{ fontSize: 9, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: string) => truncateLabel(v, 10)} interval="preserveStartEnd" />
-                <YAxis tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} />
+                <CartesianGrid vertical={false} stroke="#2B2830" />
+                <XAxis dataKey="mesAno" tick={{ fontSize: 9, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: string) => truncateLabel(v, 10)} interval="preserveStartEnd" />
+                <YAxis tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
                 <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown, name: unknown) => { if (name === 'mat') return [fmtInt(v as number), 'Matrículas']; return [fmtInt(v as number), 'Leads']; }} />
                 <Bar dataKey="leads" fill="url(#barCLLeads)" radius={[8, 8, 4, 4]} maxBarSize={36} />
                 <Line type="monotone" dataKey="mat" stroke={NEUTRAL} strokeWidth={2.5} dot={{ r: 4, fill: NEUTRAL }} />
@@ -127,12 +127,12 @@ export function CursosLivresTab({ loading, data }: Props) {
                     <stop offset="100%" stopColor={FMP_DARK} stopOpacity={0.85} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid horizontal={false} stroke="#DEDCD4" />
-                <XAxis type="number" tick={{ fontSize: 11, fill: '#6E6B66' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
-                <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#3A3838' }} tickLine={false} axisLine={false} width={200} tickFormatter={(v: string) => truncateLabel(v, 28)} />
-                <Tooltip cursor={{ fill: 'rgba(238,42,66,0.05)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtBRLCompact(v as number), 'Faturamento']} />
+                <CartesianGrid horizontal={false} stroke="#2B2830" />
+                <XAxis type="number" tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
+                <YAxis type="category" dataKey="categoria" tick={{ fontSize: 10, fill: '#D7D4CE' }} tickLine={false} axisLine={false} width={200} tickFormatter={(v: string) => truncateLabel(v, 28)} />
+                <Tooltip cursor={{ fill: 'rgba(255,77,99,0.10)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtBRLCompact(v as number), 'Faturamento']} />
                 <Bar dataKey="valor" fill="url(#barCLFat)" radius={[4, 8, 8, 4]} maxBarSize={26}>
-                  <LabelList dataKey="valor" position="right" formatter={(v: unknown) => fmtBRLCompact(v as number)} style={{ fontSize: 10, fill: '#3A3838', fontWeight: 700 }} />
+                  <LabelList dataKey="valor" position="right" formatter={(v: unknown) => fmtBRLCompact(v as number)} style={{ fontSize: 10, fill: '#D7D4CE', fontWeight: 700 }} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>

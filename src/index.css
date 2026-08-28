@@ -38,21 +38,24 @@
 }
 
 @layer components {
-  /* ---- Editorial title (hero / page heading) ---- */
+  /* ---- Título de página (tema SaaS: sans pesada) ---- */
   .fmp-display {
-    font-family: 'Noto Serif', Georgia, serif;
-    font-style: italic;
-    font-weight: 500;
+    font-family: 'Outfit', ui-sans-serif, sans-serif;
+    font-style: normal;
+    font-weight: 800;
     line-height: 1.04;
-    letter-spacing: -.01em;
+    letter-spacing: -.02em;
     color: var(--fmp-black);
   }
 
-  /* ---- KPI value in Noto Serif italic ---- */
+  /* ---- KPI: sans pesada e TABULAR — varre e compara melhor que a serif
+     itálica, e lê "produto" em vez de "documento institucional". ---- */
   .fmp-kpi {
-    font-family: 'Noto Serif', Georgia, serif;
-    font-style: italic;
-    font-weight: 600;
+    font-family: 'Outfit', ui-sans-serif, sans-serif;
+    font-style: normal;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
     line-height: 1;
     color: var(--fmp-black);
   }
@@ -67,7 +70,8 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: .16em;
-    color: var(--fmp-red-press);
+    /* No escuro, o pressionado some (2,4:1) — tom claro da rampa: 8,1:1. */
+    color: #FF8B9A;
   }
 
   /* ---- Card surface ---- */
@@ -84,7 +88,7 @@
   /* ---- Buttons ---- */
   .fmp-btn-primary {
     background: var(--fmp-red);
-    color: var(--fmp-white);
+    color: #FFFFFF;
     border: none;
     border-radius: var(--radius-pill);
     transition: background var(--dur-fast) var(--ease-out),
@@ -124,7 +128,7 @@
 
   /* ---- Glass (legacy compat — kept minimal) ---- */
   .glass {
-    background: rgba(255, 255, 255, 0.7);
+    background: rgba(23, 21, 26, 0.7);
     backdrop-filter: blur(16px) saturate(160%);
     -webkit-backdrop-filter: blur(16px) saturate(160%);
     border: 1px solid var(--fmp-line);
@@ -132,7 +136,7 @@
   }
 
   .glass-header {
-    background: rgba(239, 238, 234, 0.85);
+    background: rgba(18, 16, 20, 0.82);
     backdrop-filter: blur(16px) saturate(140%);
     -webkit-backdrop-filter: blur(16px) saturate(140%);
     border-bottom: 1px solid var(--fmp-line);
@@ -145,8 +149,8 @@
   }
 
   .glass-input {
-    background: rgba(255, 255, 255, 0.6);
-    border: 1px solid var(--fmp-line);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--fmp-line-2);
     transition: border-color var(--dur-fast) var(--ease-out),
       box-shadow var(--dur-fast) var(--ease-out);
   }
@@ -156,7 +160,7 @@
   }
 
   .glass-button {
-    background: var(--fmp-white);
+    background: var(--fmp-paper);
     border: 1px solid var(--fmp-line);
     transition: border-color var(--dur-fast) var(--ease-out),
       color var(--dur-fast) var(--ease-out);
@@ -179,7 +183,7 @@
 
   .glass-fab {
     background: var(--fmp-red);
-    color: var(--fmp-white);
+    color: #FFFFFF;
     border: none;
     box-shadow: var(--shadow-md);
     transition: transform var(--dur-fast) var(--ease-out),
@@ -195,7 +199,9 @@
 .leaflet-container {
   font-family: 'Outfit', sans-serif;
   border-radius: var(--radius-md);
-  background: var(--fmp-cream);
+  /* "Oceano" mais fundo que a página: é o degrau que faz a malha clara
+     (#2A2731) ler como silhueta no tema escuro. */
+  background: #0D0C10;
 }
 
 /* Sem .leaflet-tile-pane: nao ha mais camada de tiles. O mapa desenha a malha
@@ -213,7 +219,7 @@
 .leaflet-tooltip.cep-tooltip::before { display: none; }
 
 .leaflet-control-attribution {
-  background: rgba(255,255,255,0.75) !important;
+  background: rgba(23,21,26,0.8) !important;
   border-radius: var(--radius-sm) !important;
   font-size: 10px !important;
   color: var(--fmp-ink-3) !important;

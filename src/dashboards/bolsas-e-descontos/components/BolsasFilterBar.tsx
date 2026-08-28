@@ -46,7 +46,7 @@ export function BolsasFilterBar({
   };
 
   return (
-    <section className="relative z-20 flex flex-col gap-3 rounded-md border border-line bg-white p-4 shadow-card animate-fade-in">
+    <section className="relative z-20 flex flex-col gap-3 rounded-md border border-line bg-card p-4 shadow-card animate-fade-in">
       <div className="flex flex-wrap items-end gap-3">
         <MultiSelect
           label="Período"
