@@ -106,7 +106,7 @@ export function AnaliseDeConversaoPage() {
               role="tab"
               aria-selected={tab === t.id}
               onClick={() => setTab(t.id)}
-              className={`whitespace-nowrap rounded-pill px-4 py-2 text-xs font-semibold transition ${
+              className={`whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-semibold transition ${
                 tab === t.id
                   ? 'bg-fmp text-white shadow-glow'
                   : 'text-ink-2 hover:bg-paper'

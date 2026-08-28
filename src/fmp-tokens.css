@@ -8,6 +8,9 @@
 /* @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Noto+Serif:ital,wght@0,400;0,600;0,700;1,400;1,500;1,600;1,700&display=swap'); */
 
 :root {
+  /* Controles nativos (inputs, scrollbar, autofill) no esquema escuro. */
+  color-scheme: dark;
+
   /* ---- Paleta da marca — TEMA ESCURO (branch visual-saas) ----
      Os nomes semânticos não mudam: --fmp-black continua sendo "texto
      principal" (agora claro), --fmp-cream continua sendo "fundo da página"
@@ -67,9 +70,9 @@
   --w-light: 300; --w-regular: 400; --w-medium: 500;
   --w-semibold: 600; --w-bold: 700; --w-black: 800;
 
-  /* ---- Raios (superelipse suave) ---- */
-  --radius-sm: 8px; --radius-md: 16px; --radius-lg: 28px;
-  --radius-xl: 44px; --radius-pill: 999px;
+  /* ---- Raios (escala de produto) ---- */
+  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 14px;
+  --radius-xl: 20px; --radius-pill: 999px;
 
   /* ---- Espaçamento (base 8px) ---- */
   --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;

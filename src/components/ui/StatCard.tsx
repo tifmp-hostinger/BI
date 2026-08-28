@@ -27,7 +27,7 @@ import { BalaoInfo } from '@/components/ui/BalaoInfo';
  */
 export const STAT_GRID_CONTAINER = '@container';
 export const STAT_GRID_CLASSES =
-  'grid grid-cols-1 gap-4 @sm:grid-cols-2 @2xl:grid-cols-3 @4xl:grid-cols-4';
+  'grid grid-cols-1 gap-3 @sm:grid-cols-2 @2xl:grid-cols-3 @4xl:grid-cols-4';
 
 type Trend = { value: number; direction: 'up' | 'down' | 'flat' };
 type ColorKey = 'fmp' | 'success' | 'warning' | 'danger' | 'info' | 'gray';
@@ -111,14 +111,16 @@ export function StatCard({
     trend?.direction === 'up' ? 'text-success' : trend?.direction === 'down' ? 'text-danger' : 'text-ink-3';
   const valorTexto = String(value);
 
+  /* Tile de produto: borda fina carrega a estrutura (sem faixa de cor no
+     topo), ícone pequeno e colorido no canto, rótulo micro em caps, número
+     pesado. A semântica de cor sobrevive no ícone e no chip de tendência. */
   return (
     <div
-      className={`@container relative overflow-hidden rounded-md border border-line bg-card p-5 shadow-card transition-all duration-200 hover:shadow-card-hover animate-slide-up ${
-        highlight ? 'ring-1 ring-fmp/30' : ''
+      className={`@container relative overflow-hidden rounded-md border border-line bg-card p-4 transition-colors duration-150 hover:border-line-2 animate-fade-in ${
+        highlight ? 'border-fmp/40' : ''
       }`}
-      style={{ animationDelay: `${index * 60}ms` }}
+      style={{ animationDelay: `${index * 40}ms` }}
     >
-      <div className={`absolute inset-x-0 top-0 h-1 ${styles.bar}`} />
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           {/* min-h de 2 linhas: sem isso, rótulos de 1, 2 e 3 linhas empurram
@@ -131,7 +133,7 @@ export function StatCard({
               junto e quebra linha com o rótulo.
               min-h de 2 linhas: rótulos de 1, 2 e 3 linhas empurravam o
               número para alturas diferentes e a grade ficava torta. */}
-          <p className="min-h-[2.2em] text-2xs font-semibold uppercase leading-tight tracking-widest text-ink-3">
+          <p className="min-h-[2.2em] text-[10px] font-semibold uppercase leading-tight tracking-[0.12em] text-ink-3">
             {label}
             {hint && <HintPopover hint={hint} label={label} />}
           </p>
@@ -143,15 +145,11 @@ export function StatCard({
           </p>
           {subtitle && <p className="mt-1 text-xs text-ink-3 line-clamp-2">{subtitle}</p>}
         </div>
-        {Icon && (
-          <div className={`rounded-sm p-2.5 ${styles.bg}`}>
-            <Icon className={`h-5 w-5 ${styles.icon}`} strokeWidth={2.2} />
-          </div>
-        )}
+        {Icon && <Icon className={`h-4 w-4 shrink-0 ${styles.icon}`} strokeWidth={2.2} />}
       </div>
 
       {trend && (
-        <div className="mt-4 flex items-center gap-1.5">
+        <div className="mt-3 flex items-center gap-1.5">
           <span className={`flex items-center gap-1 rounded-full bg-paper px-2 py-0.5 text-2xs font-semibold ${trendColor}`}>
             <TrendIcon className="h-3 w-3" strokeWidth={2.5} />
             {trend.value > 0 ? '+' : ''}
@@ -167,12 +165,9 @@ export function StatCard({
 export function StatCardSkeleton({ index = 0 }: { index?: number }) {
   return (
     <div
-      className="relative animate-slide-up overflow-hidden rounded-md border border-line bg-card p-5 shadow-card"
-      style={{ animationDelay: `${index * 60}ms` }}
+      className="relative animate-fade-in overflow-hidden rounded-md border border-line bg-card p-4"
+      style={{ animationDelay: `${index * 40}ms` }}
     >
-      <div className="absolute inset-x-0 top-0 h-1 overflow-hidden bg-paper">
-        <div className="h-full w-1/3 animate-shimmer bg-gradient-to-r from-transparent via-fmp/50 to-transparent" />
-      </div>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-2">
           <div className="relative h-2 w-20 overflow-hidden rounded bg-paper">

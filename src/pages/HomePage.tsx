@@ -156,7 +156,7 @@ export function HomePage() {
           {ultimoDashboard ? (
             <Link
               to={`/dashboards/${ultimoDashboard.slug}`}
-              className="inline-flex items-center gap-2 rounded-pill bg-fmp px-4 py-2 text-xs font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-fmp-dark no-underline"
+              className="inline-flex items-center gap-2 rounded-md bg-fmp px-3.5 py-2 text-xs font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-fmp-dark no-underline"
             >
               <History className="h-4 w-4" />
               Continuar em {ultimoDashboard.title}
@@ -165,7 +165,7 @@ export function HomePage() {
           ) : (
             <Link
               to="/dashboards/presenca-nacional"
-              className="inline-flex items-center gap-2 rounded-pill bg-fmp px-4 py-2 text-xs font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-fmp-dark no-underline"
+              className="inline-flex items-center gap-2 rounded-md bg-fmp px-3.5 py-2 text-xs font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-fmp-dark no-underline"
             >
               <MapPin className="h-4 w-4" />
               Abrir Presença Nacional

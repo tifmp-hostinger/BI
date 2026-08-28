@@ -158,7 +158,7 @@ export function MinhaContaPage() {
             <button
               type="submit"
               disabled={salvandoDados}
-              className="mt-5 flex items-center gap-2 rounded-pill bg-fmp px-4 py-2 text-xs font-medium text-white transition-all hover:bg-fmp-dark disabled:opacity-60"
+              className="mt-5 flex items-center gap-2 rounded-md bg-fmp px-3.5 py-2 text-xs font-medium text-white transition-all hover:bg-fmp-dark disabled:opacity-60"
             >
               <Save className="h-3.5 w-3.5" />
               {salvandoDados ? 'Salvando…' : 'Salvar dados'}
@@ -212,7 +212,7 @@ export function MinhaContaPage() {
             <button
               type="submit"
               disabled={salvandoSenha}
-              className="mt-5 flex items-center gap-2 rounded-pill bg-fmp px-4 py-2 text-xs font-medium text-white transition-all hover:bg-fmp-dark disabled:opacity-60"
+              className="mt-5 flex items-center gap-2 rounded-md bg-fmp px-3.5 py-2 text-xs font-medium text-white transition-all hover:bg-fmp-dark disabled:opacity-60"
             >
               <KeyRound className="h-3.5 w-3.5" />
               {salvandoSenha ? 'Alterando…' : 'Alterar senha'}

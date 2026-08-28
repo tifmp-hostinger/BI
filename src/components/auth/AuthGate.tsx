@@ -70,7 +70,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
             id="codusuario"
             name="codusuario"
             placeholder="nome.sobrenome"
-            className="w-full rounded-sm border border-line px-3 py-2 text-sm text-ink outline-none transition focus:border-fmp"
+            className="w-full rounded-sm border border-line-2 bg-paper px-3 py-2 text-sm text-ink outline-none transition placeholder:text-ink-3/60 focus:border-fmp"
             onChange={() => setErro(null)}
             autoFocus
             autoComplete="username"
@@ -85,7 +85,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
             id="senha"
             name="senha"
             type="password"
-            className="w-full rounded-sm border border-line px-3 py-2 text-sm text-ink outline-none transition focus:border-fmp"
+            className="w-full rounded-sm border border-line-2 bg-paper px-3 py-2 text-sm text-ink outline-none transition placeholder:text-ink-3/60 focus:border-fmp"
             onChange={() => setErro(null)}
             autoComplete="current-password"
           />
@@ -99,7 +99,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
           <button
             type="submit"
             disabled={enviando}
-            className="mt-6 flex w-full items-center justify-center gap-2 rounded-pill bg-fmp py-2.5 text-sm font-medium text-white transition-all hover:bg-fmp-dark disabled:opacity-60"
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-md bg-fmp py-2.5 text-sm font-medium text-white transition-all hover:bg-fmp-dark disabled:opacity-60"
           >
             <LogIn className="h-4 w-4" />
             {enviando ? 'Entrando…' : 'Entrar'}

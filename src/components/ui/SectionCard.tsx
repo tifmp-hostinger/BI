@@ -39,16 +39,14 @@ export function SectionCard({
   const header = (
     <div className="flex items-start gap-3 min-w-0">
       {Icon && (
-        <div className="rounded-sm bg-fmp-muted p-2 text-fmp">
-          <Icon className="h-4 w-4" strokeWidth={2.4} />
+        <div className="rounded-sm bg-fmp-muted p-1.5 text-fmp">
+          <Icon className="h-3.5 w-3.5" strokeWidth={2.4} />
         </div>
       )}
       <div className="min-w-0">
-        <h3 className="fmp-kpi truncate text-sm leading-normal">
-          {title}
-        </h3>
+        <h3 className="truncate text-[13px] font-semibold text-ink">{title}</h3>
         {subtitle && (
-          <p className="mt-0.5 text-xs text-ink-3 line-clamp-1">{subtitle}</p>
+          <p className="mt-0.5 text-2xs text-ink-3 line-clamp-1">{subtitle}</p>
         )}
       </div>
     </div>
@@ -58,7 +56,7 @@ export function SectionCard({
     <section
       className={`rounded-md border border-line bg-card shadow-card animate-fade-in ${className}`}
     >
-      <header className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
+      <header className="flex items-start justify-between gap-4 border-b border-line px-4 py-3">
         {header}
         <div className="flex flex-shrink-0 items-center gap-1.5">
           {actions}
@@ -75,7 +73,7 @@ export function SectionCard({
           )}
         </div>
       </header>
-      <div className={`p-5 ${contentClassName}`}>{children}</div>
+      <div className={`p-4 ${contentClassName}`}>{children}</div>
 
       {expanded &&
         createPortal(

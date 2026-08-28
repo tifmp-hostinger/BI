@@ -288,7 +288,7 @@ export function GrowthEPerformancePage() {
               aria-pressed={googleOn}
               title={googleOn ? 'Remover filtro do Google' : 'Ver somente Google'}
               onClick={() => setGoogleOn((v) => !v)}
-              className={`inline-flex items-center gap-1.5 rounded-pill px-3 py-1.5 text-2xs font-semibold transition ${
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-2xs font-semibold transition ${
                 googleOn ? 'bg-fmp text-white shadow-glow' : 'border border-line bg-card text-ink-2 hover:bg-paper'
               }`}
             >
@@ -300,7 +300,7 @@ export function GrowthEPerformancePage() {
               aria-pressed={metaOn}
               title={metaOn ? 'Remover filtro do Meta' : 'Ver somente Meta'}
               onClick={() => setMetaOn((v) => !v)}
-              className={`inline-flex items-center gap-1.5 rounded-pill px-3 py-1.5 text-2xs font-semibold transition ${
+              className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-2xs font-semibold transition ${
                 metaOn ? 'bg-fmp text-white shadow-glow' : 'border border-line bg-card text-ink-2 hover:bg-paper'
               }`}
             >
@@ -311,7 +311,7 @@ export function GrowthEPerformancePage() {
             <button
               type="button"
               onClick={refetch}
-              className="inline-flex items-center gap-1.5 rounded-pill bg-fmp px-3 py-1.5 text-2xs font-medium text-white transition hover:bg-fmp-dark"
+              className="inline-flex items-center gap-1.5 rounded-md bg-fmp px-3 py-1.5 text-2xs font-medium text-white transition hover:bg-fmp-dark"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${revalidando ? 'animate-spin' : ''}`} />
               Atualizar
@@ -624,7 +624,7 @@ export function GrowthEPerformancePage() {
                           role="tab"
                           aria-selected={tabAtiva === v.id}
                           onClick={() => setView(v.id === 'series' ? 'matriculas' : v.id)}
-                          className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-pill px-4 py-2 text-xs font-semibold transition ${
+                          className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-semibold transition ${
                             tabAtiva === v.id ? 'bg-fmp text-white shadow-glow' : 'text-ink-2 hover:bg-paper'
                           }`}
                         >

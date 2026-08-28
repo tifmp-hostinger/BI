@@ -47,7 +47,7 @@ export function ConversaoFilterBar({
                 type="button"
                 aria-pressed={filters.ano.includes(ano)}
                 onClick={() => onAnoChange(toggle(filters.ano, ano))}
-                className={`rounded-pill px-3 py-1.5 text-2xs font-semibold transition ${
+                className={`rounded-md px-3 py-1.5 text-2xs font-semibold transition ${
                   filters.ano.includes(ano)
                     ? 'bg-fmp text-white'
                     : 'bg-paper text-ink-2 hover:bg-line'

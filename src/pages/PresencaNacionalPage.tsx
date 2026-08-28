@@ -159,7 +159,7 @@ export function PresencaNacionalPage() {
                   key={opt.value}
                   type="button"
                   onClick={() => setSource(opt.value)}
-                  className={`inline-flex items-center gap-1.5 rounded-pill px-3 py-1.5 text-2xs font-semibold transition ${
+                  className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-2xs font-semibold transition ${
                     active
                       ? 'bg-fmp text-white shadow-glow'
                       : 'bg-paper text-ink-2 hover:bg-sand/30'
@@ -183,7 +183,7 @@ export function PresencaNacionalPage() {
                   key={r}
                   type="button"
                   onClick={() => setRegion(value)}
-                  className={`rounded-pill px-3 py-1.5 text-2xs font-semibold transition ${
+                  className={`rounded-md px-3 py-1.5 text-2xs font-semibold transition ${
                     active
                       ? 'bg-fmp text-white shadow-glow'
                       : 'bg-paper text-ink-2 hover:bg-sand/30'

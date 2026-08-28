@@ -174,7 +174,7 @@ function FormularioNovoUsuario({
         <button
           type="submit"
           disabled={enviando || !nome || !codSugerido}
-          className="flex items-center gap-2 rounded-pill bg-fmp px-4 py-2 text-xs font-medium text-white transition-all hover:bg-fmp-dark disabled:opacity-60"
+          className="flex items-center gap-2 rounded-md bg-fmp px-3.5 py-2 text-xs font-medium text-white transition-all hover:bg-fmp-dark disabled:opacity-60"
         >
           <Plus className="h-3.5 w-3.5" />
           {enviando ? 'Criando…' : 'Criar usuário'}
@@ -267,7 +267,7 @@ function LinhaUsuario({
               <button
                 type="submit"
                 disabled={ocupado}
-                className="rounded-pill bg-fmp px-4 py-1.5 text-xs font-medium text-white hover:bg-fmp-dark disabled:opacity-60"
+                className="rounded-md bg-fmp px-3.5 py-1.5 text-xs font-medium text-white hover:bg-fmp-dark disabled:opacity-60"
               >
                 Salvar
               </button>

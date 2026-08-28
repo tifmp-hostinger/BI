@@ -33,7 +33,7 @@ export function BarraContexto({
   onAtualizar: () => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-md border border-line bg-card px-4 py-2.5 shadow-card animate-fade-in">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md border border-line bg-card px-3 py-2 animate-fade-in">
       <Link
         to="/"
         className="inline-flex items-center gap-1 text-2xs font-semibold uppercase tracking-widest text-ink-3 transition hover:text-fmp no-underline"
@@ -61,7 +61,7 @@ export function BarraContexto({
         <button
           type="button"
           onClick={onAtualizar}
-          className="inline-flex items-center gap-1.5 rounded-pill bg-fmp px-3.5 py-1.5 text-2xs font-medium text-white transition hover:bg-fmp-dark"
+          className="inline-flex items-center gap-1.5 rounded-md bg-fmp px-3 py-1.5 text-2xs font-medium text-white transition hover:bg-fmp-dark"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${revalidando ? 'animate-spin' : ''}`} />
           Atualizar

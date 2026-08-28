@@ -22,7 +22,7 @@ export function ErrorState({
         <button
           type="button"
           onClick={onRetry}
-          className="mt-4 inline-flex items-center gap-1.5 rounded-pill bg-fmp px-4 py-1.5 text-xs font-medium text-white transition-all hover:bg-fmp-dark"
+          className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-fmp px-3.5 py-1.5 text-xs font-medium text-white transition-all hover:bg-fmp-dark"
         >
           <RefreshCw className="h-3.5 w-3.5" />
           Tentar novamente

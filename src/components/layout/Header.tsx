@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronDown, LogOut, Menu, ShieldCheck, User } from 'lucide-react';
+import { ChevronDown, ChevronRight, LogOut, Menu, ShieldCheck, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 type Props = {
@@ -34,24 +34,32 @@ export function Header({ title, subtitle, onOpenSidebar }: Props) {
     return () => document.removeEventListener('mousedown', onDocClick);
   }, []);
 
+  /*
+   * Topbar de produto: 48px, breadcrumb no lugar do título grande — o nome
+   * do painel já está aceso na sidebar, o topo só situa. O subtítulo
+   * institucional vira o trecho discreto depois do ponto.
+   */
   return (
     <header className="sticky top-0 z-20 glass-header">
-      <div className="flex items-center gap-3 px-4 py-3 sm:px-6 lg:px-8">
+      <div className="flex h-12 items-center gap-3 px-4 lg:px-6">
         <button
           type="button"
           onClick={onOpenSidebar}
-          className="rounded-lg p-2 text-ink-2 hover:bg-paper lg:hidden"
+          className="rounded-md p-1.5 text-ink-2 hover:bg-paper lg:hidden"
           aria-label="Abrir menu"
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="h-[18px] w-[18px]" />
         </button>
 
-        <div className="min-w-0 flex-1">
-          <h1 className="fmp-kpi truncate text-lg leading-normal">
-            {title}
-          </h1>
+        <div className="flex min-w-0 flex-1 items-center gap-1.5">
+          <span className="hidden text-xs font-medium text-ink-3 sm:inline">FMP</span>
+          <ChevronRight className="hidden h-3 w-3 text-ink-3/60 sm:inline" />
+          <h1 className="truncate text-[13px] font-semibold text-ink">{title}</h1>
           {subtitle && (
-            <p className="truncate text-xs text-ink-3">{subtitle}</p>
+            <span className="hidden truncate text-xs text-ink-3 md:inline">
+              <span className="mx-1.5 text-ink-3/50">·</span>
+              {subtitle}
+            </span>
           )}
         </div>
 
@@ -59,11 +67,11 @@ export function Header({ title, subtitle, onOpenSidebar }: Props) {
           <button
             type="button"
             onClick={() => setOpenDropdown((v) => !v)}
-            className="flex items-center gap-2 rounded-full glass-button py-1 pl-1 pr-2.5"
+            className="flex h-8 items-center gap-2 rounded-md glass-button py-0 pl-1 pr-2"
             aria-haspopup
             aria-expanded={openDropdown}
           >
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-fmp text-2xs font-semibold text-white">
+            <span className="flex h-6 w-6 items-center justify-center rounded-[5px] bg-fmp text-[10px] font-bold text-white">
               {iniciais(perfil?.nome_completo ?? '')}
             </span>
             <span className="hidden max-w-[10rem] truncate text-xs font-medium text-ink-2 sm:inline">
@@ -73,7 +81,7 @@ export function Header({ title, subtitle, onOpenSidebar }: Props) {
           </button>
 
           {openDropdown && (
-            <div className="absolute right-0 mt-2 w-60 rounded-2xl glass-dropdown p-2 animate-slide-up">
+            <div className="absolute right-0 mt-2 w-60 rounded-lg glass-dropdown p-1.5 animate-slide-up">
               <div className="px-3 py-2">
                 <p className="truncate text-sm font-semibold text-ink">
                   {perfil?.nome_completo ?? '—'}

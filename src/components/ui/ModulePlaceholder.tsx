@@ -23,7 +23,7 @@ export function ModulePlaceholder({ title, description }: Props) {
       {description && <p className="mt-2 max-w-md text-sm text-ink-3">{description}</p>}
       <Link
         to="/"
-        className="mt-6 inline-flex items-center gap-1.5 rounded-pill bg-fmp px-4 py-2 text-xs font-medium text-white shadow-glow transition-all hover:-translate-y-0.5 hover:bg-fmp-dark no-underline"
+        className="mt-6 inline-flex items-center gap-1.5 rounded-md bg-fmp px-3.5 py-2 text-xs font-medium text-white shadow-glow transition-all hover:-translate-y-0.5 hover:bg-fmp-dark no-underline"
       >
         Voltar para o início
       </Link>

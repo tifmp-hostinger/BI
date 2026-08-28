@@ -114,7 +114,7 @@ export function BolsasEDescontosPage() {
           <button
             type="button"
             onClick={() => setTab('panorama')}
-            className={`rounded-pill px-4 py-2 text-xs font-semibold transition ${
+            className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
               tab === 'panorama'
                 ? 'bg-fmp text-white shadow-glow'
                 : 'text-ink-2 hover:bg-paper'
@@ -125,7 +125,7 @@ export function BolsasEDescontosPage() {
           <button
             type="button"
             onClick={() => setTab('evasao')}
-            className={`rounded-pill px-4 py-2 text-xs font-semibold transition ${
+            className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
               tab === 'evasao'
                 ? 'bg-fmp text-white shadow-glow'
                 : 'text-ink-2 hover:bg-paper'

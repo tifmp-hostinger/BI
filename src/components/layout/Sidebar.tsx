@@ -58,6 +58,37 @@ type Props = {
   onToggleColapso?: () => void;
 };
 
+/**
+ * Sidebar em anatomia de produto (branch visual-saas): itens de UMA linha e
+ * 36px com trilho vermelho no ativo, rótulos de seção pequenos, sem animação
+ * por item — navegação é instantânea, não uma coreografia. Os subtítulos dos
+ * painéis saíram das linhas (viravam duas alturas por item) e vivem no
+ * `title` do hover.
+ */
+
+function rotuloSecao(texto: string) {
+  return (
+    <p className="mb-1 mt-5 px-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/35">
+      {texto}
+    </p>
+  );
+}
+
+function classesItem(isActive: boolean): string {
+  return `group relative flex h-9 items-center gap-2.5 rounded-md px-2.5 text-[13px] font-medium transition-colors no-underline ${
+    isActive
+      ? 'bg-white/[0.07] text-white'
+      : 'text-white/55 hover:bg-white/[0.04] hover:text-white/90'
+  }`;
+}
+
+/** Trilho de ativo: a marca registrada visual da navegação. */
+function Trilho() {
+  return (
+    <span className="absolute -left-3 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-r-full bg-fmp" />
+  );
+}
+
 export function Sidebar({ items, open, onClose, colapsado = false, onToggleColapso }: Props) {
   const { perfil } = useAuth();
 
@@ -65,133 +96,103 @@ export function Sidebar({ items, open, onClose, colapsado = false, onToggleColap
     <>
       {open && (
         <div
-          className="fixed inset-0 z-30 bg-black/50 backdrop-blur-sm lg:hidden animate-fade-in"
+          className="fixed inset-0 z-30 bg-black/60 backdrop-blur-sm lg:hidden animate-fade-in"
           onClick={onClose}
           aria-hidden
         />
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col glass-drawer text-cream transition-all duration-300 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-[264px] flex-col glass-drawer transition-all duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
           open ? 'translate-x-0' : '-translate-x-full'
-        } ${colapsado ? 'lg:w-20' : ''}`}
+        } ${colapsado ? 'lg:w-16' : ''}`}
       >
-        {/* Brand. Recolhido a barra tem 80px: com o padding de 20px de cada
-            lado sobrariam 40px para o simbolo E o botao de recolher lado a
-            lado, e os dois vazavam. Recolhido, empilha e reduz o padding. */}
+        {/* Cabeçalho do workspace */}
         <div
-          className={
-            colapsado
-              ? 'flex flex-col items-center gap-2 px-2 py-4'
-              : 'flex items-center justify-between px-5 py-5'
-          }
+          className={`flex h-14 shrink-0 items-center border-b border-white/[0.06] ${
+            colapsado ? 'justify-center px-2' : 'gap-2.5 px-4'
+          }`}
         >
-          <NavLink to="/" onClick={onClose} className="flex items-center gap-3 no-underline">
-            <FmpSimbolo className="h-9 w-9 shrink-0" titulo="FMP" />
+          <NavLink to="/" onClick={onClose} className="flex min-w-0 items-center gap-2.5 no-underline">
+            <FmpSimbolo className="h-7 w-7 shrink-0" titulo="FMP" />
             {!colapsado && (
-              <div>
-                <p
-                  className="text-sm font-semibold tracking-tight text-cream"
-                  style={{ fontFamily: '"Noto Serif", serif', fontStyle: 'italic' }}
-                >
+              <span className="min-w-0">
+                <span className="block truncate text-[13px] font-semibold leading-tight text-white">
                   FMP Analytics
-                </p>
-                <p className="text-2xs uppercase tracking-widest text-sand">
-                  Central de Dashboards
-                </p>
-              </div>
+                </span>
+                <span className="block text-[10px] font-medium uppercase tracking-[0.12em] leading-tight text-white/35">
+                  Business Intelligence
+                </span>
+              </span>
             )}
           </NavLink>
+
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-cream/60 hover:bg-white/10 hover:text-cream lg:hidden"
+            className="ml-auto rounded-md p-1.5 text-white/50 hover:bg-white/[0.06] hover:text-white lg:hidden"
             aria-label="Fechar menu"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
-          {/* Recolher/expandir: só faz sentido no desktop, onde a barra é fixa. */}
           {onToggleColapso && (
             <button
               type="button"
               onClick={onToggleColapso}
               title={colapsado ? 'Expandir menu' : 'Recolher menu'}
               aria-label={colapsado ? 'Expandir menu' : 'Recolher menu'}
-              className="hidden rounded-lg p-1.5 text-cream/60 transition hover:bg-white/10 hover:text-cream lg:block"
+              className={`hidden rounded-md p-1.5 text-white/40 transition hover:bg-white/[0.06] hover:text-white lg:block ${
+                colapsado ? '' : 'ml-auto'
+              }`}
             >
-              {colapsado ? (
-                <PanelLeftOpen className="h-4 w-4" />
-              ) : (
-                <PanelLeftClose className="h-4 w-4" />
-              )}
+              {colapsado ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
             </button>
           )}
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
-          {!colapsado && (
-            <p className="mb-2 mt-2 px-3 text-2xs font-semibold uppercase tracking-widest text-sand/85">
-              Painel
-            </p>
-          )}
+        {/* Navegação */}
+        <nav className={`flex-1 space-y-0.5 overflow-y-auto pb-4 ${colapsado ? 'px-2 pt-3' : 'px-3'}`}>
+          {!colapsado && rotuloSecao('Geral')}
           <NavLink
             to="/"
             end
             onClick={onClose}
+            title={colapsado ? 'Início' : undefined}
             className={({ isActive }) =>
-              `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all no-underline ${
-                isActive
-                  ? 'bg-fmp-pressed text-white'
-                  : 'text-cream/70 hover:bg-white/10 hover:text-cream'
-              }`
+              `${classesItem(isActive)} ${colapsado ? 'justify-center px-0' : ''}`
             }
           >
-            <LayoutDashboard className="h-4 w-4 flex-shrink-0" strokeWidth={2.3} />
-            {!colapsado && (
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium">Início</p>
-                <p className="truncate text-2xs text-current opacity-80">Visão geral</p>
-              </div>
+            {({ isActive }) => (
+              <>
+                {isActive && !colapsado && <Trilho />}
+                <LayoutDashboard className="h-4 w-4 shrink-0" strokeWidth={2.2} />
+                {!colapsado && <span className="truncate">Início</span>}
+              </>
             )}
           </NavLink>
 
-          {!colapsado && (
-            <p className="mb-2 mt-5 px-3 text-2xs font-semibold uppercase tracking-widest text-sand/85">
-              Dashboards
-            </p>
-          )}
-          {items.map((item, i) => {
+          {!colapsado && rotuloSecao('Dashboards')}
+          {items.map((item) => {
             const Icon = ICONS[item.icon] ?? LayoutDashboard;
-            const commonInner = (
-              <>
-                <Icon className="h-4 w-4 flex-shrink-0" strokeWidth={2.3} />
-                {!colapsado && (
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{item.title}</p>
-                    {item.subtitle && (
-                      <p className="truncate text-2xs text-current opacity-80">
-                        {item.subtitle}
-                      </p>
-                    )}
-                  </div>
-                )}
-                {!colapsado && item.disabled && (
-                  <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-2xs font-semibold text-cream/75">
-                    Em breve
-                  </span>
-                )}
-              </>
-            );
 
             if (item.disabled) {
               return (
                 <div
                   key={item.slug}
-                  className="flex cursor-not-allowed items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-cream/50 animate-slide-right"
-                  style={{ animationDelay: `${i * 40}ms` }}
+                  title={item.title}
+                  className={`flex h-9 cursor-not-allowed items-center gap-2.5 rounded-md px-2.5 text-[13px] text-white/25 ${
+                    colapsado ? 'justify-center px-0' : ''
+                  }`}
                 >
-                  {commonInner}
+                  <Icon className="h-4 w-4 shrink-0" strokeWidth={2.2} />
+                  {!colapsado && (
+                    <>
+                      <span className="truncate">{item.title}</span>
+                      <span className="ml-auto rounded-sm border border-white/10 px-1 py-px text-[9px] font-semibold uppercase tracking-wider text-white/30">
+                        breve
+                      </span>
+                    </>
+                  )}
                 </div>
               );
             }
@@ -201,75 +202,72 @@ export function Sidebar({ items, open, onClose, colapsado = false, onToggleColap
                 key={item.slug}
                 to={`/dashboards/${item.slug}`}
                 onClick={onClose}
-                title={colapsado ? `${item.title}${item.subtitle ? ` — ${item.subtitle}` : ''}` : undefined}
-                style={{ animationDelay: `${i * 40}ms` }}
+                title={item.subtitle ? `${item.title} — ${item.subtitle}` : item.title}
                 className={({ isActive }) =>
-                  `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all no-underline animate-slide-right ${
-                    isActive
-                      ? 'bg-fmp-pressed text-white'
-                      : 'text-cream/70 hover:bg-white/10 hover:text-cream'
-                  }`
+                  `${classesItem(isActive)} ${colapsado ? 'justify-center px-0' : ''}`
                 }
               >
-                {commonInner}
+                {({ isActive }) => (
+                  <>
+                    {isActive && !colapsado && <Trilho />}
+                    <Icon className="h-4 w-4 shrink-0" strokeWidth={2.2} />
+                    {!colapsado && <span className="truncate">{item.title}</span>}
+                  </>
+                )}
               </NavLink>
             );
           })}
 
-          {!colapsado && perfil?.papel === 'admin' && (
-            <p className="mb-2 mt-5 px-3 text-2xs font-semibold uppercase tracking-widest text-sand/85">
-              Administração
-            </p>
-          )}
-          {/* Gestão de usuários: item real, só para quem tem papel admin. */}
           {perfil?.papel === 'admin' && (
-            <NavLink
-              to="/usuarios"
-              onClick={onClose}
-              title={colapsado ? 'Usuários — Acessos da plataforma' : undefined}
-              className={({ isActive }) =>
-                `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all no-underline ${
-                  isActive
-                    ? 'bg-fmp-pressed text-white'
-                    : 'text-cream/70 hover:bg-white/10 hover:text-cream'
-                }`
-              }
-            >
-              <Shield className="h-4 w-4 flex-shrink-0" strokeWidth={2.3} />
-              {!colapsado && (
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">Usuários</p>
-                  <p className="truncate text-2xs text-current opacity-80">Acessos da plataforma</p>
-                </div>
-              )}
-            </NavLink>
+            <>
+              {!colapsado && rotuloSecao('Administração')}
+              <NavLink
+                to="/usuarios"
+                onClick={onClose}
+                title="Usuários — acessos da plataforma"
+                className={({ isActive }) =>
+                  `${classesItem(isActive)} ${colapsado ? 'justify-center px-0' : ''}`
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    {isActive && !colapsado && <Trilho />}
+                    <Shield className="h-4 w-4 shrink-0" strokeWidth={2.2} />
+                    {!colapsado && <span className="truncate">Usuários</span>}
+                  </>
+                )}
+              </NavLink>
+            </>
           )}
         </nav>
 
-        {/* User badge */}
-        {/* Recolhido, o avatar (40px) nao cabia: dos 80px da barra sobravam
-            24px depois de px-4 + p-3, e o circulo vazava para fora. */}
-        <div className={colapsado ? 'border-t border-white/10 px-2 py-4' : 'border-t border-white/10 px-4 py-4'}>
+        {/* Usuário */}
+        <div className={`shrink-0 border-t border-white/[0.06] ${colapsado ? 'px-2 py-3' : 'px-3 py-3'}`}>
           <NavLink
             to="/minha-conta"
             onClick={onClose}
             title={perfil?.nome_completo ?? undefined}
-            className={`rounded-xl bg-white/5 no-underline transition hover:bg-white/10 ${
-              colapsado ? 'flex items-center justify-center p-2' : 'flex items-center gap-3 p-3'
+            className={`flex items-center rounded-md no-underline transition hover:bg-white/[0.05] ${
+              colapsado ? 'justify-center p-1.5' : 'gap-2.5 p-2'
             }`}
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-fmp text-sm font-semibold text-white">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-fmp text-[11px] font-bold text-white">
               {iniciais(perfil?.nome_completo ?? '')}
-            </div>
+            </span>
             {!colapsado && (
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-cream">
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-xs font-medium leading-tight text-white/90">
                   {perfil?.nome_completo ?? '—'}
-                </p>
-                <p className="truncate text-2xs text-cream/70">
+                </span>
+                <span className="block truncate text-[10px] leading-tight text-white/40">
                   {perfil?.cargo ?? perfil?.codusuario ?? ''}
-                </p>
-              </div>
+                </span>
+              </span>
+            )}
+            {!colapsado && perfil?.papel === 'admin' && (
+              <span className="rounded-sm bg-fmp/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-fmp-300">
+                Admin
+              </span>
             )}
           </NavLink>
         </div>

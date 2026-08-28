@@ -87,10 +87,12 @@ export default {
         '2xs': ['0.75rem', { lineHeight: '1rem' }],
       },
       borderRadius: {
-        sm: '8px',
-        md: '16px',
-        lg: '28px',
-        xl: '44px',
+        // Raios de PRODUTO: os 16/28/44px institucionais liam "brochura";
+        // SaaS moderno trabalha em 6-14px, com pill só para chips.
+        sm: '6px',
+        md: '10px',
+        lg: '14px',
+        xl: '20px',
         pill: '999px',
       },
       boxShadow: {
