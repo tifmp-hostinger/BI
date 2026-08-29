@@ -19,6 +19,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { fmtInt, fmtPct, truncateLabel } from '../formatters';
 import type { GraduacaoData } from '../types';
 import { CHART_TOOLTIP, CORES_CATEGORICAS, FMP_DARK, FMP_RED } from '@/lib/chartColors';
+import { BotaoInspecionar } from '@/components/ui/BotaoInspecionar';
 
 const PIE_COLORS = CORES_CATEGORICAS;
 
@@ -83,7 +84,7 @@ export function GraduacaoTab({ loading, data }: Props) {
 
       <ReorderableGrid storageKey="conv-reorder-graduacao" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <RItem rid="pgt-bolsas">
-        <SectionCard title="Matrículas Pagantes x Bolsistas" subtitle="Quantas matrículas pagam integral e quantas têm bolsa" icon={GraduationCap}>
+        <SectionCard actions={<BotaoInspecionar titulo="Pagantes x Bolsistas" arquivo="grad-pagantes-bolsistas" linhas={data.pgtVsBolsas} />} title="Matrículas Pagantes x Bolsistas" subtitle="Quantas matrículas pagam integral e quantas têm bolsa" icon={GraduationCap}>
           {data.pgtVsBolsas.every((d) => d.valor === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
           ) : (
@@ -106,7 +107,7 @@ export function GraduacaoTab({ loading, data }: Props) {
 
         </RItem>
         <RItem rid="insc-turno">
-        <SectionCard title="Inscrições por Turno" subtitle="Turno de interesse informado na inscrição" icon={Users}>
+        <SectionCard actions={<BotaoInspecionar titulo="Inscrições por Turno" arquivo="grad-inscricoes-turno" linhas={data.inscPorTurno} />} title="Inscrições por Turno" subtitle="Turno de interesse informado na inscrição" icon={Users}>
           {data.inscPorTurno.length === 0 || data.inscPorTurno.every((d) => d.valor === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
           ) : (
@@ -123,7 +124,7 @@ export function GraduacaoTab({ loading, data }: Props) {
 
         </RItem>
         <RItem rid="insc-processo">
-        <SectionCard title="Inscrições por Processo Seletivo" subtitle="Volume de inscrições por vestibular/edital" icon={Users}>
+        <SectionCard actions={<BotaoInspecionar titulo="Inscrições por Processo Seletivo" arquivo="grad-inscricoes-processo" linhas={data.inscPorProcesso} />} title="Inscrições por Processo Seletivo" subtitle="Volume de inscrições por vestibular/edital" icon={Users}>
           {data.inscPorProcesso.length === 0 ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
           ) : (
@@ -146,7 +147,7 @@ export function GraduacaoTab({ loading, data }: Props) {
 
         </RItem>
         <RItem rid="mat-ingresso">
-        <SectionCard title="Matrículas por Tipo de Ingresso" subtitle="Como o aluno entrou: vestibular, transferência, ENEM…" icon={GraduationCap}>
+        <SectionCard actions={<BotaoInspecionar titulo="Matrículas por Tipo de Ingresso" arquivo="grad-tipo-ingresso" linhas={data.matPorTipoIngresso} />} title="Matrículas por Tipo de Ingresso" subtitle="Como o aluno entrou: vestibular, transferência, ENEM…" icon={GraduationCap}>
           {data.matPorTipoIngresso.length === 0 ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
           ) : (
@@ -169,7 +170,7 @@ export function GraduacaoTab({ loading, data }: Props) {
         </RItem>
 
         <RItem rid="mat-dia" className="lg:col-span-2">
-      <SectionCard title="Matrículas por Dia" subtitle="Ritmo diário de efetivação de matrículas" icon={TrendingUp}>
+      <SectionCard actions={<BotaoInspecionar titulo="Matrículas por Dia" arquivo="grad-matriculas-dia" linhas={data.matPorDia} />} title="Matrículas por Dia" subtitle="Ritmo diário de efetivação de matrículas" icon={TrendingUp}>
         {data.matPorDia.length === 0 ? (
           <EmptyState title="Sem dados para os filtros selecionados" />
         ) : (

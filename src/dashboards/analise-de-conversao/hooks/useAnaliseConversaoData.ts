@@ -189,6 +189,9 @@ export function useAnaliseConversaoData(filters: ConversaoFilters, tab: Conversa
     eadData,
     cursosLivresData,
     freshnessRitmos,
+    /** Dataset bruto do painel — alimenta o Inspetor de Dados (colunas com
+     *  dado pessoal são omitidas pelo próprio inspetor). */
+    dataset: state.dataset,
     refetch,
   };
 }

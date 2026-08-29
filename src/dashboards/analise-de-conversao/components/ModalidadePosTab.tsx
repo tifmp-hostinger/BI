@@ -24,6 +24,7 @@ import type { ModalidadePosData } from '../types';
 import type { StateAgg } from '@/services/matriculasService';
 import { CHART_TOOLTIP, CORES_CATEGORICAS, FMP_DARK, FMP_RED } from '@/lib/chartColors';
 import { useEstiloVisualizacao } from '@/lib/estiloVisualizacao';
+import { BotaoInspecionar } from '@/components/ui/BotaoInspecionar';
 
 const PIE_COLORS = CORES_CATEGORICAS;
 
@@ -90,7 +91,7 @@ export function ModalidadePosTab({ loading, data }: Props) {
 
       <ReorderableGrid storageKey={`conv-reorder-pos-${data.modalidade === 'Pós EAD' ? 'ead' : 'presencial'}`} className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <RItem rid="fat-curso">
-        <SectionCard title={`Faturamento por Curso - ${data.modalidade}`} subtitle="Cursos ordenados pela receita gerada" icon={DollarSign}>
+        <SectionCard title={`Faturamento por Curso - ${data.modalidade}`} subtitle="Cursos ordenados pela receita gerada" icon={DollarSign} actions={<BotaoInspecionar titulo={`Faturamento por Curso — ${data.modalidade}`} arquivo="pos-faturamento-curso" linhas={data.fatPorCurso} />}>
           {data.fatPorCurso.length === 0 || data.fatPorCurso.every((d) => d.valor === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
           ) : (
@@ -116,7 +117,7 @@ export function ModalidadePosTab({ loading, data }: Props) {
 
         </RItem>
         <RItem rid="top-descontos">
-        <SectionCard title="Top Descontos com Maior Faturamento" subtitle="Tipos de desconto ordenados pela receita associada" icon={TrendingUp}>
+        <SectionCard title="Top Descontos com Maior Faturamento" subtitle="Tipos de desconto ordenados pela receita associada" icon={TrendingUp} actions={<BotaoInspecionar titulo="Top Descontos por Faturamento" arquivo="pos-top-descontos" linhas={data.topDescontosFat} />}>
           {data.topDescontosFat.length === 0 || data.topDescontosFat.every((d) => d.valor === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
           ) : (
@@ -144,6 +145,7 @@ export function ModalidadePosTab({ loading, data }: Props) {
           title="Top 5 Planos de Pagamento"
           subtitle={estilo === 'nova' ? 'Os 5 planos com maior receita no recorte' : 'Participação de cada plano na receita'}
           icon={Wallet}
+          actions={<BotaoInspecionar titulo="Top 5 Planos de Pagamento" arquivo="pos-planos-pagamento" linhas={data.top5PlanosPgto} />}
         >
           {data.top5PlanosPgto.length === 0 || data.top5PlanosPgto.every((d) => d.valor === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
@@ -199,7 +201,7 @@ export function ModalidadePosTab({ loading, data }: Props) {
 
         </RItem>
         <RItem rid="mapa-estado">
-        <SectionCard title={`Faturamento por Estado - ${data.modalidade}`} subtitle="Intensidade de vermelho = faturamento" icon={TrendingUp}>
+        <SectionCard title={`Faturamento por Estado - ${data.modalidade}`} subtitle="Intensidade de vermelho = faturamento" icon={TrendingUp} actions={<BotaoInspecionar titulo={`Faturamento por Estado — ${data.modalidade}`} arquivo="pos-faturamento-estado" linhas={mapData} />}>
           {mapData.length === 0 ? (
             <EmptyState title="Sem dados de estado para os filtros selecionados" />
           ) : (

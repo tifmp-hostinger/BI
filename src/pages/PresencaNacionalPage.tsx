@@ -39,6 +39,7 @@ import { nameOf } from '@/lib/brStates';
 import type { MatriculaSource } from '@/services/matriculasService';
 import { CHART_TOOLTIP, CORES_CATEGORICAS } from '@/lib/chartColors';
 import { fmtBRL, fmtBRLCompact, fmtInt, truncateLabel } from '@/lib/formatters';
+import { BotaoInspecionar } from '@/components/ui/BotaoInspecionar';
 
 const REGION_COLORS: Record<string, string> = {
   Sul: CORES_CATEGORICAS[0],
@@ -139,6 +140,14 @@ export function PresencaNacionalPage() {
         <BarraContexto
           descricao="Mapa das matrículas de Pós-graduação e Cursos Livres pelo Brasil, somando todo o histórico. Clique em um estado no mapa (ou numa barra do ranking) para ver cursos, cidades, situações e faturamento daquele estado."
           tabelas={FONTES_POR_DASHBOARD['presenca-nacional']}
+          inspecao={
+            <BotaoInspecionar
+              rotulo="Explorar dados"
+              titulo="Matrículas (linhas brutas)"
+              arquivo="presenca-dados"
+              linhas={(raw as unknown) as Record<string, unknown>[]}
+            />
+          }
           ritmos={freshnessRitmos}
           revalidando={revalidando}
           onAtualizar={refetch}
@@ -355,6 +364,7 @@ export function PresencaNacionalPage() {
             title="Top UFs por volume"
             subtitle="Ranking de matrículas por estado — clique numa barra para abrir o detalhe"
             icon={TrendingUp}
+            actions={<BotaoInspecionar titulo="Matrículas por UF" arquivo="matriculas-por-uf" linhas={stats.byState} />}
           >
             {loading ? (
               <ChartSkeleton height={320} />
@@ -416,6 +426,7 @@ export function PresencaNacionalPage() {
             title="Distribuição por região"
             subtitle={topRegion ? `${topRegion.name} lidera` : 'Participacao regional'}
             icon={Compass}
+            actions={<BotaoInspecionar titulo="Matrículas por Região" arquivo="matriculas-por-regiao" linhas={stats.byRegion} />}
           >
             {loading ? (
               <ChartSkeleton height={320} />

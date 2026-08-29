@@ -18,6 +18,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import type { RematriculaData } from '../types';
 import { CHART_TOOLTIP, CORES_CATEGORICAS, FMP_DARK, FMP_RED, NEUTRAL } from '@/lib/chartColors';
 import { useEstiloVisualizacao } from '@/lib/estiloVisualizacao';
+import { BotaoInspecionar } from '@/components/ui/BotaoInspecionar';
 
 /**
  * Barras agrupadas num único eixo (estilo 'nova') para Reingresso e
@@ -99,6 +100,7 @@ export function RematriculaTab({ loading, data }: Props) {
           title="Rematrícula - Composição (Evasão)"
           subtitle="Motivos de saída, empilhados por período letivo"
           icon={TrendingDown}
+          actions={<BotaoInspecionar titulo="Evasão por Período" arquivo="rematricula-evasao" linhas={data.evasaoPorPeriodo} />}
         >
           {evasaoEmpty ? (
             <EmptyState title="Sem dados de evasão para os filtros selecionados" />
@@ -125,6 +127,7 @@ export function RematriculaTab({ loading, data }: Props) {
           title="Reingresso - Comportamento"
           subtitle={estilo === 'nova' ? 'Confirmadas x aguardando, por período letivo' : 'Colunas: Confirmadas | Linha: Aguardando'}
           icon={RefreshCw}
+          actions={<BotaoInspecionar titulo="Reingresso por Período" arquivo="reingresso-periodo" linhas={data.reingressoPorPeriodo} />}
         >
           {reingressoEmpty ? (
             <EmptyState title="Sem dados de reingresso para os filtros selecionados" />
@@ -165,6 +168,7 @@ export function RematriculaTab({ loading, data }: Props) {
           title="Rematrícula - Composição"
           subtitle={estilo === 'nova' ? 'Confirmadas x não realizadas, por período letivo' : 'Colunas: confirmadas | Linha: não realizadas'}
           icon={RotateCcw}
+          actions={<BotaoInspecionar titulo="Rematrícula por Período" arquivo="rematricula-periodo" linhas={data.rematriculaPorPeriodo} />}
         >
           {rematEmpty ? (
             <EmptyState title="Sem dados de rematrícula para os filtros selecionados" />

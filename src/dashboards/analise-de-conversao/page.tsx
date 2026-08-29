@@ -36,6 +36,7 @@ import { fmtBRL, fmtBRLCompact, fmtInt, fmtPct, truncateLabel } from './formatte
 import { formatPeriodoLetivo } from '@/lib/formatters';
 import { CHART_TOOLTIP, FMP_DARK, FMP_RED, NEUTRAL } from '@/lib/chartColors';
 import type { ConversaoFilters } from './types';
+import { BotaoInspecionar } from '@/components/ui/BotaoInspecionar';
 
 type Tab =
   | 'geral'
@@ -72,7 +73,7 @@ export function AnaliseDeConversaoPage() {
     dataFim: null,
   });
 
-  const { loading, revalidando, error, progress, filterOptions, geralKpis, leadsData, graduacaoData, rematriculaData, mestradoData, especializacoesData, presencialData, eadData, cursosLivresData, freshnessRitmos, refetch } =
+  const { loading, revalidando, error, progress, filterOptions, geralKpis, leadsData, graduacaoData, rematriculaData, mestradoData, especializacoesData, presencialData, eadData, cursosLivresData, freshnessRitmos, dataset, refetch } =
     useAnaliseConversaoData(filters, tab);
 
   const tt = CHART_TOOLTIP;
@@ -88,6 +89,24 @@ export function AnaliseDeConversaoPage() {
         <BarraContexto
           descricao="Funil comercial completo — leads, inscrições e matrículas por processo (Graduação, Especializações, Mestrado e Cursos Livres) —, com os mesmos números do relatório original do Power BI."
           tabelas={FONTES_POR_DASHBOARD['analise-de-conversao']}
+          inspecao={dataset ? (
+            <BotaoInspecionar
+              rotulo="Explorar dados"
+              titulo="Dados brutos do painel"
+              arquivo="analise-conversao-dados"
+              conjuntos={([
+                { nome: 'Matrículas Graduação', linhas: dataset.matriculasGrad },
+                { nome: 'Matrículas Pós', linhas: dataset.matriculasPos },
+                { nome: 'Matrículas Mestrado', linhas: dataset.matriculasMestrado },
+                { nome: 'Matrículas Cursos Livres', linhas: dataset.matriculasCursosLives },
+                { nome: 'Inscrições Graduação', linhas: dataset.inscricoesGrad },
+                { nome: 'Inscrições Pós', linhas: dataset.inscricoesPos },
+                { nome: 'Inscrições Mestrado', linhas: dataset.inscricoesMestrado },
+                { nome: 'Leads (Rubeus)', linhas: dataset.rubeus },
+                { nome: 'Períodos letivos', linhas: dataset.pletivo },
+              ] as unknown) as { nome: string; linhas: Record<string, unknown>[] }[]}
+            />
+          ) : undefined}
           ritmos={freshnessRitmos}
           revalidando={revalidando}
           onAtualizar={refetch}
@@ -252,6 +271,7 @@ export function AnaliseDeConversaoPage() {
                     title="Leads Gerados por Canal"
                     subtitle="Ranking dos canais que mais trouxeram interessados"
                     icon={Radio}
+                    actions={<BotaoInspecionar titulo="Leads por Canal" arquivo="leads-por-canal" linhas={leadsData.leadsPorCanal} />}
                   >
                     {leadsData.leadsPorCanal.length === 0 ? (
                       <EmptyState title="Sem dados de canal para os filtros selecionados" />
@@ -405,6 +425,7 @@ function LeadsComportamentoChart({
       title={titulo}
       subtitle="Colunas: leads | Linhas: quantos viraram inscrição / matrícula"
       icon={Users}
+      actions={<BotaoInspecionar titulo={titulo} arquivo="leads-comportamento" linhas={dados} />}
     >
       {dados.every((d) => d.leads === 0) ? (
         <EmptyState title="Sem dados de leads para os filtros selecionados" />

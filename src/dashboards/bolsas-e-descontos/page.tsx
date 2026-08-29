@@ -40,6 +40,7 @@ import { BarraProporcao } from '@/components/ui/BarraProporcao';
 import { BolsasFilterBar } from './components/BolsasFilterBar';
 import { fmtBRL, fmtBRLCompact, fmtInt, truncateLabel } from './formatters';
 import type { BolsasFilters } from './types';
+import { BotaoInspecionar } from '@/components/ui/BotaoInspecionar';
 
 const COLORS = CORES_CATEGORICAS;
 
@@ -56,6 +57,7 @@ export function BolsasEDescontosPage() {
   });
 
   const {
+    linhasBrutas,
     filterOptions,
     optionsLoading,
     panorama,
@@ -104,6 +106,14 @@ export function BolsasEDescontosPage() {
         <BarraContexto
           descricao="Performance e retenção de matrículas com benefícios financeiros: panorama de bolsas, descontos e faturamento, além da evasão relacionada a benefícios. Os cálculos replicam o relatório original do Power BI, incluindo regras históricas de contagem."
           tabelas={FONTES_POR_DASHBOARD['bolsas-e-descontos']}
+          inspecao={
+            <BotaoInspecionar
+              rotulo="Explorar dados"
+              titulo="Benefícios (linhas brutas)"
+              arquivo="bolsas-dados"
+              linhas={(linhasBrutas as unknown) as Record<string, unknown>[] | null}
+            />
+          }
           ritmos={freshnessRitmos}
           revalidando={revalidando}
           onAtualizar={refetch}
@@ -222,7 +232,7 @@ export function BolsasEDescontosPage() {
             {/* Charts 2x2 */}
             <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               {/* 1. Waterfall — Top 5 Descontos */}
-              <SectionCard title="Top 5 Descontos com Maior Nº de Ocorrências" subtitle="Agrupado por tipo de benefício" icon={Percent}>
+              <SectionCard title="Top 5 Descontos com Maior Nº de Ocorrências" subtitle="Agrupado por tipo de benefício" icon={Percent} actions={<BotaoInspecionar titulo="Top 5 Descontos por Ocorrências" arquivo="top-descontos-ocorrencias" linhas={panorama?.topDescontos} />}>
                 {loading ? (
                   <ChartSkeleton height={320} />
                 ) : !panorama || panorama.topDescontos.length === 0 ? (
@@ -263,7 +273,7 @@ export function BolsasEDescontosPage() {
               </SectionCard>
 
               {/* 2. Area — Nº Ocorrências por Bolsa */}
-              <SectionCard title="Nº Ocorrências por Bolsa" subtitle="Agrupado por tipo de benefício" icon={Award}>
+              <SectionCard title="Nº Ocorrências por Bolsa" subtitle="Agrupado por tipo de benefício" icon={Award} actions={<BotaoInspecionar titulo="Ocorrências por Bolsa" arquivo="ocorrencias-por-bolsa" linhas={panorama?.ocorrenciasBolsa} />}>
                 {loading ? (
                   <ChartSkeleton height={320} />
                 ) : !panorama || panorama.ocorrenciasBolsa.length === 0 ? (
@@ -322,7 +332,7 @@ export function BolsasEDescontosPage() {
                   "distribuição" de só duas categorias, o % é a resposta; o
                   donut antigo ocupava 320px para codificar 2 números que os
                   cards acima já mostram. */}
-              <SectionCard title="Distribuição dos Benefícios Financeiros" subtitle="Participação de bolsas e descontos no recorte" icon={Percent}>
+              <SectionCard title="Distribuição dos Benefícios Financeiros" subtitle="Participação de bolsas e descontos no recorte" icon={Percent} actions={<BotaoInspecionar titulo="Distribuição dos Benefícios" arquivo="distribuicao-beneficios" linhas={panorama?.distribuicao} />}>
                 {loading ? (
                   <ChartSkeleton height={320} />
                 ) : !panorama || panorama.distribuicao.length === 0 ||
@@ -334,7 +344,7 @@ export function BolsasEDescontosPage() {
               </SectionCard>
 
               {/* 4. Columns — Top 5 Cursos de Maior Faturamento - Descontos */}
-              <SectionCard title="Top 5 Cursos de Maior Faturamento - Descontos" subtitle="Categoria: curso" icon={Wallet}>
+              <SectionCard title="Top 5 Cursos de Maior Faturamento - Descontos" subtitle="Categoria: curso" icon={Wallet} actions={<BotaoInspecionar titulo="Top 5 Cursos por Faturamento" arquivo="top-cursos-faturamento" linhas={panorama?.topCursosFat} />}>
                 {loading ? (
                   <ChartSkeleton height={320} />
                 ) : !panorama || panorama.topCursosFat.length === 0 ? (
@@ -416,7 +426,7 @@ export function BolsasEDescontosPage() {
                   "funil", mas o dado é um RANKING: a metáfora de etapas
                   enganava e as margens de 180px por lado zeravam a área útil
                   no celular. Barras horizontais na rampa vermelha da marca. */}
-              <SectionCard title="Top 10 Benefícios Financeiros com Maior Evasão" subtitle="Agrupado por tipo de benefício" icon={TrendingDown}>
+              <SectionCard title="Top 10 Benefícios Financeiros com Maior Evasão" subtitle="Agrupado por tipo de benefício" icon={TrendingDown} actions={<BotaoInspecionar titulo="Top 10 Benefícios com Maior Evasão" arquivo="beneficios-maior-evasao" linhas={evasao?.evasaoBeneficios} />}>
                 {loading ? (
                   <ChartSkeleton height={360} />
                 ) : !evasao || evasao.evasaoBeneficios.length === 0 ? (
@@ -473,6 +483,7 @@ export function BolsasEDescontosPage() {
                 title="Evasão por Ano"
                 subtitle={estilo === 'nova' ? 'Matrículas com benefício e evasões, na mesma escala' : 'Colunas: matrículas com benefício | Linha: evasão'}
                 icon={TrendingDown}
+                actions={<BotaoInspecionar titulo="Evasão por Ano" arquivo="evasao-por-ano" linhas={evasao?.evasaoPorAno} />}
               >
                 {loading ? (
                   <ChartSkeleton height={360} />
@@ -565,7 +576,7 @@ export function BolsasEDescontosPage() {
               </SectionCard>
 
               {/* 3. Donut — Evasão por Modalidade */}
-              <SectionCard title="Evasão com Benefícios Financeiros por Modalidade" subtitle="Categoria: tipo de curso" icon={GraduationCap}>
+              <SectionCard title="Evasão com Benefícios Financeiros por Modalidade" subtitle="Categoria: tipo de curso" icon={GraduationCap} actions={<BotaoInspecionar titulo="Evasão por Modalidade" arquivo="evasao-por-modalidade" linhas={evasao?.evasaoPorModalidade} />}>
                 {loading ? (
                   <ChartSkeleton height={360} />
                 ) : !evasao || evasao.evasaoPorModalidade.length === 0 ||

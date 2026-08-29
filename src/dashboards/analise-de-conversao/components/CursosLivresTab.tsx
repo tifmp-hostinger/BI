@@ -19,6 +19,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { fmtBRLCompact, fmtInt, fmtPct, truncateLabel } from '../formatters';
 import type { CursosLivresData } from '../types';
 import { CHART_TOOLTIP, FMP_DARK, FMP_RED, NEUTRAL } from '@/lib/chartColors';
+import { BotaoInspecionar } from '@/components/ui/BotaoInspecionar';
 
 
 type Props = {
@@ -62,7 +63,7 @@ export function CursosLivresTab({ loading, data }: Props) {
 
       <ReorderableGrid storageKey="conv-reorder-cursoslivres" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <RItem rid="funil-canal">
-        <SectionCard title="Leads Gerados por Canal" subtitle="Ranking dos canais que mais trouxeram interessados" icon={Radio}>
+        <SectionCard actions={<BotaoInspecionar titulo="Leads por Canal" arquivo="cl-leads-canal" linhas={data.leadsPorCanal} />} title="Leads Gerados por Canal" subtitle="Ranking dos canais que mais trouxeram interessados" icon={Radio}>
           {data.leadsPorCanal.length === 0 ? (
             <EmptyState title="Sem dados de canal para os filtros selecionados" />
           ) : (
@@ -90,7 +91,7 @@ export function CursosLivresTab({ loading, data }: Props) {
 
         </RItem>
         <RItem rid="insc-mat-mes">
-        <SectionCard title="Leads x Matrículas por Mês" subtitle="Colunas: leads (CRM) | Linha: matrículas" icon={Users}>
+        <SectionCard actions={<BotaoInspecionar titulo="Leads x Matrículas por Mês" arquivo="cl-leads-matriculas-mes" linhas={data.inscVsMatMensal} />} title="Leads x Matrículas por Mês" subtitle="Colunas: leads (CRM) | Linha: matrículas" icon={Users}>
           {data.inscVsMatMensal.length === 0 || data.inscVsMatMensal.every((d) => d.leads === 0 && d.mat === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
           ) : (
@@ -115,7 +116,7 @@ export function CursosLivresTab({ loading, data }: Props) {
 
         </RItem>
         <RItem rid="fat-curso" className="lg:col-span-2">
-        <SectionCard title="Faturamento por Curso" subtitle="Cursos ordenados pela receita gerada" icon={DollarSign}>
+        <SectionCard actions={<BotaoInspecionar titulo="Faturamento por Curso" arquivo="cl-faturamento-curso" linhas={data.fatPorCurso} />} title="Faturamento por Curso" subtitle="Cursos ordenados pela receita gerada" icon={DollarSign}>
           {data.fatPorCurso.length === 0 || data.fatPorCurso.every((d) => d.valor === 0) ? (
             <EmptyState title="Sem dados de faturamento para os filtros selecionados" />
           ) : (

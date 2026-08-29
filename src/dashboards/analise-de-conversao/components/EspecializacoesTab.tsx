@@ -26,6 +26,7 @@ import { fmtBRLCompact, fmtInt, fmtPct, truncateLabel } from '../formatters';
 import type { EspecializacoesData } from '../types';
 import { CHART_TOOLTIP, CORES_CATEGORICAS, FMP_DARK, FMP_RED, NEUTRAL } from '@/lib/chartColors';
 import { useEstiloVisualizacao } from '@/lib/estiloVisualizacao';
+import { BotaoInspecionar } from '@/components/ui/BotaoInspecionar';
 
 const PIE_COLORS = CORES_CATEGORICAS;
 
@@ -92,6 +93,7 @@ export function EspecializacoesTab({ loading, data }: Props) {
           title="Faturamento e Matrículas por Mês"
           subtitle={estilo === 'nova' ? 'Faturamento e matrículas mês a mês, lado a lado' : 'Colunas: faturamento | Linha: matrículas (mês fiscal)'}
           icon={TrendingUp}
+          actions={<BotaoInspecionar titulo="Faturamento e Matrículas por Mês" arquivo="espec-faturamento-mensal" linhas={data.fatMensal} />}
         >
           {data.fatMensal.length === 0 || data.fatMensal.every((d) => d.fat === 0 && d.mat === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
@@ -159,6 +161,7 @@ export function EspecializacoesTab({ loading, data }: Props) {
           title="Faturamento por Modalidade de Ensino"
           subtitle={estilo === 'nova' ? 'EAD x Presencial mês a mês, com matrículas abaixo' : 'EAD x Presencial mês a mês, com matrículas no eixo direito'}
           icon={TrendingUp}
+          actions={<BotaoInspecionar titulo="Faturamento por Modalidade (mensal)" arquivo="espec-fat-modalidade-mensal" linhas={data.fatMensal} />}
         >
           {data.fatMensal.length === 0 || data.fatMensal.every((d) => d.fatEad === 0 && d.fatPres === 0 && d.mat === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
@@ -212,7 +215,7 @@ export function EspecializacoesTab({ loading, data }: Props) {
 
         </RItem>
         <RItem rid="top5-cursos">
-        <SectionCard title="Top 5 Cursos com Maior Faturamento" subtitle="Cursos ordenados pela receita gerada" icon={DollarSign}>
+        <SectionCard actions={<BotaoInspecionar titulo="Top 5 Cursos por Faturamento" arquivo="espec-top5-cursos" linhas={data.top5CursosFat} />} title="Top 5 Cursos com Maior Faturamento" subtitle="Cursos ordenados pela receita gerada" icon={DollarSign}>
           {data.top5CursosFat.length === 0 || data.top5CursosFat.every((d) => d.valor === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
           ) : (
@@ -239,7 +242,7 @@ export function EspecializacoesTab({ loading, data }: Props) {
         </RItem>
         <RItem rid="pizzas">
         <div className="grid grid-cols-1 gap-4">
-          <SectionCard title="% Faturamento por Modalidade" subtitle="EAD vs Presencial" icon={TrendingUp}>
+          <SectionCard actions={<BotaoInspecionar titulo="Faturamento por Modalidade" arquivo="espec-fat-modalidade" linhas={data.fatPorModalidade} />} title="% Faturamento por Modalidade" subtitle="EAD vs Presencial" icon={TrendingUp}>
             {data.fatPorModalidade.length === 0 || data.fatPorModalidade.every((d) => d.valor === 0) ? (
               <EmptyState title="Sem dados para os filtros selecionados" />
             ) : estilo === 'nova' ? (
@@ -262,7 +265,7 @@ export function EspecializacoesTab({ loading, data }: Props) {
               contagens de linhas), não reais. O nome "Faturamento" vinha do
               card vizinho, esse sim em reais — lado a lado, os dois pareciam
               a mesma unidade. O tooltip já formatava como inteiro. */}
-          <SectionCard title="Matrículas por Estrutura Acadêmica (TCC)" subtitle="TCC vs Sem TCC" icon={GraduationCap}>
+          <SectionCard actions={<BotaoInspecionar titulo="Matrículas por TCC" arquivo="espec-matriculas-tcc" linhas={data.fatPorTcc} />} title="Matrículas por Estrutura Acadêmica (TCC)" subtitle="TCC vs Sem TCC" icon={GraduationCap}>
             {data.fatPorTcc.length === 0 || data.fatPorTcc.every((d) => d.valor === 0) ? (
               <EmptyState title="Sem dados para os filtros selecionados" />
             ) : estilo === 'nova' ? (

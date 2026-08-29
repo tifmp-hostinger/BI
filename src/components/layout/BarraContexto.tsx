@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { ArrowLeft, HelpCircle, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AtualizandoAviso } from '@/components/ui/AtualizandoAviso';
@@ -24,6 +25,7 @@ export function BarraContexto({
   ritmos,
   revalidando,
   onAtualizar,
+  inspecao,
 }: {
   /** Texto institucional do painel — vai para o balão do "?". */
   descricao: string;
@@ -31,6 +33,8 @@ export function BarraContexto({
   ritmos?: Record<string, RitmoFonte>;
   revalidando: boolean;
   onAtualizar: () => void;
+  /** Slot para o explorador de dados brutos do painel (BotaoInspecionar). */
+  inspecao?: ReactNode;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md border border-line bg-card px-3 py-2 animate-fade-in">
@@ -57,6 +61,7 @@ export function BarraContexto({
       {/* Preferência GLOBAL (vale para todos os painéis de uma vez) — mora
           aqui porque é onde os gráficos estão; ver lib/estiloVisualizacao. */}
       <div className="ml-auto flex items-center gap-2">
+        {inspecao}
         <SeletorVisualizacao />
         <button
           type="button"

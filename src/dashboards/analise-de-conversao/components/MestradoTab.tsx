@@ -23,6 +23,7 @@ import type { MestradoData } from '../types';
 import { CHART_TOOLTIP, CORES_CATEGORICAS, FMP_DARK, FMP_RED } from '@/lib/chartColors';
 import { useEstiloVisualizacao } from '@/lib/estiloVisualizacao';
 import { MEST_META } from '../constants';
+import { BotaoInspecionar } from '@/components/ui/BotaoInspecionar';
 
 const PIE_COLORS = CORES_CATEGORICAS;
 
@@ -78,7 +79,7 @@ export function MestradoTab({ loading, data }: Props) {
 
       <ReorderableGrid storageKey="conv-reorder-mestrado" className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <RItem rid="insc-processo">
-        <SectionCard title="Inscrições por Processo Seletivo" subtitle="Volume de inscrições por período letivo" icon={Users}>
+        <SectionCard actions={<BotaoInspecionar titulo="Inscrições por Processo Seletivo" arquivo="mest-inscricoes-processo" linhas={data.inscPorProcesso} />} title="Inscrições por Processo Seletivo" subtitle="Volume de inscrições por período letivo" icon={Users}>
           {data.inscPorProcesso.length === 0 ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
           ) : (
@@ -101,7 +102,7 @@ export function MestradoTab({ loading, data }: Props) {
 
         </RItem>
         <RItem rid="status-insc">
-        <SectionCard title="Status das Inscrições" subtitle="Situação de cada inscrição no processo seletivo" icon={Users}>
+        <SectionCard actions={<BotaoInspecionar titulo="Status das Inscrições" arquivo="mest-status-inscricoes" linhas={data.statusInscricoes} />} title="Status das Inscrições" subtitle="Situação de cada inscrição no processo seletivo" icon={Users}>
           {data.statusInscricoes.length === 0 || data.statusInscricoes.every((d) => d.valor === 0) ? (
             <EmptyState title="Sem dados para os filtros selecionados" />
           ) : estilo === 'nova' ? (
@@ -170,7 +171,7 @@ export function MestradoTab({ loading, data }: Props) {
 
         </RItem>
         <RItem rid="leads-canal" className="lg:col-span-2">
-        <SectionCard title="Leads Gerados por Canal" subtitle="Ranking dos canais que mais trouxeram interessados" icon={Radio}>
+        <SectionCard actions={<BotaoInspecionar titulo="Leads por Canal" arquivo="mest-leads-canal" linhas={data.leadsPorCanal} />} title="Leads Gerados por Canal" subtitle="Ranking dos canais que mais trouxeram interessados" icon={Radio}>
           {data.leadsPorCanal.length === 0 ? (
             <EmptyState title="Sem dados de canal para os filtros selecionados" />
           ) : (

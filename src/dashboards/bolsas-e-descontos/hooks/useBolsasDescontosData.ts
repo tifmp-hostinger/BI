@@ -154,6 +154,8 @@ export function useBolsasDescontosData(filters: BolsasFilters) {
   }, [dataset, filtered, kpis]);
 
   return {
+    /** Linhas brutas enriquecidas do painel — alimentam o Inspetor de Dados. */
+    linhasBrutas: dataset?.enrichedRows ?? null,
     filterOptions: dataset?.filterOptions ?? null,
     optionsLoading: loading,
     optionsError: error,

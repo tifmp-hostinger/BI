@@ -155,6 +155,8 @@ export function useGrowthData(filters: GrowthFilters, view: GrowthView) {
     loading: state.loading,
     revalidando: state.revalidando,
     error: state.error,
+    /** Dataset bruto — alimenta o Inspetor de Dados (PII omitida lá). */
+    dataset: state.dataset,
     progress: state.progress,
     pletivo: state.dataset?.pletivo ?? [],
     media,

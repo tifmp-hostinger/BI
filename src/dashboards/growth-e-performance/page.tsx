@@ -47,6 +47,7 @@ import {
   SerieMensalView,
 } from './components/GrowthViews';
 import type { Fonte, GrowthFilters, GrowthView } from './types';
+import { BotaoInspecionar } from '@/components/ui/BotaoInspecionar';
 
 /**
  * Grade da faixa de KPIs deste painel — não usa STAT_GRID_CLASSES porque
@@ -199,7 +200,7 @@ export function GrowthEPerformancePage() {
   const {
     loading, revalidando, error, progress, pletivo,
     media, negocio, campanhas, mapa, horarios, origem, serieLeads, serieMatriculas,
-    freshnessRitmos, refetch,
+    freshnessRitmos, dataset, refetch,
   } = useGrowthData(filters, viewAtiva);
 
   /**
@@ -307,6 +308,22 @@ export function GrowthEPerformancePage() {
               <Facebook className="h-3.5 w-3.5" />
               Meta
             </button>
+            {dataset && (
+              <BotaoInspecionar
+                rotulo="Explorar dados"
+                titulo="Dados brutos do painel"
+                arquivo="growth-dados"
+                conjuntos={([
+                  { nome: 'Google Ads', linhas: dataset.google },
+                  { nome: 'Meta Ads', linhas: dataset.meta },
+                  { nome: 'Leads (Rubeus)', linhas: dataset.rubeus },
+                  { nome: 'Matrículas Graduação', linhas: dataset.matGrad },
+                  { nome: 'Matrículas Mestrado', linhas: dataset.matMestrado },
+                  { nome: 'Matrículas Pós', linhas: dataset.matPos },
+                  { nome: 'Matrículas Cursos Livres', linhas: dataset.matCL },
+                ] as unknown) as { nome: string; linhas: Record<string, unknown>[] }[]}
+              />
+            )}
             <SeletorVisualizacao />
             <button
               type="button"
@@ -641,12 +658,12 @@ export function GrowthEPerformancePage() {
                         </SectionCard>
                       )}
                       {viewAtiva === 'mapa' && (
-                        <SectionCard title="Mapa por UF" subtitle="Investimento por UF — só Google Ads" icon={MapIcon}>
+                        <SectionCard title="Mapa por UF" subtitle="Investimento por UF — só Google Ads" icon={MapIcon} actions={<BotaoInspecionar titulo="Investimento por UF" arquivo="growth-investimento-uf" linhas={mapa ?? undefined} />}>
                           {mapa ? <MapaView data={mapa} /> : <ChartSkeleton height={420} />}
                         </SectionCard>
                       )}
                       {viewAtiva === 'horarios' && (
-                        <SectionCard title="Leads por Horário" subtitle="Faixa de 2h × Leads + Taxa de Conversão (Rubeus)" icon={Clock}>
+                        <SectionCard title="Leads por Horário" subtitle="Faixa de 2h × Leads + Taxa de Conversão (Rubeus)" icon={Clock} actions={<BotaoInspecionar titulo="Leads por Horário" arquivo="growth-leads-horario" linhas={horarios ?? undefined} />}>
                           {horarios ? <HorariosView data={horarios} /> : <ChartSkeleton height={360} />}
                         </SectionCard>
                       )}
@@ -666,6 +683,12 @@ export function GrowthEPerformancePage() {
                           subtitle="Linha vermelha: volume mensal | Linha bege: investimento — segue o filtro de datas"
                           icon={Calendar}
                           actions={
+                            <>
+                            <BotaoInspecionar
+                              titulo={viewAtiva === 'leads' ? 'Leads por Mês' : 'Matrículas por Mês'}
+                              arquivo="growth-serie-mensal"
+                              linhas={(viewAtiva === 'leads' ? serieLeads : serieMatriculas) ?? undefined}
+                            />
                             <div className="flex items-center gap-1 rounded-pill border border-line bg-paper p-0.5">
                               {(['matriculas', 'leads'] as const).map((opcao) => (
                                 <button
@@ -681,6 +704,7 @@ export function GrowthEPerformancePage() {
                                 </button>
                               ))}
                             </div>
+                            </>
                           }
                         >
                           {viewAtiva === 'leads' ? (
