@@ -49,11 +49,17 @@ type StatCardProps = {
   exactValue?: string;
 };
 
+/*
+ * Disciplina de cor do tema SaaS: o ÍCONE do tile é neutro — cor de marca em
+ * todo ícone fazia o vermelho virar papel de parede e nada se destacar. A
+ * semântica (success/danger/…) sobrevive onde carrega informação: no chip de
+ * tendência e nos estados.
+ */
 const COLOR_STYLES: Record<
   ColorKey,
   { icon: string; bg: string; bar: string; text: string }
 > = {
-  fmp: { icon: 'text-fmp', bg: 'bg-fmp-muted', bar: 'bg-fmp', text: 'text-fmp' },
+  fmp: { icon: 'text-ink-3', bg: 'bg-fmp-muted', bar: 'bg-fmp', text: 'text-fmp' },
   success: { icon: 'text-success', bg: 'bg-success-light', bar: 'bg-success', text: 'text-success-dark' },
   warning: { icon: 'text-warning', bg: 'bg-warning-light', bar: 'bg-warning', text: 'text-warning-dark' },
   danger: { icon: 'text-danger', bg: 'bg-danger-light', bar: 'bg-danger', text: 'text-danger-dark' },

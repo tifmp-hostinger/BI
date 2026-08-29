@@ -311,7 +311,7 @@ export function GrowthEPerformancePage() {
             <button
               type="button"
               onClick={refetch}
-              className="inline-flex items-center gap-1.5 rounded-md bg-fmp px-3 py-1.5 text-2xs font-medium text-white transition hover:bg-fmp-dark"
+              className="inline-flex items-center gap-1.5 rounded-md border border-line-2 bg-card text-ink-2 transition hover:border-fmp/60 hover:text-ink px-3 py-1.5 text-2xs font-medium"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${revalidando ? 'animate-spin' : ''}`} />
               Atualizar

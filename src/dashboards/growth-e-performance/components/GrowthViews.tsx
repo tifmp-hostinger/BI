@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
+  Area,
   Bar,
   BarChart,
   CartesianGrid,
@@ -254,7 +255,7 @@ export function HorariosView({ data }: { data: HorarioDatum[] }) {
               labelFormatter={(v) => String(v)}
               formatter={(v: unknown) => [fmtInt(v as number), 'Leads']}
             />
-            <Bar dataKey="leads" fill="url(#barHorarioNovo)" radius={[8, 8, 4, 4]} maxBarSize={36} />
+            <Bar dataKey="leads" fill="url(#barHorarioNovo)" radius={[8, 8, 4, 4]} maxBarSize={24} />
           </BarChart>
         </ResponsiveContainer>
         <div className="mt-3">
@@ -272,7 +273,7 @@ export function HorariosView({ data }: { data: HorarioDatum[] }) {
               />
               {/* connectNulls={false}: faixa sem lead com status vira lacuna,
                   não uma linha em 0% que pareceria "converteu zero". */}
-              <Line type="monotone" dataKey="taxaConv" stroke={FMP_DARK} strokeWidth={2} dot={{ r: 2.5, fill: FMP_DARK }} connectNulls={false} />
+              <Line type="monotone" dataKey="taxaConv" stroke={FMP_DARK} strokeWidth={2} dot={false} activeDot={{ r: 4, fill: FMP_DARK, strokeWidth: 0 }} connectNulls={false} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
@@ -327,10 +328,10 @@ export function HorariosView({ data }: { data: HorarioDatum[] }) {
             return <span className="text-xs text-ink-2">{labels[v] ?? v}</span>;
           }}
         />
-        <Bar yAxisId="left" dataKey="leads" fill="url(#barHorario)" radius={[8, 8, 4, 4]} maxBarSize={36} />
+        <Bar yAxisId="left" dataKey="leads" fill="url(#barHorario)" radius={[8, 8, 4, 4]} maxBarSize={24} />
         {/* connectNulls={false}: faixas sem lead com status ficam como lacuna,
             em vez de uma linha em 0% que pareceria "converteu zero". */}
-        <Line yAxisId="right" type="monotone" dataKey="taxaConv" stroke={NEUTRAL} strokeWidth={2.5} dot={{ r: 3, fill: NEUTRAL }} connectNulls={false} />
+        <Line yAxisId="right" type="monotone" dataKey="taxaConv" stroke={NEUTRAL} strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: NEUTRAL, strokeWidth: 0 }} connectNulls={false} />
       </ComposedChart>
     </ResponsiveContainer>
   );
@@ -476,32 +477,46 @@ export function SerieMensalView({ data, label }: { data: SerieMensalDatum[]; lab
         <RotuloPainel>{label}</RotuloPainel>
         <ResponsiveContainer width="100%" height={210}>
           <ComposedChart data={data} syncId="growth-serie" margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-            <CartesianGrid vertical={false} stroke="#2B2830" />
+            <defs>
+              {/* Preenchimento em degradê sob a linha: leitura de área sem
+                  perder a precisão da linha. */}
+              <linearGradient id="areaSerieValor" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={FMP_RED} stopOpacity={0.28} />
+                <stop offset="100%" stopColor={FMP_RED} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid vertical={false} stroke="#242229" />
             <XAxis dataKey="mesAno" hide />
-            <YAxis width={62} tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtIntCompact(v)} />
+            <YAxis width={76} tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtIntCompact(v)} />
             <Tooltip
               contentStyle={TT.contentStyle}
               labelStyle={TT.labelStyle}
               itemStyle={TT.itemStyle}
               formatter={(v: unknown) => [fmtInt(v as number), label]}
             />
-            <Line type="monotone" dataKey="valor" stroke={FMP_RED} strokeWidth={2.5} dot={{ r: 3, fill: FMP_RED }} />
+            <Area type="monotone" dataKey="valor" stroke={FMP_RED} strokeWidth={2} fill="url(#areaSerieValor)" activeDot={{ r: 4, fill: FMP_RED, strokeWidth: 0 }} />
           </ComposedChart>
         </ResponsiveContainer>
         <div className="mt-3">
           <RotuloPainel>Investimento</RotuloPainel>
           <ResponsiveContainer width="100%" height={140}>
             <ComposedChart data={data} syncId="growth-serie" margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-              <CartesianGrid vertical={false} stroke="#2B2830" />
+              <defs>
+                <linearGradient id="areaSerieInvest" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={NEUTRAL} stopOpacity={0.2} />
+                  <stop offset="100%" stopColor={NEUTRAL} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid vertical={false} stroke="#242229" />
               <XAxis dataKey="mesAno" tick={{ fontSize: 10, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={fmtMes} />
-              <YAxis width={62} tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
+              <YAxis width={76} tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
               <Tooltip
                 contentStyle={TT.contentStyle}
                 labelStyle={TT.labelStyle}
                 itemStyle={TT.itemStyle}
                 formatter={(v: unknown) => [fmtBRLCompact(v as number), 'Investimento']}
               />
-              <Line type="monotone" dataKey="investimento" stroke={FMP_DARK} strokeWidth={2} dot={{ r: 2.5, fill: FMP_DARK }} />
+              <Area type="monotone" dataKey="investimento" stroke={NEUTRAL} strokeWidth={2} fill="url(#areaSerieInvest)" activeDot={{ r: 4, fill: NEUTRAL, strokeWidth: 0 }} />
             </ComposedChart>
           </ResponsiveContainer>
         </div>
@@ -550,8 +565,8 @@ export function SerieMensalView({ data, label }: { data: SerieMensalDatum[]; lab
             return <span className="text-xs text-ink-2">{labels[v] ?? v}</span>;
           }}
         />
-        <Line yAxisId="left" type="monotone" dataKey="valor" stroke={FMP_RED} strokeWidth={2.5} dot={{ r: 3, fill: FMP_RED }} />
-        <Line yAxisId="right" type="monotone" dataKey="investimento" stroke={NEUTRAL} strokeWidth={2.5} dot={{ r: 3, fill: NEUTRAL }} />
+        <Line yAxisId="left" type="monotone" dataKey="valor" stroke={FMP_RED} strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: FMP_RED, strokeWidth: 0 }} />
+        <Line yAxisId="right" type="monotone" dataKey="investimento" stroke={NEUTRAL} strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: NEUTRAL, strokeWidth: 0 }} />
       </ComposedChart>
     </ResponsiveContainer>
   );

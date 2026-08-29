@@ -35,13 +35,6 @@ const ICONS: Record<string, LucideIcon> = {
   TrendingUp,
 };
 
-const ACCENT: Record<string, { chip: string; icon: string }> = {
-  fmp: { chip: 'bg-fmp-muted', icon: 'text-fmp' },
-  emerald: { chip: 'bg-success-light', icon: 'text-success' },
-  amber: { chip: 'bg-warning-light', icon: 'text-warning' },
-  rose: { chip: 'bg-danger-light', icon: 'text-danger' },
-  info: { chip: 'bg-info-light', icon: 'text-info' },
-};
 
 /**
  * Quando o dado de cada painel foi baixado — lido da entrada `meta:` que o
@@ -224,7 +217,6 @@ export function HomePage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {data.map((d, i) => {
               const Icon = ICONS[d.icon] ?? LayoutDashboard;
-              const accent = ACCENT[d.color] ?? ACCENT.fmp;
               const disabled = !d.is_active;
               const dadosDe = frescor[d.slug] ?? null;
               const ehUltimo = !disabled && d.slug === ultimoSlug;
@@ -232,8 +224,10 @@ export function HomePage() {
               const CardBody = (
                 <>
                   <div className="relative flex items-start justify-between gap-4">
-                    <div className={`rounded-sm p-3 ${accent.chip}`}>
-                      <Icon className={`h-5 w-5 ${accent.icon}`} strokeWidth={2.2} />
+                    {/* Ícone neutro em ladrilho de 32px — cor de marca em todo
+                        ícone fazia o vermelho virar papel de parede. */}
+                    <div className="rounded-md border border-line bg-paper p-2">
+                      <Icon className="h-4 w-4 text-ink-2" strokeWidth={2.2} />
                     </div>
                     {disabled && (
                       <Badge variant="neutral" className="uppercase">
@@ -249,17 +243,16 @@ export function HomePage() {
                     )}
                   </div>
 
-                  <div className="relative mt-6 space-y-2">
-                    <p className="text-2xs font-semibold uppercase tracking-widest text-ink-3">
+                  <div className="relative mt-4 space-y-1.5">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-ink-3">
                       {d.category}
                     </p>
-                    <h3 className="fmp-kpi text-base leading-normal">
+                    <h3 className="text-sm font-semibold leading-snug text-ink">
                       {d.title}
                     </h3>
-                    {/* ALTURA RESERVADA (min-h, 3 linhas): descrições de 1, 2
-                        e 3 linhas deixariam os cards com alturas diferentes e
-                        a grade visivelmente torta. */}
-                    <p className="min-h-[3.5rem] text-xs leading-relaxed text-ink-3 line-clamp-3">
+                    {/* ALTURA RESERVADA (min-h, 2 linhas): descrições de
+                        comprimentos diferentes deixariam a grade torta. */}
+                    <p className="min-h-[2.6em] text-2xs leading-relaxed text-ink-3 line-clamp-2">
                       {d.description}
                     </p>
                   </div>
@@ -268,8 +261,13 @@ export function HomePage() {
                       a página abrir. Ocupa o mesmo lugar e a mesma altura do
                       texto que substitui, então nada se move quando ela
                       aparece. */}
-                  <div className="relative mt-5 flex items-center justify-between border-t border-line pt-4">
-                    <span className="text-2xs text-ink-3">
+                  <div className="relative mt-4 flex items-center justify-between border-t border-line pt-3">
+                    <span className="inline-flex items-center gap-1.5 text-2xs text-ink-3">
+                      {/* Ponto verde = dado quente no navegador: o detalhe de
+                          "produto vivo" que uma frase não transmite. */}
+                      {!disabled && dadosDe && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-success" aria-hidden />
+                      )}
                       {disabled
                         ? 'Aguardando ativação'
                         : dadosDe
@@ -277,20 +275,20 @@ export function HomePage() {
                           : 'Acessar dashboard'}
                     </span>
                     <span
-                      className={`flex h-8 w-8 items-center justify-center rounded-full transition-all ${
+                      className={`flex h-7 w-7 items-center justify-center rounded-md border transition-colors ${
                         disabled
-                          ? 'bg-paper text-ink-3'
-                          : 'bg-fmp text-white group-hover:-translate-y-0.5 group-hover:shadow-glow'
+                          ? 'border-line text-ink-3/50'
+                          : 'border-line-2 text-ink-3 group-hover:border-fmp group-hover:bg-fmp group-hover:text-white'
                       }`}
                     >
-                      <ArrowUpRight className="h-4 w-4" />
+                      <ArrowUpRight className="h-3.5 w-3.5" />
                     </span>
                   </div>
                 </>
               );
 
-              const baseClass = `group relative overflow-hidden rounded-md border bg-card p-5 shadow-card transition-all duration-200 animate-slide-up ${
-                ehUltimo ? 'border-fmp/40 ring-1 ring-fmp/20' : 'border-line'
+              const baseClass = `group relative overflow-hidden rounded-md border bg-card p-4 transition-colors duration-150 animate-fade-in ${
+                ehUltimo ? 'border-fmp/40' : 'border-line hover:border-line-2'
               }`;
 
               if (disabled) {
@@ -309,7 +307,7 @@ export function HomePage() {
                   key={d.id}
                   to={`/dashboards/${d.slug}`}
                   style={{ animationDelay: `${i * 60}ms` }}
-                  className={`${baseClass} hover:-translate-y-0.5 hover:shadow-card-hover no-underline`}
+                  className={`${baseClass} no-underline`}
                 >
                   {CardBody}
                 </Link>

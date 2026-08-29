@@ -25,7 +25,7 @@ export default {
         // Cartões: bg-white foi trocado por bg-card nos componentes — não dá
         // para reapontar `white`, porque text-white (botões) e white/10
         // (overlays do menu) precisam continuar brancos de verdade.
-        card: '#17151A',
+        card: '#141318',
         fmp: {
           DEFAULT: '#EE2A42',
           light: '#43222A',
@@ -49,7 +49,7 @@ export default {
           3: '#97929B',
         },
         cream: '#EFEEEA',
-        paper: '#1D1A20',
+        paper: '#1B191F',
         sand: '#BFBAA4',
         // *-light são FUNDOS de chip (agora tingidos escuros) e *-dark são o
         // TEXTO sobre esses chips (agora claros) — os papéis se mantêm.
@@ -79,8 +79,8 @@ export default {
           3: '#26232B',
         },
         line: {
-          DEFAULT: '#2B2830',
-          2: '#3A3641',
+          DEFAULT: '#242229',
+          2: '#332F3A',
         },
       },
       fontSize: {

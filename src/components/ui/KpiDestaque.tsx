@@ -53,18 +53,18 @@ export function KpiDestaque({
 
   return (
     <div
-      className={`@container relative flex flex-col justify-between overflow-hidden rounded-md border border-fmp/30 bg-card p-5 shadow-card ring-1 ring-fmp/10 transition-all duration-200 hover:shadow-card-hover animate-slide-up ${className}`}
+      className={`@container relative flex flex-col overflow-hidden rounded-md border border-line bg-card p-5 transition-colors duration-150 hover:border-line-2 animate-fade-in ${className}`}
     >
       <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-fmp via-[#FF3B55] to-[#FF7A45]" />
 
       <div className="flex items-start justify-between gap-3">
-        <p className="text-2xs font-semibold uppercase leading-tight tracking-widest text-fmp-pressed">
+        <p className="text-[10px] font-semibold uppercase leading-tight tracking-[0.12em] text-ink-3">
           {rotulo}
           {hint && (
             <BalaoInfo
               rotuloAcao={`O que é ${rotulo}?`}
               gatilho={<HelpCircle className="h-3 w-3" strokeWidth={2.4} />}
-              classeGatilho="cursor-help rounded-full p-1.5 -m-0.5 text-fmp-pressed transition hover:text-fmp focus-visible:text-fmp"
+              classeGatilho="cursor-help rounded-full p-1.5 -m-0.5 text-ink-3 transition hover:text-fmp focus-visible:text-fmp"
             >
               <span className="block text-2xs font-normal normal-case leading-relaxed tracking-normal text-ink-2">
                 {hint}
@@ -72,11 +72,7 @@ export function KpiDestaque({
             </BalaoInfo>
           )}
         </p>
-        {Icon && (
-          <div className="rounded-sm bg-fmp-muted p-2.5 text-fmp">
-            <Icon className="h-5 w-5" strokeWidth={2.2} />
-          </div>
-        )}
+        {Icon && <Icon className="h-4 w-4 shrink-0 text-ink-3" strokeWidth={2.2} />}
       </div>
 
       <p

@@ -111,9 +111,9 @@ export function EspecializacoesTab({ loading, data }: Props) {
                   </defs>
                   <CartesianGrid vertical={false} stroke="#2B2830" />
                   <XAxis dataKey="mesAno" hide />
-                  <YAxis width={62} tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
+                  <YAxis width={76} tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
                   <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtBRLCompact(v as number), 'Faturamento']} />
-                  <Bar dataKey="fat" fill="url(#barEspecFatNovo)" radius={[8, 8, 4, 4]} maxBarSize={36} />
+                  <Bar dataKey="fat" fill="url(#barEspecFatNovo)" radius={[8, 8, 4, 4]} maxBarSize={24} />
                 </ComposedChart>
               </ResponsiveContainer>
               <div className="mt-3">
@@ -122,9 +122,9 @@ export function EspecializacoesTab({ loading, data }: Props) {
                   <ComposedChart data={data.fatMensal} syncId="espec-fat-mes" margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
                     <CartesianGrid vertical={false} stroke="#2B2830" />
                     <XAxis dataKey="mesAno" tick={{ fontSize: 9, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: string) => truncateLabel(v, 10)} interval="preserveStartEnd" />
-                    <YAxis width={62} tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
+                    <YAxis width={76} tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
                     <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtInt(v as number), 'Matrículas']} />
-                    <Line type="monotone" dataKey="mat" stroke={FMP_DARK} strokeWidth={2} dot={{ r: 2.5, fill: FMP_DARK }} />
+                    <Line type="monotone" dataKey="mat" stroke={FMP_DARK} strokeWidth={2} dot={false} activeDot={{ r: 4, fill: FMP_DARK, strokeWidth: 0 }} />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
@@ -144,10 +144,10 @@ export function EspecializacoesTab({ loading, data }: Props) {
                 <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
                 <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown, name: unknown) => { if (name === 'mat') return [fmtInt(v as number), 'Matrículas']; return [fmtBRLCompact(v as number), 'Faturamento']; }} />
                 <Legend verticalAlign="bottom" iconType="circle" formatter={(v: string) => { const labels: Record<string, string> = { fat: 'Faturamento', mat: 'Matrículas' }; return <span className="text-xs text-ink-2">{labels[v] ?? v}</span>; }} />
-                <Bar yAxisId="left" dataKey="fat" fill="url(#barEspecFat)" radius={[8, 8, 4, 4]} maxBarSize={36}>
+                <Bar yAxisId="left" dataKey="fat" fill="url(#barEspecFat)" radius={[8, 8, 4, 4]} maxBarSize={24}>
                   <LabelList dataKey="fat" position="top" formatter={(v: unknown) => fmtBRLCompact(v as number)} style={{ fontSize: 10, fill: '#D7D4CE', fontWeight: 600 }} />
                 </Bar>
-                <Line yAxisId="right" type="monotone" dataKey="mat" stroke={NEUTRAL} strokeWidth={2.5} dot={{ r: 3, fill: NEUTRAL }} />
+                <Line yAxisId="right" type="monotone" dataKey="mat" stroke={NEUTRAL} strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: NEUTRAL, strokeWidth: 0 }} />
               </ComposedChart>
             </ResponsiveContainer>
           )}
@@ -173,11 +173,11 @@ export function EspecializacoesTab({ loading, data }: Props) {
                 <ComposedChart data={data.fatMensal} syncId="espec-fat-mod" margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
                   <CartesianGrid vertical={false} stroke="#2B2830" />
                   <XAxis dataKey="mesAno" hide />
-                  <YAxis width={62} tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
+                  <YAxis width={76} tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: number) => fmtBRLCompact(v)} />
                   <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown, name: unknown) => [fmtBRLCompact(v as number), name === 'EAD' ? 'EAD' : 'Presencial']} />
                   <Legend verticalAlign="bottom" iconType="circle" formatter={(v: string) => <span className="text-xs text-ink-2">{v}</span>} />
-                  <Line type="monotone" dataKey="fatEad" name="EAD" stroke={FMP_RED} strokeWidth={2.5} dot={{ r: 3, fill: FMP_RED }} />
-                  <Line type="monotone" dataKey="fatPres" name="Presencial" stroke={NEUTRAL} strokeWidth={2.5} dot={{ r: 3, fill: NEUTRAL }} />
+                  <Line type="monotone" dataKey="fatEad" name="EAD" stroke={FMP_RED} strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: FMP_RED, strokeWidth: 0 }} />
+                  <Line type="monotone" dataKey="fatPres" name="Presencial" stroke={NEUTRAL} strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: NEUTRAL, strokeWidth: 0 }} />
                 </ComposedChart>
               </ResponsiveContainer>
               <div className="mt-3">
@@ -186,9 +186,9 @@ export function EspecializacoesTab({ loading, data }: Props) {
                   <ComposedChart data={data.fatMensal} syncId="espec-fat-mod" margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
                     <CartesianGrid vertical={false} stroke="#2B2830" />
                     <XAxis dataKey="mesAno" tick={{ fontSize: 9, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: string) => truncateLabel(v, 10)} interval="preserveStartEnd" />
-                    <YAxis width={62} tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
+                    <YAxis width={76} tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
                     <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtInt(v as number), 'Matrículas']} />
-                    <Line type="monotone" dataKey="mat" stroke={FMP_DARK} strokeWidth={2} dot={{ r: 2.5, fill: FMP_DARK }} />
+                    <Line type="monotone" dataKey="mat" stroke={FMP_DARK} strokeWidth={2} dot={false} activeDot={{ r: 4, fill: FMP_DARK, strokeWidth: 0 }} />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
@@ -202,8 +202,8 @@ export function EspecializacoesTab({ loading, data }: Props) {
                 <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
                 <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown, name: unknown) => { if (name === 'mat') return [fmtInt(v as number), 'Matrículas']; return [fmtBRLCompact(v as number), 'Faturamento']; }} />
                 <Legend verticalAlign="bottom" iconType="circle" formatter={(v: string) => { const labels: Record<string, string> = { fatEad: 'EAD', fatPres: 'Presencial', mat: 'Matrículas' }; return <span className="text-xs text-ink-2">{labels[v] ?? v}</span>; }} />
-                <Line yAxisId="left" type="monotone" dataKey="fatEad" name="EAD" stroke={FMP_RED} strokeWidth={2.5} dot={{ r: 3, fill: FMP_RED }} />
-                <Line yAxisId="left" type="monotone" dataKey="fatPres" name="Presencial" stroke={NEUTRAL} strokeWidth={2.5} dot={{ r: 3, fill: NEUTRAL }} />
+                <Line yAxisId="left" type="monotone" dataKey="fatEad" name="EAD" stroke={FMP_RED} strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: FMP_RED, strokeWidth: 0 }} />
+                <Line yAxisId="left" type="monotone" dataKey="fatPres" name="Presencial" stroke={NEUTRAL} strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: NEUTRAL, strokeWidth: 0 }} />
                 <Line yAxisId="right" type="monotone" dataKey="mat" stroke={FMP_DARK} strokeWidth={2} dot={false} strokeDasharray="5 3" />
               </ComposedChart>
             </ResponsiveContainer>

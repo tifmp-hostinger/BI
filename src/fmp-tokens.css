@@ -19,16 +19,16 @@
   --fmp-red-hover:  #FF3B55; /* hover clareia (estamos no escuro) */
   --fmp-red-press:  #C81F35;
   --fmp-black:      #F2EFEA; /* texto principal sobre o escuro */
-  --fmp-cream:      #121014; /* fundo da página: carvão quente */
-  --fmp-white:      #17151A; /* cards / superfícies elevadas */
+  --fmp-cream:      #0B0A0D; /* fundo da página: carvão quente */
+  --fmp-white:      #141318; /* cards / superfícies elevadas */
   --fmp-sand:       #BFBAA4; /* neutro quente — segue legível no escuro */
 
   /* ---- Neutros de apoio ---- */
-  --fmp-paper:      #1D1A20; /* superfície aninhada sobre o carvão */
+  --fmp-paper:      #1B191F; /* superfície aninhada sobre o carvão */
   --fmp-ink-2:      #C9C5BE;
   --fmp-ink-3:      #97929B;
-  --fmp-line:       #2B2830;
-  --fmp-line-2:     #3A3641;
+  --fmp-line:       #242229;
+  --fmp-line-2:     #332F3A;
 
   /* ---- Washes de UI (NÃO são cores de marca) ---- */
   --fmp-red-100:    #552833;              /* linha selecionada */

@@ -98,7 +98,7 @@ export function GraduacaoTab({ loading, data }: Props) {
                 <XAxis dataKey="categoria" tick={{ fontSize: 12, fill: '#D7D4CE' }} tickLine={false} axisLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
                 <Tooltip cursor={{ fill: 'rgba(255,77,99,0.10)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown) => [fmtInt(v as number), 'Matrículas']} />
-                <Bar dataKey="valor" fill="url(#barPgtBolsa)" radius={[8, 8, 4, 4]} maxBarSize={80} />
+                <Bar dataKey="valor" fill="url(#barPgtBolsa)" radius={[8, 8, 4, 4]} maxBarSize={44} />
               </BarChart>
             </ResponsiveContainer>
           )}

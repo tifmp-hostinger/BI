@@ -400,7 +400,7 @@ export function PresencaNacionalPage() {
                     dataKey="total"
                     fill="url(#barUf)"
                     radius={[8, 8, 4, 4]}
-                    maxBarSize={36}
+                    maxBarSize={24}
                     onClick={(d: unknown) => {
                       const row = d as { uf?: string };
                       if (row?.uf) selecionaUf(row.uf);

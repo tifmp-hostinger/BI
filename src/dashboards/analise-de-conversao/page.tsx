@@ -108,7 +108,7 @@ export function AnaliseDeConversaoPage() {
               onClick={() => setTab(t.id)}
               className={`whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-semibold transition ${
                 tab === t.id
-                  ? 'bg-fmp text-white shadow-glow'
+                  ? 'bg-white/[0.08] text-ink'
                   : 'text-ink-2 hover:bg-paper'
               }`}
             >
@@ -440,9 +440,9 @@ function LeadsComportamentoChart({
                 return <span className="text-xs text-ink-2">{labels[v] ?? v}</span>;
               }}
             />
-            <Bar dataKey="leads" name="Leads" fill={`url(#${gradientId})`} radius={[8, 8, 4, 4]} maxBarSize={36} />
-            <Line type="monotone" dataKey="convLeadsInsc" name="Conv. p/ Inscrição" stroke={NEUTRAL} strokeWidth={2.5} dot={{ r: 3, fill: NEUTRAL }} />
-            <Line type="monotone" dataKey="convLeadsMat" name="Conv. p/ Matrícula" stroke={FMP_DARK} strokeWidth={2.5} dot={{ r: 3, fill: FMP_DARK }} />
+            <Bar dataKey="leads" name="Leads" fill={`url(#${gradientId})`} radius={[8, 8, 4, 4]} maxBarSize={24} />
+            <Line type="monotone" dataKey="convLeadsInsc" name="Conv. p/ Inscrição" stroke={NEUTRAL} strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: NEUTRAL, strokeWidth: 0 }} />
+            <Line type="monotone" dataKey="convLeadsMat" name="Conv. p/ Matrícula" stroke={FMP_DARK} strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: FMP_DARK, strokeWidth: 0 }} />
           </ComposedChart>
         </ResponsiveContainer>
       )}

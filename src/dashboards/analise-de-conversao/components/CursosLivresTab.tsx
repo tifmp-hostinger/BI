@@ -106,8 +106,8 @@ export function CursosLivresTab({ loading, data }: Props) {
                 <XAxis dataKey="mesAno" tick={{ fontSize: 9, fill: '#9B97A1' }} tickLine={false} axisLine={false} tickFormatter={(v: string) => truncateLabel(v, 10)} interval="preserveStartEnd" />
                 <YAxis tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
                 <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} formatter={(v: unknown, name: unknown) => { if (name === 'mat') return [fmtInt(v as number), 'Matrículas']; return [fmtInt(v as number), 'Leads']; }} />
-                <Bar dataKey="leads" fill="url(#barCLLeads)" radius={[8, 8, 4, 4]} maxBarSize={36} />
-                <Line type="monotone" dataKey="mat" stroke={NEUTRAL} strokeWidth={2.5} dot={{ r: 4, fill: NEUTRAL }} />
+                <Bar dataKey="leads" fill="url(#barCLLeads)" radius={[8, 8, 4, 4]} maxBarSize={24} />
+                <Line type="monotone" dataKey="mat" stroke={NEUTRAL} strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: NEUTRAL, strokeWidth: 0 }} />
               </ComposedChart>
             </ResponsiveContainer>
           )}

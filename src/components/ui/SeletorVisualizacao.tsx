@@ -14,7 +14,7 @@ export function SeletorVisualizacao() {
 
   const base =
     'inline-flex items-center gap-1 rounded-[6px] px-2.5 py-1 text-2xs font-semibold transition';
-  const ativo = 'bg-fmp text-white shadow-glow';
+  const ativo = 'bg-white/[0.09] text-ink';
   const inativo = 'text-ink-3 hover:bg-paper hover:text-ink-2';
 
   return (

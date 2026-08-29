@@ -55,8 +55,8 @@ function BarrasAgrupadas({
         <YAxis tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
         <Tooltip cursor={{ fill: 'rgba(255,77,99,0.10)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} />
         <Legend verticalAlign="bottom" iconType="circle" formatter={(v: string) => <span className="text-xs text-ink-2">{v}</span>} />
-        <Bar dataKey={chaveA} name={rotuloA} fill={`url(#${gradientId})`} radius={[8, 8, 4, 4]} maxBarSize={36} />
-        <Bar dataKey={chaveB} name={rotuloB} fill={NEUTRAL} radius={[8, 8, 4, 4]} maxBarSize={36} />
+        <Bar dataKey={chaveA} name={rotuloA} fill={`url(#${gradientId})`} radius={[8, 8, 4, 4]} maxBarSize={24} />
+        <Bar dataKey={chaveB} name={rotuloB} fill={NEUTRAL} radius={[8, 8, 4, 4]} maxBarSize={24} />
       </BarChart>
     </ResponsiveContainer>
   );
@@ -110,10 +110,10 @@ export function RematriculaTab({ loading, data }: Props) {
                 <YAxis tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
                 <Tooltip cursor={{ fill: 'rgba(255,77,99,0.10)' }} contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} />
                 <Legend verticalAlign="bottom" iconType="circle" formatter={(v: string) => { const labels: Record<string, string> = { evJubilado: 'Jubilado', evEvadido: 'Evadido', evCancelado: 'Cancelado', evTransferido: 'Transferido' }; return <span className="text-xs text-ink-2">{labels[v] ?? v}</span>; }} />
-                <Bar dataKey="evCancelado" name="Cancelado" stackId="a" fill={FMP_RED} radius={[0, 0, 0, 0]} maxBarSize={48} />
-                <Bar dataKey="evEvadido" name="Evadido" stackId="a" fill={CORES_CATEGORICAS[1]} radius={[0, 0, 0, 0]} maxBarSize={48} />
-                <Bar dataKey="evJubilado" name="Jubilado" stackId="a" fill={CORES_CATEGORICAS[3]} radius={[0, 0, 0, 0]} maxBarSize={48} />
-                <Bar dataKey="evTransferido" name="Transferido" stackId="a" fill={CORES_CATEGORICAS[0]} radius={[8, 8, 0, 0]} maxBarSize={48} />
+                <Bar dataKey="evCancelado" name="Cancelado" stackId="a" fill={FMP_RED} radius={[0, 0, 0, 0]} maxBarSize={26} />
+                <Bar dataKey="evEvadido" name="Evadido" stackId="a" fill={CORES_CATEGORICAS[1]} radius={[0, 0, 0, 0]} maxBarSize={26} />
+                <Bar dataKey="evJubilado" name="Jubilado" stackId="a" fill={CORES_CATEGORICAS[3]} radius={[0, 0, 0, 0]} maxBarSize={26} />
+                <Bar dataKey="evTransferido" name="Transferido" stackId="a" fill={CORES_CATEGORICAS[0]} radius={[8, 8, 0, 0]} maxBarSize={26} />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -152,8 +152,8 @@ export function RematriculaTab({ loading, data }: Props) {
                 <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
                 <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} />
                 <Legend verticalAlign="bottom" iconType="circle" formatter={(v: string) => { const labels: Record<string, string> = { reingressoConf: 'Confirmadas', reingressoAguard: 'Aguardando' }; return <span className="text-xs text-ink-2">{labels[v] ?? v}</span>; }} />
-                <Bar yAxisId="left" dataKey="reingressoConf" name="Confirmadas" fill="url(#barReingresso)" radius={[8, 8, 4, 4]} maxBarSize={48} />
-                <Line yAxisId="right" type="monotone" dataKey="reingressoAguard" name="Aguardando" stroke={NEUTRAL} strokeWidth={2.5} dot={{ r: 4, fill: NEUTRAL }} />
+                <Bar yAxisId="left" dataKey="reingressoConf" name="Confirmadas" fill="url(#barReingresso)" radius={[8, 8, 4, 4]} maxBarSize={26} />
+                <Line yAxisId="right" type="monotone" dataKey="reingressoAguard" name="Aguardando" stroke={NEUTRAL} strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: NEUTRAL, strokeWidth: 0 }} />
               </ComposedChart>
             </ResponsiveContainer>
           )}
@@ -192,8 +192,8 @@ export function RematriculaTab({ loading, data }: Props) {
                 <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: '#9B97A1' }} tickLine={false} axisLine={false} />
                 <Tooltip contentStyle={tooltip.contentStyle} labelStyle={tooltip.labelStyle} itemStyle={tooltip.itemStyle} />
                 <Legend verticalAlign="bottom" iconType="circle" formatter={(v: string) => { const labels: Record<string, string> = { rematConf: 'Confirmada', rematNaoRealiz: 'Não realizada' }; return <span className="text-xs text-ink-2">{labels[v] ?? v}</span>; }} />
-                <Bar yAxisId="left" dataKey="rematConf" name="Confirmada" fill="url(#barRemat)" radius={[8, 8, 4, 4]} maxBarSize={48} />
-                <Line yAxisId="right" type="monotone" dataKey="rematNaoRealiz" name="Não realizada" stroke={NEUTRAL} strokeWidth={2.5} dot={{ r: 4, fill: NEUTRAL }} />
+                <Bar yAxisId="left" dataKey="rematConf" name="Confirmada" fill="url(#barRemat)" radius={[8, 8, 4, 4]} maxBarSize={26} />
+                <Line yAxisId="right" type="monotone" dataKey="rematNaoRealiz" name="Não realizada" stroke={NEUTRAL} strokeWidth={2.5} dot={false} activeDot={{ r: 4, fill: NEUTRAL, strokeWidth: 0 }} />
               </ComposedChart>
             </ResponsiveContainer>
           )}

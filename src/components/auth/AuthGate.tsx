@@ -48,8 +48,14 @@ export function AuthGate({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-paper px-4 py-10">
-      <div className="w-full max-w-sm">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-canvas px-4 py-10">
+      {/* O ÚNICO momento de brilho do tema: um halo da marca atrás do card.
+          Decorativo, atrás de tudo, invisível para leitores de tela. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-1/4 h-[560px] w-[720px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-fmp/[0.13] blur-[110px]"
+      />
+      <div className="relative w-full max-w-sm">
         <div className="mb-8 flex justify-center">
           <FmpMarca className="h-12" />
         </div>

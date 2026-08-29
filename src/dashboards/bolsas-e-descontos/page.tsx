@@ -116,7 +116,7 @@ export function BolsasEDescontosPage() {
             onClick={() => setTab('panorama')}
             className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
               tab === 'panorama'
-                ? 'bg-fmp text-white shadow-glow'
+                ? 'bg-white/[0.08] text-ink'
                 : 'text-ink-2 hover:bg-paper'
             }`}
           >
@@ -127,7 +127,7 @@ export function BolsasEDescontosPage() {
             onClick={() => setTab('evasao')}
             className={`rounded-md px-3 py-1.5 text-xs font-semibold transition ${
               tab === 'evasao'
-                ? 'bg-fmp text-white shadow-glow'
+                ? 'bg-white/[0.08] text-ink'
                 : 'text-ink-2 hover:bg-paper'
             }`}
           >
@@ -256,7 +256,7 @@ export function BolsasEDescontosPage() {
                         itemStyle={tt.itemStyle}
                         formatter={(v: unknown) => [`${fmtInt(v as number)} ocorrências`, 'Descontos']}
                       />
-                      <Bar dataKey="valor" fill="url(#barDesc)" radius={[8, 8, 4, 4]} maxBarSize={48} />
+                      <Bar dataKey="valor" fill="url(#barDesc)" radius={[8, 8, 4, 4]} maxBarSize={26} />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
@@ -549,7 +549,7 @@ export function BolsasEDescontosPage() {
                         dataKey="matBeneFin"
                         fill="url(#barAno)"
                         radius={[8, 8, 4, 4]}
-                        maxBarSize={36}
+                        maxBarSize={24}
                       />
                       <Line
                         yAxisId={estilo === 'nova' ? 'left' : 'right'}
